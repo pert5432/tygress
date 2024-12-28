@@ -27,7 +27,7 @@ class Entity {
 
 const buildSelect = (e: Entity): string => {
   const targets = e.columns
-    .map((c) => `${c.name} AS "${e.className}.${c.fieldName}"`)
+    .map((c) => `${e.name}.${c.name} AS "${e.className}.${c.fieldName}"`)
     .join(", ");
 
   return `SELECT ${targets} FROM ${e.name}`;
