@@ -1,4 +1,7 @@
 import { Client } from "pg";
+import { A } from "./a";
+
+console.log(A);
 
 class Column {
   constructor(name: string, fieldName: string) {
