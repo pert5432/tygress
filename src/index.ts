@@ -1,52 +1,27 @@
 import { Client } from "pg";
-import { A } from "./a";
+import { Users } from "./users";
+import { Entity } from "./types/entity.type";
+import { METADATA_STORE } from "./metadata-store";
 
-console.log(A);
+const buildSelect = (e: Entity<unknown>): string => {
+  const metadata = METADATA_STORE.get(e);
+  console.log(metadata);
 
-class Column {
-  constructor(name: string, fieldName: string) {
-    this.name = name;
-    this.fieldName = fieldName;
-  }
-
-  name: string;
-
-  fieldName: string;
-}
-
-class Entity {
-  constructor(name: string, className: string, columns: Column[]) {
-    this.name = name;
-    this.className = className;
-    this.columns = columns;
-  }
-
-  name: string;
-
-  className: string;
-
-  columns: Column[];
-}
-
-const buildSelect = (e: Entity): string => {
-  const targets = e.columns
-    .map((c) => `${e.name}.${c.name} AS "${e.className}.${c.fieldName}"`)
+  const targets = metadata.columns
+    .map(
+      (c) =>
+        `${metadata.tablename}.${c.name} AS "${metadata.className}.${c.fieldName}"`
+    )
     .join(", ");
 
-  return `SELECT ${targets} FROM ${e.name}`;
+  return `SELECT ${targets} FROM ${metadata.tablename}`;
 };
 
 const main = async () => {
   const client = new Client("postgres://petr@localhost:5437/tygress");
   await client.connect();
 
-  const users = new Entity("users", "Users", [
-    new Column("id", "ID"),
-    new Column("username", "Username"),
-    new Column("full_name", "FullName"),
-  ]);
-
-  const sql = buildSelect(users);
+  const sql = buildSelect(Users);
 
   console.log(sql);
 
