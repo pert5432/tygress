@@ -1,12 +1,19 @@
 import { ColumnMetadata } from "./column-metadata";
-import { Entity } from "./types/entity.type";
+import { Entity } from "./types/entity";
 
-export type TableMetadata = {
-  tablename: string;
-  className: string;
-  class: Entity<unknown>;
+export class TableMetadata {
+  constructor(public tablename: string, public klass: Entity<unknown>) {}
+
+  get fullName(): string {
+    if (this.schemaname?.length) {
+      return `${this.schemaname}.${this.tablename}`;
+    }
+
+    return this.tablename;
+  }
 
   schemaname?: string;
 
-  columns: ColumnMetadata[];
-};
+  columns: ColumnMetadata[] = [];
+  columnsMap: Map<string, ColumnMetadata> = new Map();
+}

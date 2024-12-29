@@ -1,13 +1,12 @@
 import { METADATA_STORE } from "../metadata-store";
-import { Entity } from "../types/entity.type";
+import { TableMetadata } from "../table-metadata";
+import { Entity } from "../types/entity";
 
 export const Table = (tablename: string): ClassDecorator => {
   return function (target: Object) {
-    METADATA_STORE.addTable(target as Entity<unknown>, {
-      tablename,
-      className: (target as { name: string }).name,
-      class: target as Entity<unknown>,
-      columns: [],
-    });
+    METADATA_STORE.addTable(
+      target as Entity<unknown>,
+      new TableMetadata(tablename, target as Entity<unknown>)
+    );
   };
 };

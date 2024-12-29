@@ -1,6 +1,6 @@
 import { ColumnMetadata } from "./column-metadata";
 import { TableMetadata } from "./table-metadata";
-import { Entity } from "./types/entity.type";
+import { Entity } from "./types/entity";
 
 class MetadataStore {
   public tables = new Map<Entity<unknown>, TableMetadata>();
@@ -15,6 +15,10 @@ class MetadataStore {
     const columns = this.columns.get(table) ?? [];
     metadata.columns = columns;
 
+    for (const column of columns) {
+      metadata.columnsMap.set(column.fieldName, column);
+    }
+
     this.tables.set(table, metadata);
   }
 
@@ -25,8 +29,8 @@ class MetadataStore {
     this.columns.set(table, newColumns);
   }
 
-  public get(table: Entity<unknown>): TableMetadata {
-    const res = this.tables.get(table);
+  public getTable<T>(table: T): TableMetadata {
+    const res = this.tables.get(table as Entity<unknown>);
     if (!res) {
       throw new Error(`No metadata found for ${table}`);
     }
