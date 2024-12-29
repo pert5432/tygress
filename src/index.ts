@@ -4,6 +4,7 @@ import { Entity } from "./types/entity";
 import { METADATA_STORE } from "./metadata-store";
 import { WhereCondition, Wheres } from "./types/where-args";
 import { quote } from "./quote";
+import { doubleQuote } from "./double-quote";
 
 const buildSelect = <T extends Entity<unknown>>(
   e: T,
@@ -12,7 +13,12 @@ const buildSelect = <T extends Entity<unknown>>(
   const metadata = METADATA_STORE.getTable(e);
 
   const targets = metadata.columns
-    .map((c) => `${c.fullName} AS "${metadata.klass.name}.${c.fieldName}"`)
+    .map(
+      (c) =>
+        `${doubleQuote(c.fullName)} AS ${doubleQuote(
+          `${metadata.klass.name}.${c.fieldName}`
+        )}`
+    )
     .join(", ");
 
   const whereConditions: string[] = [];
