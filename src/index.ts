@@ -5,10 +5,11 @@ import { METADATA_STORE } from "./metadata-store";
 import { WhereCondition, Wheres } from "./types/where-args";
 import { quote } from "./quote";
 import { doubleQuote } from "./double-quote";
+import { SelectOptions } from "./types/select-options";
 
 const buildSelect = <T extends Entity<unknown>>(
   e: T,
-  where?: Wheres<InstanceType<T>>
+  options?: SelectOptions<InstanceType<T>>
 ): string => {
   const metadata = METADATA_STORE.getTable(e);
 
@@ -22,7 +23,9 @@ const buildSelect = <T extends Entity<unknown>>(
     .join(", ");
 
   const whereConditions: string[] = [];
-  if (where) {
+  if (options?.where) {
+    const { where } = options;
+
     const getComparator = (comparator: WhereCondition): string => {
       const data = new Map<WhereCondition, string>([
         ["gt", ">"],
@@ -71,7 +74,7 @@ const main = async () => {
   await client.connect();
 
   const sql = buildSelect(Users, {
-    username: { value: "a", condition: "gte" },
+    where: { username: { value: "a", condition: "gte" } },
   });
 
   console.log(sql);
