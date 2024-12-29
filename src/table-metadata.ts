@@ -1,4 +1,5 @@
 import { ColumnMetadata } from "./column-metadata";
+import { RelationMetadata } from "./relation-metadata";
 import { Entity } from "./types/entity";
 
 export class TableMetadata {
@@ -16,4 +17,6 @@ export class TableMetadata {
 
   columns: ColumnMetadata[] = [];
   columnsMap: Map<string, ColumnMetadata> = new Map();
+
+  relations: Map<string, RelationMetadata> = new Map();
 }

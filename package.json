@@ -4,7 +4,8 @@
   "author": "pert5432",
   "license": "MIT",
   "dependencies": {
-    "pg": "^8.13.1"
+    "pg": "^8.13.1",
+    "reflect-metadata": "^0.2.2"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
