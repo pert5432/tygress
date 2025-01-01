@@ -4,7 +4,7 @@ import { Pets } from "./pets";
 @Table("users")
 export class Users {
   @Column("id")
-  id: string;
+  id: number;
 
   @Column("username")
   username: string;

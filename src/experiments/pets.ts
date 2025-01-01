@@ -4,7 +4,7 @@ import { Column, Table, ManyToOne } from "../decorators";
 @Table("pets")
 export class Pets {
   @Column("id")
-  id: string;
+  id: number;
 
   @Column("name")
   name: string;

@@ -1,5 +1,12 @@
 import { METADATA_STORE, TableMetadata } from "./metadata";
-import { Entity, Joins, SelectOptions, WhereCondition } from "./types";
+import {
+  Entity,
+  Joins,
+  SelectOptions,
+  WhereCondition,
+  WhereComparator,
+  Wheres,
+} from "./types";
 import { doubleQuote, quote } from "./utils";
 
 export class QueryBuilder<T extends Entity<unknown>> {
@@ -15,10 +22,10 @@ export class QueryBuilder<T extends Entity<unknown>> {
   private whereConditions: string[] = [];
   private sqlJoins: string[] = [];
 
-  public buildSelect<T>(): string {
+  public buildSelect(): string {
     this.tablesToSelect.push(this.table);
 
-    this.buildWhere();
+    this.buildWhereConditions();
     this.buildJoins();
 
     const targets = this.tablesToSelect
@@ -44,26 +51,60 @@ export class QueryBuilder<T extends Entity<unknown>> {
     return sql;
   }
 
-  private buildWhere(): void {
-    if (this.options?.where) {
-      const { where } = this.options;
+  private buildWhere<P>(table: TableMetadata, where: Wheres<P>): void {
+    for (const fieldName in where) {
+      let column = table.columnsMap.get(fieldName);
 
-      for (const fieldName of Object.keys(where)) {
-        const column = this.table.columnsMap.get(fieldName);
-        if (!column) {
-          throw new Error(
-            `Column ${fieldName} not found in table ${this.table.klass.name}`
-          );
+      // Fetch the column meta from a relation instead
+      // Maybe this should be a different branch alltogether (i.e. we want to handle conditions for columns and for relations separately)
+      if (!column) {
+        const relation = table.relations.get(fieldName);
+
+        if (relation) {
+          const { field, klass } = relation.getOtherSide(table.klass);
+          const otherTable = METADATA_STORE.getTable(klass);
+
+          column = otherTable.columnsMap.get(field);
         }
+      }
 
-        const condition = where[fieldName as keyof InstanceType<T>]!;
-        const comparator = this.getComparator(condition.condition);
+      if (!column) {
+        throw new Error(
+          `Column ${fieldName} not found in table ${table.klass.name}`
+        );
+      }
+
+      const condition = where[fieldName as keyof Wheres<P>]!;
+
+      if (condition instanceof WhereCondition) {
+        const comparator = this.getSqlComparator(condition.condition);
 
         this.whereConditions.push(
           `${column.fullName} ${comparator} ${quote(condition.value)}`
         );
+      } else {
+        const nextTableRelation = table.relations.get(fieldName);
+        if (!nextTableRelation) {
+          throw new Error(
+            `No relation for table ${table.klass.name}, column ${fieldName}`
+          );
+        }
+
+        this.buildWhere(
+          METADATA_STORE.getTable(nextTableRelation.getOtherTable(table.klass)),
+          condition
+        );
       }
     }
+  }
+
+  private buildWhereConditions(): void {
+    if (!this.options.where) {
+      return;
+    }
+
+    const { where } = this.options;
+    this.buildWhere(this.table, where);
   }
 
   private buildJoins(): void {
@@ -84,11 +125,7 @@ export class QueryBuilder<T extends Entity<unknown>> {
           );
         }
 
-        const inverseTable =
-          relation.primary === currentTable.klass
-            ? relation.foreign
-            : relation.primary;
-
+        const inverseTable = relation.getOtherTable(currentTable.klass);
         const inverseMeta = METADATA_STORE.getTable(inverseTable);
 
         if (_join === true || _join instanceof Object) {
@@ -112,8 +149,8 @@ export class QueryBuilder<T extends Entity<unknown>> {
     join(joins, this.table);
   }
 
-  private getComparator = (comparator: WhereCondition): string => {
-    const data = new Map<WhereCondition, string>([
+  private getSqlComparator = (comparator: WhereComparator): string => {
+    const data = new Map<WhereComparator, string>([
       ["gt", ">"],
       ["gte", ">="],
       ["lt", "<"],

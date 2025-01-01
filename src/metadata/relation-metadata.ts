@@ -1,6 +1,6 @@
 import { Relation } from "../enums";
 import { METADATA_STORE } from "./metadata-store";
-import { Entity } from "../types";
+import { Entity, RelationSide } from "../types";
 
 export class RelationMetadata {
   type: Relation;
@@ -29,5 +29,23 @@ export class RelationMetadata {
     const foreignMeta = METADATA_STORE.getTable(this.foreign);
 
     return `${foreignMeta.fullName}.${this.foreignKey}`;
+  }
+
+  public getOtherTable(table: Entity<unknown>): Entity<unknown> {
+    return this.primary === table ? this.foreign : this.primary;
+  }
+
+  public getOtherSide(table: Entity<unknown>): RelationSide {
+    return this.primary === table
+      ? {
+          field: this.foreignField,
+          key: this.foreignKey,
+          klass: this.foreign,
+        }
+      : {
+          field: this.primaryField,
+          key: this.primaryKey,
+          klass: this.primary,
+        };
   }
 }

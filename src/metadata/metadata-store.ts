@@ -59,7 +59,7 @@ class MetadataStore {
     this.columns.set(args.klass, newColumns);
   }
 
-  public getTable<T>(table: T): TableMetadata {
+  public getTable<T extends Entity<unknown>>(table: T): TableMetadata {
     const res = this.tables.get(table as Entity<unknown>);
     if (!res) {
       throw new Error(`No metadata found for ${table}`);
@@ -111,6 +111,15 @@ class MetadataStore {
         inverseRelation.foreignKey = relation.foreignKey;
         inverseRelation.primaryKey = relation.primaryKey;
       }
+    }
+
+    // Ensure foreign key column is registered to foreign table
+    if (relation.type === Relation.MANY_TO_ONE) {
+      this.addColumn({
+        name: relation.foreignKey,
+        fieldName: relation.foreignField,
+        klass: relation.foreign,
+      });
     }
 
     // Finally insert new relation into the array
