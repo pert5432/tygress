@@ -1,4 +1,4 @@
-import { METADATA_STORE } from "../metadata-store";
+import { METADATA_STORE } from "../metadata/metadata-store";
 import { Entity } from "../types/entity";
 
 export const Table = (tablename: string): ClassDecorator => {

@@ -1,4 +1,4 @@
-import { RelationMetadata } from "../relation-metadata";
+import { RelationMetadata } from "../metadata";
 import { RelationMetadataArgs } from "../types/args";
 
 export abstract class RelationMetadataFactory {

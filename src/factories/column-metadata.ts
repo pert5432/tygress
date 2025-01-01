@@ -1,4 +1,4 @@
-import { ColumnMetadata } from "../column-metadata";
+import { ColumnMetadata } from "../metadata/column-metadata";
 import { ColumnMetadataArgs } from "../types/args";
 
 export abstract class ColumnMetadataFactory {

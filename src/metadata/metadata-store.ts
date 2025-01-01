@@ -1,18 +1,16 @@
-import { ColumnMetadata } from "./column-metadata";
-import { Relation } from "./enums/relation";
+import { Relation } from "../enums";
 import {
   ColumnMetadataFactory,
   RelationMetadataFactory,
   TableMetadataFactory,
-} from "./factories";
-import { RelationMetadata } from "./relation-metadata";
-import { TableMetadata } from "./table-metadata";
+} from "../factories";
+import { RelationMetadata, TableMetadata, ColumnMetadata } from ".";
 import {
   ColumnMetadataArgs,
   RelationMetadataArgs,
   TableMetadataArgs,
-} from "./types/args";
-import { Entity } from "./types/entity";
+} from "../types/args";
+import { Entity } from "../types";
 
 class MetadataStore {
   public tables = new Map<Entity<unknown>, TableMetadata>();

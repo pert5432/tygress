@@ -1,4 +1,4 @@
-import { doubleQuote } from "./double-quote";
+import { doubleQuote } from "../double-quote";
 import { TableMetadata } from "./table-metadata";
 
 export class ColumnMetadata {

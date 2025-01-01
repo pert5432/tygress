@@ -1,6 +1,6 @@
-import { Relation } from "./enums/relation";
+import { Relation } from "../enums";
 import { METADATA_STORE } from "./metadata-store";
-import { Entity } from "./types/entity";
+import { Entity } from "../types";
 
 export class RelationMetadata {
   type: Relation;

@@ -1,6 +1,6 @@
 import { ColumnMetadata } from "./column-metadata";
 import { RelationMetadata } from "./relation-metadata";
-import { Entity } from "./types/entity";
+import { Entity } from "../types/entity";
 
 export class TableMetadata {
   tablename: string;

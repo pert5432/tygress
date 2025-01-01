@@ -1,4 +1,4 @@
-import { TableMetadata } from "../table-metadata";
+import { TableMetadata } from "../metadata/table-metadata";
 import { TableMetadataArgs } from "../types/args";
 
 export abstract class TableMetadataFactory {
