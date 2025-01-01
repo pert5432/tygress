@@ -1,6 +1,4 @@
-import { Column } from "./decorators/column";
-import { OneToMany } from "./decorators/one-to-many";
-import { Table } from "./decorators/table";
+import { Column, OneToMany, Table } from "../decorators";
 import { Pets } from "./pets";
 
 @Table("users")

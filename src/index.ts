@@ -1,9 +1,9 @@
-import "reflect-metadata";
 import { Client } from "pg";
-import { Users } from "./users";
-import { Entity, WhereCondition, SelectOptions, Joins } from "./types";
+import "reflect-metadata";
+import { Users } from "./experiments/users";
 import { METADATA_STORE, TableMetadata } from "./metadata";
-import { quote, doubleQuote } from "./utils/";
+import { Entity, Joins, SelectOptions, WhereCondition } from "./types";
+import { doubleQuote, quote } from "./utils/";
 
 const buildSelect = <T extends Entity<unknown>>(
   e: T,

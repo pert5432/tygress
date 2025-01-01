@@ -1,7 +1,5 @@
 import { Users } from "./users";
-import { Column } from "./decorators/column";
-import { ManyToOne } from "./decorators/many-to-one";
-import { Table } from "./decorators/table";
+import { Column, Table, ManyToOne } from "../decorators";
 
 @Table("pets")
 export class Pets {
