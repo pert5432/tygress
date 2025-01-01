@@ -1,5 +1,6 @@
 import { RelationMetadata } from "../metadata";
 import { RelationMetadataArgs } from "../types/args";
+import { fieldNameToColumName } from "../utils";
 
 export abstract class RelationMetadataFactory {
   public static create({
@@ -21,7 +22,7 @@ export abstract class RelationMetadataFactory {
 
     e.foreign = foreign;
     e.foreignField = foreignField;
-    e.foreignKey = foreignKey ?? foreignField + "_id";
+    e.foreignKey = foreignKey ?? fieldNameToColumName(foreignField) + "_id";
 
     return e;
   }

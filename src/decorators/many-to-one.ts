@@ -5,8 +5,8 @@ import { Entity } from "../types/entity";
 export const ManyToOne = <Primary extends Entity<unknown>>(
   primary: Primary,
   primaryField: keyof InstanceType<Primary>,
-  primaryKey: string,
-  foreignKey: string
+  primaryKey?: string,
+  foreignKey?: string
 ) => {
   return function (target: Object, propertyName: string) {
     METADATA_STORE.addRelation({

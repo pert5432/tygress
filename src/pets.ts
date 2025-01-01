@@ -11,6 +11,6 @@ export class Pets {
   @Column("name")
   name: string;
 
-  @ManyToOne(Users, "pets", "id", "user_id")
-  users: Users[];
+  @ManyToOne(Users, "pets")
+  user: Users;
 }

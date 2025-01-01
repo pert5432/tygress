@@ -14,6 +14,6 @@ export class Users {
   @Column("full_name")
   fullName: string;
 
-  @OneToMany(Pets, "users")
+  @OneToMany(Pets, "user")
   pets: Pets[];
 }
