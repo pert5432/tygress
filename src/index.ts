@@ -1,14 +1,9 @@
 import "reflect-metadata";
 import { Client } from "pg";
 import { Users } from "./users";
-import { Entity } from "./types/entity";
-import { METADATA_STORE } from "./metadata/metadata-store";
-import { WhereCondition } from "./types/where-args";
-import { quote } from "./quote";
-import { doubleQuote } from "./double-quote";
-import { SelectOptions } from "./types/select-options";
-import { TableMetadata } from "./metadata/table-metadata";
-import { Joins } from "./types/join-args";
+import { Entity, WhereCondition, SelectOptions, Joins } from "./types";
+import { METADATA_STORE, TableMetadata } from "./metadata";
+import { quote, doubleQuote } from "./utils/";
 
 const buildSelect = <T extends Entity<unknown>>(
   e: T,
