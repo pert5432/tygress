@@ -1,0 +1,28 @@
+import { RelationMetadata } from "../relation-metadata";
+import { RelationMetadataArgs } from "../types/args";
+
+export abstract class RelationMetadataFactory {
+  public static create({
+    type,
+    foreign,
+    foreignField,
+    foreignKey,
+    primary,
+    primaryField,
+    primaryKey,
+  }: RelationMetadataArgs): RelationMetadata {
+    const e = new RelationMetadata();
+
+    e.type = type;
+
+    e.primary = primary;
+    e.primaryField = primaryField;
+    e.primaryKey = primaryKey ?? "id";
+
+    e.foreign = foreign;
+    e.foreignField = foreignField;
+    e.foreignKey = foreignKey ?? foreignField + "_id";
+
+    return e;
+  }
+}

@@ -7,7 +7,9 @@ export class RelationMetadata {
 
   // This table has id
   primary: Entity<unknown>;
+  // Which field the decorator is defined on
   primaryField: string;
+  // Name of the column whic the FK points to (id by default)
   primaryKey: string;
 
   get fullPrimaryKey(): string {
@@ -18,7 +20,9 @@ export class RelationMetadata {
 
   // this table has other_id
   foreign: Entity<unknown>;
+  // Which field the decorator is defined on
   foreignField: string;
+  // The name of the FK column (other_id), inferred from foreignField by default
   foreignKey: string;
 
   get fullForeignKey(): string {

@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "author": "pert5432",
   "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "start": "ts-node ./src/index.ts"
+  },
   "dependencies": {
     "pg": "^8.13.1",
     "reflect-metadata": "^0.2.2"

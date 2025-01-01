@@ -1,7 +1,17 @@
 import { ColumnMetadata } from "./column-metadata";
 import { Relation } from "./enums/relation";
+import {
+  ColumnMetadataFactory,
+  RelationMetadataFactory,
+  TableMetadataFactory,
+} from "./factories";
 import { RelationMetadata } from "./relation-metadata";
 import { TableMetadata } from "./table-metadata";
+import {
+  ColumnMetadataArgs,
+  RelationMetadataArgs,
+  TableMetadataArgs,
+} from "./types/args";
 import { Entity } from "./types/entity";
 
 class MetadataStore {
@@ -10,13 +20,17 @@ class MetadataStore {
 
   public relations: RelationMetadata[] = [];
 
-  public addTable(table: Entity<unknown>, metadata: TableMetadata): void {
-    if (this.tables.get(table)) {
-      throw new Error(`Metadata for table ${table} already registered`);
+  public addTable(args: TableMetadataArgs): void {
+    const metadata = TableMetadataFactory.create(args);
+
+    if (this.tables.get(metadata.klass)) {
+      throw new Error(
+        `Metadata for table ${metadata.klass} already registered`
+      );
     }
 
     // Add existing columns to this tables metadata
-    const columns = this.columns.get(table) ?? [];
+    const columns = this.columns.get(metadata.klass) ?? [];
     metadata.columns = columns;
 
     for (const column of columns) {
@@ -29,20 +43,22 @@ class MetadataStore {
 
     // Add relations to map on table metadata
     this.relations
-      .filter((e) => e.primary === table)
+      .filter((e) => e.primary === metadata.klass)
       .forEach((e) => metadata.relations.set(e.primaryField, e));
     this.relations
-      .filter((e) => e.foreign === table)
+      .filter((e) => e.foreign === metadata.klass)
       .forEach((e) => metadata.relations.set(e.foreignField, e));
 
-    this.tables.set(table, metadata);
+    this.tables.set(metadata.klass, metadata);
   }
 
-  public addColumn(table: Entity<unknown>, column: ColumnMetadata): void {
-    const newColumns = this.columns.get(table) ?? [];
-    newColumns.push(column);
+  public addColumn(args: ColumnMetadataArgs): void {
+    const metadata = ColumnMetadataFactory.create(args);
 
-    this.columns.set(table, newColumns);
+    const newColumns = this.columns.get(args.klass) ?? [];
+    newColumns.push(metadata);
+
+    this.columns.set(args.klass, newColumns);
   }
 
   public getTable<T>(table: T): TableMetadata {
@@ -54,7 +70,9 @@ class MetadataStore {
     return res;
   }
 
-  public addRelation(relation: RelationMetadata) {
+  public addRelation(args: RelationMetadataArgs) {
+    const relation = RelationMetadataFactory.create(args);
+
     // Inserting OneToMany so current relation is the primary side
     // Back-fill the primary class to the inverse side of the currently inserted relation
     if (relation.type === Relation.ONE_TO_MANY && relation.foreign) {

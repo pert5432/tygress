@@ -1,6 +1,5 @@
-import { Relation } from "../enums/relation";
+import { Relation } from "../enums";
 import { METADATA_STORE } from "../metadata-store";
-import { RelationMetadata } from "../relation-metadata";
 import { Entity } from "../types/entity";
 
 export const ManyToOne = <Primary extends Entity<unknown>>(
@@ -10,17 +9,15 @@ export const ManyToOne = <Primary extends Entity<unknown>>(
   foreignKey: string
 ) => {
   return function (target: Object, propertyName: string) {
-    const e = new RelationMetadata();
-    e.type = Relation.MANY_TO_ONE;
+    METADATA_STORE.addRelation({
+      type: Relation.MANY_TO_ONE,
+      foreign: target.constructor as Entity<unknown>,
+      foreignField: propertyName,
+      foreignKey,
 
-    e.foreign = target.constructor as Entity<unknown>;
-    e.foreignField = propertyName;
-    e.foreignKey = foreignKey;
-
-    e.primary = primary;
-    e.primaryField = primaryField.toString();
-    e.primaryKey = primaryKey;
-
-    METADATA_STORE.addRelation(e);
+      primary,
+      primaryField: primaryField.toString(),
+      primaryKey,
+    });
   };
 };

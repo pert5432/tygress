@@ -3,7 +3,11 @@ import { RelationMetadata } from "./relation-metadata";
 import { Entity } from "./types/entity";
 
 export class TableMetadata {
-  constructor(public tablename: string, public klass: Entity<unknown>) {}
+  tablename: string;
+
+  klass: Entity<unknown>;
+
+  schemaname?: string;
 
   get fullName(): string {
     if (this.schemaname?.length) {
@@ -12,8 +16,6 @@ export class TableMetadata {
 
     return this.tablename;
   }
-
-  schemaname?: string;
 
   columns: ColumnMetadata[] = [];
   columnsMap: Map<string, ColumnMetadata> = new Map();
