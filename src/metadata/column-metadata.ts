@@ -1,4 +1,3 @@
-import { doubleQuote } from "../utils/double-quote";
 import { TableMetadata } from "./table-metadata";
 
 export class ColumnMetadata {
@@ -7,12 +6,4 @@ export class ColumnMetadata {
 
   // Is set when table metadata is created
   table?: TableMetadata;
-
-  get fullName(): string {
-    if (this.table) {
-      return `${doubleQuote(this.table.fullName)}.${doubleQuote(this.name)}`;
-    }
-
-    return doubleQuote(this.name);
-  }
 }

@@ -1,1 +1,1 @@
-export const quote = (i: any): string => `'${i}'`;
+export const q = (i: any): string => `'${i}'`;
