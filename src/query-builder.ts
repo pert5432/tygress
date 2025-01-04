@@ -1,3 +1,4 @@
+import { JoinNodeFactory } from "./factories";
 import { METADATA_STORE, TableMetadata } from "./metadata";
 import {
   Entity,
@@ -7,8 +8,8 @@ import {
   WhereComparator,
   Wheres,
 } from "./types";
-import { JoinNode } from "./types/query";
-import { dQ, entityNameToAlias, q } from "./utils";
+import { JoinNode, Query } from "./types/query";
+import { dQ, q } from "./utils";
 
 export class QueryBuilder<T extends Entity<unknown>> {
   constructor(
@@ -17,12 +18,7 @@ export class QueryBuilder<T extends Entity<unknown>> {
   ) {
     this.table = METADATA_STORE.getTable(this.entity);
 
-    this.joinNodes = {
-      klass: entity,
-      alias: entityNameToAlias(entity.name),
-      path: [],
-      joins: {},
-    };
+    this.joinNodes = JoinNodeFactory.createRoot(entity);
   }
 
   private table: TableMetadata;
@@ -31,7 +27,7 @@ export class QueryBuilder<T extends Entity<unknown>> {
 
   private joinNodes: JoinNode<T>;
 
-  public buildSelect(): string {
+  public buildSelect(): Query<T> {
     this.buildJoins();
     this.buildWhereConditions();
 
@@ -46,6 +42,11 @@ export class QueryBuilder<T extends Entity<unknown>> {
             `${node.alias}.${c.fieldName}`
           )}`
         );
+
+        node.selectedFields.set(c.fieldName, {
+          fullName: `${node.alias}.${c.fieldName}`,
+          column: c,
+        });
       }
 
       for (const key in node.joins) {
@@ -67,7 +68,7 @@ export class QueryBuilder<T extends Entity<unknown>> {
       sql += " WHERE " + this.whereConditions.join(" AND ");
     }
 
-    return sql;
+    return { sql, joinNodes: this.joinNodes };
   }
 
   private buildWhereConditions(): void {
@@ -158,12 +159,11 @@ export class QueryBuilder<T extends Entity<unknown>> {
         const inverseTable = relation.getOtherTable(currentTable.klass);
         const inverseMeta = METADATA_STORE.getTable(inverseTable);
 
-        const nextJoinNode: JoinNode<typeof inverseTable> = {
-          klass: inverseTable,
-          alias: `${joinNode.alias}_${entityNameToAlias(inverseTable.name)}`,
-          path: [...joinNode.path, key],
-          joins: {},
-        };
+        const nextJoinNode = JoinNodeFactory.create(
+          joinNode,
+          inverseTable,
+          key
+        );
 
         joinNode.joins[key] = nextJoinNode;
 

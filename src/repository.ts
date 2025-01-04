@@ -4,15 +4,15 @@ import { QueryBuilder } from "./query-builder";
 import { QueryRunner } from "./query-runner";
 
 export abstract class Repository {
-  public static async select<T extends Entity<unknown>>(
+  public static async select<T extends Entity<any>>(
     client: Client,
     entity: T,
     options: SelectOptions<InstanceType<T>>
   ) {
-    const sql = new QueryBuilder(entity, options).buildSelect();
+    const query = new QueryBuilder(entity, options).buildSelect();
 
-    console.log(sql);
+    console.log(query.sql);
 
-    return await new QueryRunner(client, entity, sql).run();
+    return await new QueryRunner(client, query).run();
   }
 }
