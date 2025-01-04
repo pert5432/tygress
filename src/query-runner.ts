@@ -1,6 +1,7 @@
 import { Client } from "pg";
 import { Entity } from "./types";
 import { JoinNode, Query } from "./types/query";
+import { Relation } from "./enums";
 
 export class QueryRunner<T extends Entity<unknown>> {
   private sql: string;
@@ -12,8 +13,6 @@ export class QueryRunner<T extends Entity<unknown>> {
   }
 
   public async run(): Promise<T[]> {
-    await this.client.connect();
-
     const { rows } = await this.client.query(this.sql);
 
     let paths: JoinNode<Entity<unknown>>[][] = [];
@@ -102,7 +101,10 @@ export class QueryRunner<T extends Entity<unknown>> {
         for (const [key, entities] of node.entitiesByParentsIdPath.entries()) {
           const parentEntity = parentNode.entityByIdPath.get(key)!;
 
-          parentEntity[node.parentField!] = entities;
+          parentEntity[node.parentField!] =
+            node.relationToParent === Relation.MANY_TO_ONE
+              ? entities
+              : entities[0];
         }
       }
     }
@@ -118,7 +120,10 @@ export class QueryRunner<T extends Entity<unknown>> {
       ] of penultimateNode.entitiesByParentsIdPath.entries()) {
         const parentEntity = rootEntities.get(key)!;
 
-        parentEntity[penultimateNode.parentField!] = entities;
+        parentEntity[penultimateNode.parentField!] =
+          penultimateNode.relationToParent === Relation.MANY_TO_ONE
+            ? entities
+            : entities[0];
       }
     }
 

@@ -162,7 +162,8 @@ export class QueryBuilder<T extends Entity<unknown>> {
         const nextJoinNode = JoinNodeFactory.create(
           joinNode,
           inverseTable,
-          key
+          key,
+          relation.type
         );
 
         joinNode.joins[key] = nextJoinNode;
