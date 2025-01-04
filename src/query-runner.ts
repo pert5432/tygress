@@ -47,6 +47,7 @@ export class QueryRunner<T extends Entity<unknown>> {
     // Reverse paths so we can go from leaves up with a simple for ... of loop
     paths = paths.map((e) => e.reverse());
 
+    // This just might not be needed, idk, refactor later
     const rootEntities = new Map<string, Entity<unknown>>();
 
     // Go thru all rows, creating entities and grouping them by relations
@@ -91,42 +92,37 @@ export class QueryRunner<T extends Entity<unknown>> {
       }
     }
 
+    //
+    // Propagate entity instances up tree of join nodes
+    //
     for (const path of paths) {
-      // Process path until root - 2
+      // Propagate entities up to second to last node in path
+      // After this all nodes in the path except the root will have their joined entities filled
       for (let i = 0; i < path.length - 2; i += 1) {
         const node = path[i];
         const parentNode = path[i + 1];
 
-        // Register entities to its parent entity
-        for (const [key, entities] of node.entitiesByParentsIdPath.entries()) {
-          const parentEntity = parentNode.entityByIdPath.get(key)!;
-
-          parentEntity[node.parentField!] =
-            node.relationToParent === Relation.MANY_TO_ONE
-              ? entities
-              : entities[0];
-        }
+        this.propagateEntitiesToParent(parentNode.entityByIdPath, node);
       }
-    }
 
-    for (const path of paths) {
-      // Second to last node of the path
+      // Propagate entities to root node
       const penultimateNode = path[path.length - 2];
-
-      // Register entities to root entities
-      for (const [
-        key,
-        entities,
-      ] of penultimateNode.entitiesByParentsIdPath.entries()) {
-        const parentEntity = rootEntities.get(key)!;
-
-        parentEntity[penultimateNode.parentField!] =
-          penultimateNode.relationToParent === Relation.MANY_TO_ONE
-            ? entities
-            : entities[0];
-      }
+      this.propagateEntitiesToParent(rootEntities, penultimateNode);
     }
 
     return Array.from(rootEntities.values()) as T[];
   }
+
+  // Util to propagate entity instances into relation fields on its parent
+  private propagateEntitiesToParent = (
+    parentEntityMap: Map<string, Entity<unknown>>,
+    node: JoinNode<Entity<unknown>>
+  ) => {
+    for (const [key, entities] of node.entitiesByParentsIdPath.entries()) {
+      const parentEntity = parentEntityMap.get(key)!;
+
+      parentEntity[node.parentField!] =
+        node.relationToParent === Relation.MANY_TO_ONE ? entities : entities[0];
+    }
+  };
 }
