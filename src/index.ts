@@ -13,22 +13,23 @@ const main = async () => {
   a.value = "a";
   a.condition = "gt";
 
-  console.log(
-    await Repository.select(client, Users, {
-      where: { pets: { name: a } },
-      joins: {
-        pets: true,
-      },
-    })
-  );
+  const users = await Repository.select(client, Users, {
+    where: { pets: { name: a } },
+    joins: {
+      pets: true,
+    },
+  });
 
-  console.log(
-    await Repository.select(client, Pets, {
-      joins: {
-        user: true,
-      },
-    })
-  );
+  console.log(users[0]);
+  console.log(users[0].pets);
+
+  // console.log(
+  //   await Repository.select(client, Pets, {
+  //     joins: {
+  //       user: true,
+  //     },
+  //   })
+  // );
 };
 
 main();

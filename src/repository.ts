@@ -8,7 +8,7 @@ export abstract class Repository {
     client: Client,
     entity: T,
     options: SelectOptions<InstanceType<T>>
-  ) {
+  ): Promise<InstanceType<T>[]> {
     const query = new QueryBuilder(entity, options).buildSelect();
 
     console.log(query.sql);

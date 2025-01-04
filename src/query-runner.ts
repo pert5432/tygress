@@ -12,7 +12,7 @@ export class QueryRunner<T extends Entity<unknown>> {
     this.joinNodes = query.joinNodes;
   }
 
-  public async run(): Promise<T[]> {
+  public async run(): Promise<InstanceType<T>[]> {
     const { rows } = await this.client.query(this.sql);
 
     let paths: JoinNode<Entity<unknown>>[][] = [];
@@ -48,7 +48,7 @@ export class QueryRunner<T extends Entity<unknown>> {
     paths = paths.map((e) => e.reverse());
 
     // This just might not be needed, idk, refactor later
-    const rootEntities = new Map<string, Entity<unknown>>();
+    const rootEntities = new Map<string, InstanceType<Entity<unknown>>>();
 
     // Go thru all rows, creating entities and grouping them by relations
     for (const row of rows) {
@@ -110,16 +110,16 @@ export class QueryRunner<T extends Entity<unknown>> {
       this.propagateEntitiesToParent(rootEntities, penultimateNode);
     }
 
-    return Array.from(rootEntities.values()) as T[];
+    return Array.from(rootEntities.values()) as InstanceType<T>[];
   }
 
   // Util to propagate entity instances into relation fields on its parent
   private propagateEntitiesToParent = (
-    parentEntityMap: Map<string, Entity<unknown>>,
+    parentEntityMap: Map<string, InstanceType<Entity<unknown>>>,
     node: JoinNode<Entity<unknown>>
   ) => {
     for (const [key, entities] of node.entitiesByParentsIdPath.entries()) {
-      const parentEntity = parentEntityMap.get(key)!;
+      const parentEntity: any = parentEntityMap.get(key)!;
 
       parentEntity[node.parentField!] =
         node.relationToParent === Relation.MANY_TO_ONE ? entities : entities[0];
