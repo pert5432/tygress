@@ -6,4 +6,6 @@ export class ColumnMetadata {
 
   // Is set when table metadata is created
   table?: TableMetadata;
+
+  select: boolean;
 }

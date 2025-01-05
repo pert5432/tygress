@@ -37,6 +37,10 @@ export class QueryBuilder<T extends Entity<unknown>> {
       node: JoinNode<E>
     ): void => {
       for (const c of METADATA_STORE.getTable(node.klass).columns) {
+        if (!c.select) {
+          return;
+        }
+
         targets.push(
           `${dQ(node.alias)}.${dQ(c.name)} AS ${dQ(
             `${node.alias}.${c.fieldName}`

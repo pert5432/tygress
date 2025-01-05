@@ -21,7 +21,6 @@ const main = async () => {
   });
 
   console.log(users[0]);
-  console.log(users[0].pets);
 
   // console.log(
   //   await Repository.select(client, Pets, {
