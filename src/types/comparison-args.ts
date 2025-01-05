@@ -1,9 +1,11 @@
+import { WhereComparator } from "./where-comparator";
+
 type ComparisonArgs = {
   leftAlias: string;
   leftColumn: string;
   leftCast?: string;
 
-  comparator: string;
+  comparator: WhereComparator;
 
   rightCast?: string;
 };
@@ -14,5 +16,5 @@ export type ColColComparisonArgs = ComparisonArgs & {
 };
 
 export type ColParamComparisonArgs = ComparisonArgs & {
-  rightParamNumber: number;
+  paramNumbers: number[];
 };

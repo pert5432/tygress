@@ -1,6 +1,5 @@
+import { WhereComparator } from ".";
 import { Entity } from "./entity";
-
-export type WhereComparator = "gt" | "gte" | "lt" | "lte" | "eq" | "not-eq";
 
 export class ParametrizedCondition<V> {
   readonly "@instanceof" = Symbol.for("ParametrizedCondition");

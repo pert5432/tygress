@@ -127,8 +127,8 @@ export class QueryBuilder<T extends Entity<unknown>> {
             {
               leftAlias: joinNode.alias,
               leftColumn: column.name,
-              comparator: this.getSqlComparator(condition.condition),
-              rightParamNumber: 1,
+              comparator: condition.condition,
+              paramNumbers: [1],
             }
             // condition.parameter
           );
@@ -141,8 +141,8 @@ export class QueryBuilder<T extends Entity<unknown>> {
             {
               leftAlias: joinNode.alias,
               leftColumn: column.name,
-              comparator: this.getSqlComparator("eq"),
-              rightParamNumber: 1,
+              comparator: "eq",
+              paramNumbers: [1],
             }
             // condition.parameter
           );
@@ -201,7 +201,7 @@ export class QueryBuilder<T extends Entity<unknown>> {
           const comparison = ComparisonFactory.createColCol({
             leftAlias: foreignAlias,
             leftColumn: relation.foreignKey,
-            comparator: "=",
+            comparator: "eq",
             rightAlias: primaryAlias,
             rightColumn: relation.primaryKey,
           });

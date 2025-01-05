@@ -1,9 +1,11 @@
 import { ComparisonType } from "../enums";
 import { dQ } from "../utils";
+import { WHERE_COMPARATORS } from "../where-comparators";
 import {
   ColColComparisonArgs,
   ColParamComparisonArgs,
 } from "./comparison-args";
+import { WhereComparator } from "./where-comparator";
 
 export abstract class Comparison {
   type: ComparisonType;
@@ -12,36 +14,27 @@ export abstract class Comparison {
   leftColumn: string;
   leftCast?: string;
 
-  comparator: string;
+  comparator: WhereComparator;
 
   rightAlias?: string;
   rightColumn?: string;
 
-  rightParamNumber?: number;
+  paramNumbers?: number[];
 
   rightCast?: string;
 
-  public sql(): string {
-    const left = `${dQ(this.leftAlias)}.${dQ(this.leftColumn)}${
-      this.leftCast ? `::${this.leftCast}` : ``
-    }`;
+  protected abstract _sql(): string;
 
-    return `${left} ${this.comparator} ${this.rightSql()}`;
+  public sql(): string {
+    return this._sql();
   }
 
-  private rightSql(): string {
-    switch (this.type) {
-      case ComparisonType.COL_COL:
-        return `${dQ(this.rightAlias)}.${dQ(this.rightColumn)}${
-          this.leftCast ? `::${this.leftCast}` : ``
-        }`;
-      case ComparisonType.COL_PARAM:
-        return `$${this.rightParamNumber}${
-          this.rightCast ? `::${this.rightCast}` : ""
-        }`;
-      default:
-        throw new Error(`Invalid comparison type ${this.type}`);
-    }
+  protected formatCol(alias: string, col: string, cast?: string): string {
+    return `${dQ(alias)}.${dQ(col)}${cast ? `::${cast}` : ""}`;
+  }
+
+  protected get comparatorF() {
+    return WHERE_COMPARATORS[this.comparator];
   }
 }
 
@@ -72,6 +65,17 @@ export class ColColComparison extends Comparison {
 
   rightAlias: string;
   rightColumn: string;
+
+  protected _sql(): string {
+    const left = this.formatCol(this.leftAlias, this.leftColumn, this.leftCast);
+    const right = this.formatCol(
+      this.rightAlias,
+      this.rightColumn,
+      this.rightCast
+    );
+
+    return `${left} ${this.comparatorF([right])}`;
+  }
 }
 
 export class ColParamComparison extends Comparison {
@@ -80,7 +84,7 @@ export class ColParamComparison extends Comparison {
     leftColumn,
     leftCast,
     comparator,
-    rightParamNumber,
+    paramNumbers,
     rightCast,
   }: ColParamComparisonArgs) {
     super();
@@ -91,11 +95,20 @@ export class ColParamComparison extends Comparison {
 
     this.comparator = comparator;
 
-    this.rightParamNumber = rightParamNumber;
+    this.paramNumbers = paramNumbers;
     this.rightCast = rightCast;
   }
 
   readonly type = ComparisonType.COL_PARAM;
 
-  rightParamNumber: number;
+  paramNumbers: number[];
+
+  protected _sql(): string {
+    const left = this.formatCol(this.leftAlias, this.leftColumn, this.leftCast);
+    const right = this.paramNumbers!?.map(
+      (p) => `$${p}${this.rightCast ? `::${this.rightCast}` : ""}`
+    );
+
+    return `${left} ${this.comparatorF(right)}`;
+  }
 }
