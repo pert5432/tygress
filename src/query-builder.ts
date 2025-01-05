@@ -4,9 +4,10 @@ import {
   Entity,
   Joins,
   SelectOptions,
-  WhereCondition,
+  ParametrizedCondition,
   WhereComparator,
   Wheres,
+  Comparison,
 } from "./types";
 import { JoinNode, Query } from "./types/query";
 import { dQ, q } from "./utils";
@@ -109,30 +110,40 @@ export class QueryBuilder<T extends Entity<unknown>> {
 
         const condition = where[fieldName];
 
-        if (condition instanceof WhereCondition) {
-          const comparator = this.getSqlComparator(condition.condition);
-
-          this.whereConditions.push(
-            `${dQ(joinNode.alias)}.${dQ(column.name)} ${comparator} ${q(
-              condition.value
-            )}`
-          );
-        } else {
-          const nextTableRelation = table.relations.get(fieldName);
-          if (!nextTableRelation) {
-            throw new Error(
-              `No relation for table ${table.klass.name}, column ${fieldName}`
-            );
-          }
-
-          buildWhere(
-            METADATA_STORE.getTable(
-              nextTableRelation.getOtherTable(table.klass)
-            ),
+        // Go process conditions for joined entity if the key coresponds to a relation
+        const relation = table.relations.get(fieldName);
+        if (relation) {
+          return buildWhere(
+            METADATA_STORE.getTable(relation.getOtherTable(table.klass)),
             condition as Wheres<Entity<unknown>>,
             joinNode.joins[fieldName as keyof E]!
           );
         }
+
+        // Build comparison based on args
+        let comparison: Comparison;
+        if ((condition as any) instanceof ParametrizedCondition) {
+          comparison = {
+            left: `${dQ(joinNode.alias)}.${dQ(column.name)}`,
+            comparator: this.getSqlComparator(condition.condition),
+            right: `${q(condition.parameter)}`,
+          };
+        } else if (
+          typeof condition === "number" ||
+          typeof condition === "string" ||
+          typeof condition === "boolean"
+        ) {
+          comparison = {
+            left: `${dQ(joinNode.alias)}.${dQ(column.name)}`,
+            comparator: this.getSqlComparator("eq"),
+            right: `${q(condition)}`,
+          };
+        } else {
+          throw new Error(`bogus condition ${condition}`);
+        }
+
+        const { left, comparator, right } = comparison;
+        this.whereConditions.push(`${left} ${comparator} ${right}`);
       }
     };
 
