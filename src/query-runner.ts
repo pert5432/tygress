@@ -5,15 +5,17 @@ import { Relation } from "./enums";
 
 export class QueryRunner<T extends Entity<unknown>> {
   private sql: string;
+  private params: any[];
   private joinNodes: JoinNode<T>;
 
   constructor(private client: Client, query: Query<T>) {
     this.sql = query.sql;
+    this.params = query.params;
     this.joinNodes = query.joinNodes;
   }
 
   public async run(): Promise<InstanceType<T>[]> {
-    const { rows } = await this.client.query(this.sql);
+    const { rows } = await this.client.query(this.sql, this.params);
 
     let paths: JoinNode<Entity<unknown>>[][] = [];
 

@@ -9,7 +9,7 @@ const main = async () => {
   await client.connect();
 
   const users = await Repository.select(client, Users, {
-    where: { pets: { name: "pootis" } },
+    where: { pets: { name: "moofis" } },
     joins: {
       pets: true,
     },

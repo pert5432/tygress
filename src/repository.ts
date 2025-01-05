@@ -12,6 +12,7 @@ export abstract class Repository {
     const query = new QueryBuilder(entity, options).buildSelect();
 
     console.log(query.sql);
+    console.log(query.params);
 
     return await new QueryRunner(client, query).run();
   }

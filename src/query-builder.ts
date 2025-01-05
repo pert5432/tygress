@@ -27,6 +27,8 @@ export class QueryBuilder<T extends Entity<unknown>> {
 
   private joinNodes: JoinNode<T>;
 
+  private params: any[] = [];
+
   public buildSelect(): Query<T> {
     this.buildJoins();
     this.buildWhereConditions();
@@ -72,7 +74,7 @@ export class QueryBuilder<T extends Entity<unknown>> {
       sql += " WHERE " + this.whereConditions.join(" AND ");
     }
 
-    return { sql, joinNodes: this.joinNodes };
+    return { sql, params: this.params, joinNodes: this.joinNodes };
   }
 
   private buildWhereConditions(): void {
@@ -122,29 +124,23 @@ export class QueryBuilder<T extends Entity<unknown>> {
         // Build comparison based on args
         let comparison: Comparison;
         if ((condition as any) instanceof ParametrizedCondition) {
-          comparison = ComparisonFactory.createColParam(
-            {
-              leftAlias: joinNode.alias,
-              leftColumn: column.name,
-              comparator: condition.condition,
-              paramNumbers: [1],
-            }
-            // condition.parameter
-          );
+          comparison = ComparisonFactory.createColParam({
+            leftAlias: joinNode.alias,
+            leftColumn: column.name,
+            comparator: condition.condition,
+            paramNumbers: [this.addParam(condition.parameter)],
+          });
         } else if (
           typeof condition === "number" ||
           typeof condition === "string" ||
           typeof condition === "boolean"
         ) {
-          comparison = ComparisonFactory.createColParam(
-            {
-              leftAlias: joinNode.alias,
-              leftColumn: column.name,
-              comparator: "eq",
-              paramNumbers: [1],
-            }
-            // condition.parameter
-          );
+          comparison = ComparisonFactory.createColParam({
+            leftAlias: joinNode.alias,
+            leftColumn: column.name,
+            comparator: "eq",
+            paramNumbers: [this.addParam(condition)],
+          });
         } else {
           throw new Error(`bogus condition ${condition}`);
         }
@@ -220,5 +216,11 @@ export class QueryBuilder<T extends Entity<unknown>> {
     };
 
     joinTable(this.options.joins, this.joinNodes);
+  }
+
+  private addParam(val: any): number {
+    this.params.push(val);
+
+    return this.params.length;
   }
 }
