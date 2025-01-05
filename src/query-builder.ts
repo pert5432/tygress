@@ -1,4 +1,4 @@
-import { JoinNodeFactory } from "./factories";
+import { ComparisonFactory, JoinNodeFactory } from "./factories";
 import { METADATA_STORE, TableMetadata } from "./metadata";
 import {
   Entity,
@@ -123,27 +123,34 @@ export class QueryBuilder<T extends Entity<unknown>> {
         // Build comparison based on args
         let comparison: Comparison;
         if ((condition as any) instanceof ParametrizedCondition) {
-          comparison = {
-            left: `${dQ(joinNode.alias)}.${dQ(column.name)}`,
-            comparator: this.getSqlComparator(condition.condition),
-            right: `${q(condition.parameter)}`,
-          };
+          comparison = ComparisonFactory.createColParam(
+            {
+              leftAlias: joinNode.alias,
+              leftColumn: column.name,
+              comparator: this.getSqlComparator(condition.condition),
+              rightParamNumber: 1,
+            }
+            // condition.parameter
+          );
         } else if (
           typeof condition === "number" ||
           typeof condition === "string" ||
           typeof condition === "boolean"
         ) {
-          comparison = {
-            left: `${dQ(joinNode.alias)}.${dQ(column.name)}`,
-            comparator: this.getSqlComparator("eq"),
-            right: `${q(condition)}`,
-          };
+          comparison = ComparisonFactory.createColParam(
+            {
+              leftAlias: joinNode.alias,
+              leftColumn: column.name,
+              comparator: this.getSqlComparator("eq"),
+              rightParamNumber: 1,
+            }
+            // condition.parameter
+          );
         } else {
           throw new Error(`bogus condition ${condition}`);
         }
 
-        const { left, comparator, right } = comparison;
-        this.whereConditions.push(`${left} ${comparator} ${right}`);
+        this.whereConditions.push(comparison.sql());
       }
     };
 
@@ -191,12 +198,18 @@ export class QueryBuilder<T extends Entity<unknown>> {
               ? [joinNode.alias, nextJoinNode.alias]
               : [nextJoinNode.alias, joinNode.alias];
 
+          const comparison = ComparisonFactory.createColCol({
+            leftAlias: foreignAlias,
+            leftColumn: relation.foreignKey,
+            comparator: "=",
+            rightAlias: primaryAlias,
+            rightColumn: relation.primaryKey,
+          });
+
           this.sqlJoins.push(
             `INNER JOIN ${dQ(inverseMeta.fullName)} ${dQ(
               nextJoinNode.alias
-            )} ON ${dQ(foreignAlias)}.${dQ(relation.foreignKey)} = ${dQ(
-              primaryAlias
-            )}.${dQ(relation.primaryKey)}`
+            )} ON ${comparison.sql()}`
           );
         }
 
