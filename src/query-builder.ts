@@ -5,12 +5,11 @@ import {
   Joins,
   SelectOptions,
   ParametrizedCondition,
-  WhereComparator,
   Wheres,
   Comparison,
 } from "./types";
 import { JoinNode, Query } from "./types/query";
-import { dQ, q } from "./utils";
+import { dQ } from "./utils";
 
 export class QueryBuilder<T extends Entity<unknown>> {
   constructor(
@@ -222,22 +221,4 @@ export class QueryBuilder<T extends Entity<unknown>> {
 
     joinTable(this.options.joins, this.joinNodes);
   }
-
-  private getSqlComparator = (comparator: WhereComparator): string => {
-    const data = new Map<WhereComparator, string>([
-      ["gt", ">"],
-      ["gte", ">="],
-      ["lt", "<"],
-      ["lte", "<="],
-      ["eq", "="],
-      ["not-eq", "!="],
-    ]);
-
-    const res = data.get(comparator);
-    if (!res) {
-      throw new Error(`Invalid comparator ${comparator}`);
-    }
-
-    return res;
-  };
 }
