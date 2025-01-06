@@ -4,8 +4,8 @@ import { Entity } from "./entity";
 export class ParametrizedCondition<V> {
   readonly "@instanceof" = Symbol.for("ParametrizedCondition");
 
-  parameter: V;
-  condition: WhereComparator;
+  parameters: V[];
+  comparator: WhereComparator;
 }
 
 export type Where<Property> = Property extends Array<infer I>

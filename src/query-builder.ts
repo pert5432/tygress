@@ -117,18 +117,25 @@ export class QueryBuilder<T extends Entity<unknown>> {
           return buildWhere(
             METADATA_STORE.getTable(relation.getOtherTable(table.klass)),
             condition as Wheres<Entity<unknown>>,
-            joinNode.joins[fieldName as keyof E]!
+            joinNode.joins[fieldName]!
           );
         }
 
         // Build comparison based on args
         let comparison: Comparison;
-        if ((condition as any) instanceof ParametrizedCondition) {
+        if ((condition as Object) instanceof ParametrizedCondition) {
+          // To get type safety because inference doesn't work here for some reason ¯\_(ツ)_/¯
+          const parametrizedCondition = condition as ParametrizedCondition<
+            E[typeof fieldName]
+          >;
+
           comparison = ComparisonFactory.createColParam({
             leftAlias: joinNode.alias,
             leftColumn: column.name,
-            comparator: condition.condition,
-            paramNumbers: [this.addParam(condition.parameter)],
+            comparator: parametrizedCondition.comparator,
+            paramNumbers: parametrizedCondition.parameters.map((e) =>
+              this.addParam(e)
+            ),
           });
         } else if (
           typeof condition === "number" ||
@@ -218,7 +225,7 @@ export class QueryBuilder<T extends Entity<unknown>> {
     joinTable(this.options.joins, this.joinNodes);
   }
 
-  private addParam(val: any): number {
+  private addParam(val: number | string | boolean): number {
     this.params.push(val);
 
     return this.params.length;
