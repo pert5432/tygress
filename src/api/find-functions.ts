@@ -1,8 +1,12 @@
-import { ParametrizedConditionFactory } from "../factories";
+import {
+  ParametrizedConditionFactory,
+  ParametrizedConditionWrapperFactory,
+} from "../factories";
 import { ParametrizedCondition } from "../types";
+import { ParametrizedConditionWrapper } from "../types/where-args";
 
-export const In = <T>(params: T[]): ParametrizedCondition<T> => {
-  return ParametrizedConditionFactory.create("in", params);
+export const Eq = <T>(param: T): ParametrizedCondition<T> => {
+  return ParametrizedConditionFactory.create("eq", [param]);
 };
 
 export const Gt = <T>(param: T): ParametrizedCondition<T> => {
@@ -23,4 +27,20 @@ export const Lte = <T>(param: T): ParametrizedCondition<T> => {
 
 export const NotEq = <T>(param: T): ParametrizedCondition<T> => {
   return ParametrizedConditionFactory.create("not-eq", [param]);
+};
+
+export const In = <T>(params: T[]): ParametrizedCondition<T> => {
+  return ParametrizedConditionFactory.create("in", params);
+};
+
+export const And = <T>(
+  conditions: ParametrizedCondition<T>[]
+): ParametrizedConditionWrapper<T> => {
+  return ParametrizedConditionWrapperFactory.create(conditions, "AND");
+};
+
+export const Or = <T>(
+  conditions: ParametrizedCondition<T>[]
+): ParametrizedConditionWrapper<T> => {
+  return ParametrizedConditionWrapperFactory.create(conditions, "OR");
 };

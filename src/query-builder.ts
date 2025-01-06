@@ -8,7 +8,9 @@ import {
   Wheres,
   Comparison,
 } from "./types";
+import { ComparisonWrapper } from "./types/comparison-wrapper";
 import { JoinNode, Query } from "./types/query";
+import { ParametrizedConditionWrapper } from "./types/where-args";
 import { dQ } from "./utils";
 
 export class QueryBuilder<T extends Entity<unknown>> {
@@ -122,7 +124,7 @@ export class QueryBuilder<T extends Entity<unknown>> {
         }
 
         // Build comparison based on args
-        let comparison: Comparison;
+        let comparison: Comparison | ComparisonWrapper;
         if ((condition as Object) instanceof ParametrizedCondition) {
           // To get type safety because inference doesn't work here for some reason ¯\_(ツ)_/¯
           const parametrizedCondition = condition as ParametrizedCondition<
@@ -148,6 +150,26 @@ export class QueryBuilder<T extends Entity<unknown>> {
             comparator: "eq",
             paramNumbers: [this.addParam(condition)],
           });
+        } else if (
+          (condition as Object) instanceof ParametrizedConditionWrapper
+        ) {
+          const conditionWrapper = condition as ParametrizedConditionWrapper<
+            E[typeof fieldName]
+          >;
+
+          const comparisons = conditionWrapper.conditions.map((c) =>
+            ComparisonFactory.createColParam({
+              leftAlias: joinNode.alias,
+              leftColumn: column.name,
+              comparator: c.comparator,
+              paramNumbers: c.parameters.map((e) => this.addParam(e)),
+            })
+          );
+
+          comparison = new ComparisonWrapper(
+            comparisons,
+            conditionWrapper.logicalOperator
+          );
         } else {
           throw new Error(`bogus condition ${condition}`);
         }
