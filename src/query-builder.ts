@@ -8,9 +8,18 @@ import {
   Wheres,
   Comparison,
 } from "./types";
-import { ComparisonWrapper } from "./types/comparison-wrapper";
+import { ComparisonSqlBuilder } from "./types/comparison-builder";
+import {
+  ComparisonWrapper,
+  NotComparisonWrapper,
+} from "./types/comparison-wrapper";
+import { Parametrizable } from "./types/parametrizable";
 import { JoinNode, Query } from "./types/query";
-import { ParametrizedConditionWrapper } from "./types/where-args";
+import {
+  NotConditionWrapper,
+  ParameterArgs,
+  ParametrizedConditionWrapper,
+} from "./types/where-args";
 import { dQ } from "./utils";
 
 export class QueryBuilder<T extends Entity<unknown>> {
@@ -123,58 +132,65 @@ export class QueryBuilder<T extends Entity<unknown>> {
           );
         }
 
-        // Build comparison based on args
-        let comparison: Comparison | ComparisonWrapper;
-        if ((condition as Object) instanceof ParametrizedCondition) {
-          // To get type safety because inference doesn't work here for some reason ¯\_(ツ)_/¯
-          const parametrizedCondition = condition as ParametrizedCondition<
-            E[typeof fieldName]
-          >;
+        const getComparison = (
+          condition: ParameterArgs<Parametrizable>
+        ): ComparisonSqlBuilder => {
+          if ((condition as Object) instanceof ParametrizedCondition) {
+            // To get type safety because inference doesn't work here for some reason ¯\_(ツ)_/¯
+            const parametrizedCondition =
+              condition as ParametrizedCondition<Parametrizable>;
 
-          comparison = ComparisonFactory.createColParam({
-            leftAlias: joinNode.alias,
-            leftColumn: column.name,
-            comparator: parametrizedCondition.comparator,
-            paramNumbers: parametrizedCondition.parameters.map((e) =>
-              this.addParam(e)
-            ),
-          });
-        } else if (
-          typeof condition === "number" ||
-          typeof condition === "string" ||
-          typeof condition === "boolean"
-        ) {
-          comparison = ComparisonFactory.createColParam({
-            leftAlias: joinNode.alias,
-            leftColumn: column.name,
-            comparator: "eq",
-            paramNumbers: [this.addParam(condition)],
-          });
-        } else if (
-          (condition as Object) instanceof ParametrizedConditionWrapper
-        ) {
-          const conditionWrapper = condition as ParametrizedConditionWrapper<
-            E[typeof fieldName]
-          >;
-
-          const comparisons = conditionWrapper.conditions.map((c) =>
-            ComparisonFactory.createColParam({
+            return ComparisonFactory.createColParam({
               leftAlias: joinNode.alias,
               leftColumn: column.name,
-              comparator: c.comparator,
-              paramNumbers: c.parameters.map((e) => this.addParam(e)),
-            })
-          );
+              comparator: parametrizedCondition.comparator,
+              paramNumbers: parametrizedCondition.parameters.map((e) =>
+                this.addParam(e)
+              ),
+            });
+          } else if (
+            typeof condition === "number" ||
+            typeof condition === "string" ||
+            typeof condition === "boolean"
+          ) {
+            return ComparisonFactory.createColParam({
+              leftAlias: joinNode.alias,
+              leftColumn: column.name,
+              comparator: "eq",
+              paramNumbers: [this.addParam(condition)],
+            });
+          } else if (
+            (condition as Object) instanceof ParametrizedConditionWrapper
+          ) {
+            const conditionWrapper =
+              condition as ParametrizedConditionWrapper<Parametrizable>;
 
-          comparison = new ComparisonWrapper(
-            comparisons,
-            conditionWrapper.logicalOperator
-          );
-        } else {
-          throw new Error(`bogus condition ${condition}`);
-        }
+            const comparisons = conditionWrapper.conditions.map((c) =>
+              ComparisonFactory.createColParam({
+                leftAlias: joinNode.alias,
+                leftColumn: column.name,
+                comparator: c.comparator,
+                paramNumbers: c.parameters.map((e) => this.addParam(e)),
+              })
+            );
 
-        this.whereConditions.push(comparison.sql());
+            return new ComparisonWrapper(
+              comparisons,
+              conditionWrapper.logicalOperator
+            );
+          } else if ((condition as Object) instanceof NotConditionWrapper) {
+            const notConditionWrapper =
+              condition as NotConditionWrapper<Parametrizable>;
+
+            return new NotComparisonWrapper(
+              getComparison(notConditionWrapper.condition)
+            );
+          } else {
+            throw new Error(`bogus condition ${condition}`);
+          }
+        };
+
+        this.whereConditions.push(getComparison(condition!).sql());
       }
     };
 

@@ -5,4 +5,6 @@ export { Wheres } from "./where-args";
 export { ParametrizedCondition } from "./where-args";
 export { RelationSide } from "./relation-side";
 export { Comparison } from "./comparison";
+export { ComparisonSqlBuilder as ComparisonBuilder } from "./comparison-builder";
+export { ComparisonWrapper, NotComparisonWrapper } from "./comparison-wrapper";
 export { WhereComparator } from "./where-comparator";

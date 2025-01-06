@@ -1,15 +1,13 @@
-import { ComparisonType } from "../enums";
 import { dQ } from "../utils";
 import { WHERE_COMPARATORS } from "../where-comparators";
 import {
   ColColComparisonArgs,
   ColParamComparisonArgs,
 } from "./comparison-args";
+import { ComparisonSqlBuilder } from "./comparison-builder";
 import { WhereComparator } from "./where-comparator";
 
-export abstract class Comparison {
-  type: ComparisonType;
-
+export abstract class Comparison extends ComparisonSqlBuilder {
   leftAlias: string;
   leftColumn: string;
   leftCast?: string;
@@ -61,8 +59,6 @@ export class ColColComparison extends Comparison {
     this.rightCast = rightCast;
   }
 
-  readonly type = ComparisonType.COL_COL;
-
   rightAlias: string;
   rightColumn: string;
 
@@ -98,8 +94,6 @@ export class ColParamComparison extends Comparison {
     this.paramNumbers = paramNumbers;
     this.rightCast = rightCast;
   }
-
-  readonly type = ComparisonType.COL_PARAM;
 
   paramNumbers: number[];
 
