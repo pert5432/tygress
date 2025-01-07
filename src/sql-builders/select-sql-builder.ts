@@ -89,6 +89,22 @@ export class SelectSqlBuilder<T extends Entity<unknown>> {
       sql += ` ORDER BY ${this.orderBys.join(", ")}`;
     }
 
+    if (this.args.limit) {
+      if (this.args.limit < 1) {
+        throw new Error(`Bogus limit ${this.args.limit}`);
+      }
+
+      sql += ` LIMIT ${this.args.limit}`;
+    }
+
+    if (this.args.offset) {
+      if (this.args.offset < 0) {
+        throw new Error(`Bogus limit ${this.args.offset}`);
+      }
+
+      sql += ` OFFSET ${this.args.offset}`;
+    }
+
     return { sql, params: this.params, joinNodes: this.joinNodes };
   }
 

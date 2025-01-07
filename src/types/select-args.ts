@@ -9,4 +9,8 @@ export type SelectArgs<E extends InstanceType<Entity<unknown>>> = {
   joins?: Joins<E>;
 
   order?: OrderArgs<E>;
+
+  limit?: number;
+
+  offset?: number;
 };
