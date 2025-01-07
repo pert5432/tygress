@@ -10,7 +10,7 @@ import {
   RelationMetadataArgs,
   TableMetadataArgs,
 } from "../types/create-args";
-import { Entity } from "../types";
+import { AnEntity, Entity } from "../types";
 
 class MetadataStore {
   public tables = new Map<Entity<unknown>, TableMetadata>();
@@ -18,6 +18,40 @@ class MetadataStore {
 
   public relations: RelationMetadata[] = [];
 
+  //
+  // Getters
+  //
+  public getTable<T extends Entity<unknown>>(table: T): TableMetadata {
+    const res = this.tables.get(table as Entity<unknown>);
+    if (!res) {
+      throw new Error(`No metadata found for ${table}`);
+    }
+
+    return res;
+  }
+
+  public getColumn<T extends AnEntity>(
+    table: T,
+    fieldName: keyof T
+  ): ColumnMetadata {
+    const column = METADATA_STORE.getTable(table).columnsMap.get(
+      fieldName.toString()
+    );
+
+    if (!column) {
+      throw new Error(
+        `No column found for entity ${
+          table.name
+        }, field ${fieldName.toString()}`
+      );
+    }
+
+    return column;
+  }
+
+  //
+  // Modifiers
+  //
   public addTable(args: TableMetadataArgs): void {
     const metadata = TableMetadataFactory.create(args);
 
@@ -57,15 +91,6 @@ class MetadataStore {
     newColumns.push(metadata);
 
     this.columns.set(args.klass, newColumns);
-  }
-
-  public getTable<T extends Entity<unknown>>(table: T): TableMetadata {
-    const res = this.tables.get(table as Entity<unknown>);
-    if (!res) {
-      throw new Error(`No metadata found for ${table}`);
-    }
-
-    return res;
   }
 
   public addRelation(args: RelationMetadataArgs) {

@@ -4,7 +4,7 @@ import {
   NotComparisonWrapper,
   ComparisonWrapper,
   ComparisonSqlBuilder,
-} from ".";
+} from "./comparison";
 import {
   Entity,
   Joins,
@@ -12,6 +12,7 @@ import {
   ParametrizedCondition,
   Wheres,
   Parametrizable,
+  AnEntity,
 } from "../types";
 import { JoinNode, Query } from "../types/query";
 import {
@@ -20,6 +21,7 @@ import {
   ParametrizedConditionWrapper,
 } from "../types/where-args";
 import { dQ } from "../utils";
+import { Order, OrderArgs } from "../types/order-args";
 
 export class SelectSqlBuilder<T extends Entity<unknown>> {
   constructor(private entity: T, private args: SelectArgs<InstanceType<T>>) {
@@ -31,6 +33,7 @@ export class SelectSqlBuilder<T extends Entity<unknown>> {
   private table: TableMetadata;
   private whereConditions: string[] = [];
   private sqlJoins: string[] = [];
+  private orderBys: string[] = [];
 
   private joinNodes: JoinNode<T>;
 
@@ -39,6 +42,7 @@ export class SelectSqlBuilder<T extends Entity<unknown>> {
   public buildSelect(): Query<T> {
     this.buildJoins();
     this.buildWhereConditions();
+    this.buildOrder();
 
     const targets: string[] = [];
 
@@ -78,7 +82,11 @@ export class SelectSqlBuilder<T extends Entity<unknown>> {
     }
 
     if (this.whereConditions.length) {
-      sql += " WHERE " + this.whereConditions.join(" AND ");
+      sql += ` WHERE ${this.whereConditions.join(" AND ")}`;
+    }
+
+    if (this.orderBys.length) {
+      sql += ` ORDER BY ${this.orderBys.join(", ")}`;
     }
 
     return { sql, params: this.params, joinNodes: this.joinNodes };
@@ -259,6 +267,38 @@ export class SelectSqlBuilder<T extends Entity<unknown>> {
     joinTable(this.args.joins, this.joinNodes);
   }
 
+  private buildOrder(): void {
+    if (!this.args?.order) {
+      return;
+    }
+
+    const createOrder = <E extends AnEntity>(
+      order: Order<E>,
+      joinNode: JoinNode<E>
+    ): void => {
+      for (const key in order) {
+        const val = order[key];
+
+        if (val === "ASC" || val === "DESC") {
+          const column = METADATA_STORE.getColumn(joinNode.klass, key);
+
+          this.orderBys.push(`${dQ(joinNode.alias)}.${dQ(column.name)} ${val}`);
+        } else if ((val as any) instanceof Object) {
+          const nextJoinNode = joinNode.joins[key] as JoinNode<AnEntity>;
+
+          return createOrder(val as OrderArgs<AnEntity>, nextJoinNode);
+        } else {
+          throw new Error(`Bogus order by ${val}`);
+        }
+      }
+    };
+
+    return createOrder(this.args.order, this.joinNodes);
+  }
+
+  //
+  // HELPER FUNCTIONS
+  //
   private addParam(val: number | string | boolean): number {
     this.params.push(val);
 

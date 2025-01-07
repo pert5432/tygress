@@ -1,3 +1,3 @@
-export * from "./comparison";
-export * from "./comparison-builder";
-export * from "./comparison-wrapper";
+export { ComparisonSqlBuilder } from "./comparison-builder";
+export { ColColComparison, ColParamComparison } from "./comparison";
+export { ComparisonWrapper, NotComparisonWrapper } from "./comparison-wrapper";

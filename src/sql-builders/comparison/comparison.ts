@@ -5,7 +5,7 @@ import {
   ColParamComparisonArgs,
 } from "../../types/create-args/comparison";
 import { ComparisonSqlBuilder } from "./comparison-builder";
-import { WhereComparator } from "../../types/where-comparator";
+import { WhereComparator } from "../../types";
 
 export abstract class Comparison extends ComparisonSqlBuilder {
   leftAlias: string;

@@ -1,9 +1,8 @@
-import { Comparison } from "../comparison";
 import { ComparisonSqlBuilder } from "./comparison-builder";
 
 export class ComparisonWrapper extends ComparisonSqlBuilder {
   constructor(
-    private comparisons: (Comparison | ComparisonWrapper)[],
+    private comparisons: ComparisonSqlBuilder[],
     private logicalOperator: "AND" | "OR"
   ) {
     super();

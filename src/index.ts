@@ -14,6 +14,7 @@ const main = async () => {
     joins: {
       pets: true,
     },
+    order: { id: "ASC", pets: { id: "DESC" } },
   });
 
   console.log(users[0]);
