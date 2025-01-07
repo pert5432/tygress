@@ -1,5 +1,5 @@
 import { RelationMetadata } from "../metadata";
-import { RelationMetadataArgs } from "../types/args";
+import { RelationMetadataArgs } from "../types/create-args";
 import { fieldNameToColumName } from "../utils";
 
 export abstract class RelationMetadataFactory {

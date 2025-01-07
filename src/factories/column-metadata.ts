@@ -1,5 +1,5 @@
 import { ColumnMetadata } from "../metadata/column-metadata";
-import { ColumnMetadataArgs } from "../types/args";
+import { ColumnMetadataArgs } from "../types/create-args";
 import { isNull } from "../utils";
 
 export abstract class ColumnMetadataFactory {

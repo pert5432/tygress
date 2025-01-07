@@ -1,10 +1,8 @@
 export { Entity } from "./entity";
 export { Joins } from "./join-args";
-export { SelectOptions } from "./select-options";
+export { SelectArgs } from "./select-args";
 export { Wheres } from "./where-args";
 export { ParametrizedCondition } from "./where-args";
 export { RelationSide } from "./relation-side";
-export { Comparison } from "./comparison";
-export { ComparisonSqlBuilder as ComparisonBuilder } from "./comparison-builder";
-export { ComparisonWrapper, NotComparisonWrapper } from "./comparison-wrapper";
 export { WhereComparator } from "./where-comparator";
+export { Parametrizable } from "./parametrizable";

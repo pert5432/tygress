@@ -1,8 +1,11 @@
-import { ColColComparison, ColParamComparison } from "../types/comparison";
+import {
+  ColColComparison,
+  ColParamComparison,
+} from "../sql-builders/comparison/comparison";
 import {
   ColColComparisonArgs,
   ColParamComparisonArgs,
-} from "../types/comparison-args";
+} from "../types/create-args/comparison";
 
 export abstract class ComparisonFactory {
   public static createColCol(args: ColColComparisonArgs): ColColComparison {

@@ -9,7 +9,7 @@ import {
   ColumnMetadataArgs,
   RelationMetadataArgs,
   TableMetadataArgs,
-} from "../types/args";
+} from "../types/create-args";
 import { Entity } from "../types";
 
 class MetadataStore {

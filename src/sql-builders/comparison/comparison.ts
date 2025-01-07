@@ -1,11 +1,11 @@
-import { dQ } from "../utils";
-import { WHERE_COMPARATORS } from "../where-comparators";
+import { dQ } from "../../utils";
+import { WHERE_COMPARATORS } from "../../where-comparators";
 import {
   ColColComparisonArgs,
   ColParamComparisonArgs,
-} from "./comparison-args";
+} from "../../types/create-args/comparison";
 import { ComparisonSqlBuilder } from "./comparison-builder";
-import { WhereComparator } from "./where-comparator";
+import { WhereComparator } from "../../types/where-comparator";
 
 export abstract class Comparison extends ComparisonSqlBuilder {
   leftAlias: string;

@@ -1,4 +1,4 @@
-import { WhereComparator } from "./where-comparator";
+import { WhereComparator } from "../where-comparator";
 
 type ComparisonArgs = {
   leftAlias: string;

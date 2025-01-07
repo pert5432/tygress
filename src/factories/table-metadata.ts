@@ -1,5 +1,5 @@
 import { TableMetadata } from "../metadata/table-metadata";
-import { TableMetadataArgs } from "../types/args";
+import { TableMetadataArgs } from "../types/create-args";
 
 export abstract class TableMetadataFactory {
   public static create({

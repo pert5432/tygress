@@ -1,32 +1,28 @@
-import { ComparisonFactory, JoinNodeFactory } from "./factories";
-import { METADATA_STORE, TableMetadata } from "./metadata";
+import { ComparisonFactory, JoinNodeFactory } from "../factories";
+import { METADATA_STORE, TableMetadata } from "../metadata";
+import {
+  NotComparisonWrapper,
+  ComparisonWrapper,
+  ComparisonSqlBuilder,
+} from ".";
 import {
   Entity,
   Joins,
-  SelectOptions,
+  SelectArgs,
   ParametrizedCondition,
   Wheres,
-  Comparison,
-} from "./types";
-import { ComparisonSqlBuilder } from "./types/comparison-builder";
-import {
-  ComparisonWrapper,
-  NotComparisonWrapper,
-} from "./types/comparison-wrapper";
-import { Parametrizable } from "./types/parametrizable";
-import { JoinNode, Query } from "./types/query";
+  Parametrizable,
+} from "../types";
+import { JoinNode, Query } from "../types/query";
 import {
   NotConditionWrapper,
   ParameterArgs,
   ParametrizedConditionWrapper,
-} from "./types/where-args";
-import { dQ } from "./utils";
+} from "../types/where-args";
+import { dQ } from "../utils";
 
-export class QueryBuilder<T extends Entity<unknown>> {
-  constructor(
-    private entity: T,
-    private options: SelectOptions<InstanceType<T>>
-  ) {
+export class SelectSqlBuilder<T extends Entity<unknown>> {
+  constructor(private entity: T, private args: SelectArgs<InstanceType<T>>) {
     this.table = METADATA_STORE.getTable(this.entity);
 
     this.joinNodes = JoinNodeFactory.createRoot(entity);
@@ -89,7 +85,7 @@ export class QueryBuilder<T extends Entity<unknown>> {
   }
 
   private buildWhereConditions(): void {
-    if (!this.options.where) {
+    if (!this.args.where) {
       return;
     }
 
@@ -194,11 +190,11 @@ export class QueryBuilder<T extends Entity<unknown>> {
       }
     };
 
-    buildWhere(this.table, this.options.where, this.joinNodes);
+    buildWhere(this.table, this.args.where, this.joinNodes);
   }
 
   private buildJoins(): void {
-    if (!this.options?.joins) {
+    if (!this.args?.joins) {
       return;
     }
 
@@ -260,7 +256,7 @@ export class QueryBuilder<T extends Entity<unknown>> {
       }
     };
 
-    joinTable(this.options.joins, this.joinNodes);
+    joinTable(this.args.joins, this.joinNodes);
   }
 
   private addParam(val: number | string | boolean): number {
