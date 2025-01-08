@@ -7,3 +7,4 @@ export { RelationSide } from "./relation-side";
 export { WhereComparator } from "./where-comparator";
 export { Parametrizable } from "./parametrizable";
 export { OrderArgs } from "./order-args";
+export { SelectTargetArgs } from "./select-target-args";

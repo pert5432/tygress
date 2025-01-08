@@ -1,5 +1,5 @@
 import { ComparisonFactory, JoinNodeFactory } from "../factories";
-import { METADATA_STORE, TableMetadata } from "../metadata";
+import { ColumnMetadata, METADATA_STORE, TableMetadata } from "../metadata";
 import {
   NotComparisonWrapper,
   ComparisonWrapper,
@@ -13,6 +13,7 @@ import {
   Wheres,
   Parametrizable,
   AnEntity,
+  SelectTargetArgs,
 } from "../types";
 import { JoinNode, Query } from "../types/query";
 import {
@@ -22,6 +23,7 @@ import {
 } from "../types/where-args";
 import { dQ } from "../utils";
 import { Order, OrderArgs } from "../types/order-args";
+import { join } from "path";
 
 export class SelectSqlBuilder<T extends Entity<unknown>> {
   constructor(private entity: T, private args: SelectArgs<InstanceType<T>>) {
@@ -39,43 +41,22 @@ export class SelectSqlBuilder<T extends Entity<unknown>> {
 
   private params: any[] = [];
 
+  private selectTargets: string[] = [];
+
   public buildSelect(): Query<T> {
     this.buildJoins();
     this.buildWhereConditions();
     this.buildOrder();
 
-    const targets: string[] = [];
+    if (this.args.select) {
+      this.selectTargetsFromSelectArg(this.args.select, this.joinNodes);
+    } else {
+      this.selectTargetsFromJoinNode(this.joinNodes);
+    }
 
-    const processJoinNode = <E extends Entity<unknown>>(
-      node: JoinNode<E>
-    ): void => {
-      for (const c of METADATA_STORE.getTable(node.klass).columns) {
-        if (!c.select) {
-          return;
-        }
-
-        targets.push(
-          `${dQ(node.alias)}.${dQ(c.name)} AS ${dQ(
-            `${node.alias}.${c.fieldName}`
-          )}`
-        );
-
-        node.selectedFields.set(c.fieldName, {
-          fullName: `${node.alias}.${c.fieldName}`,
-          column: c,
-        });
-      }
-
-      for (const key in node.joins) {
-        processJoinNode(node.joins[key]!);
-      }
-    };
-
-    processJoinNode(this.joinNodes);
-
-    let sql = `SELECT ${targets} FROM ${dQ(this.table.tablename)} ${dQ(
-      this.joinNodes.alias
-    )}`;
+    let sql = `SELECT ${this.selectTargets.join(", ")} FROM ${dQ(
+      this.table.tablename
+    )} ${dQ(this.joinNodes.alias)}`;
 
     if (this.sqlJoins.length) {
       sql += ` ${this.sqlJoins.join(" ")}`;
@@ -319,5 +300,64 @@ export class SelectSqlBuilder<T extends Entity<unknown>> {
     this.params.push(val);
 
     return this.params.length;
+  }
+
+  private selectTargetsFromJoinNode = <E extends Entity<unknown>>(
+    node: JoinNode<E>
+  ): void => {
+    for (const c of METADATA_STORE.getTable(node.klass).columns) {
+      if (!c.select) {
+        return;
+      }
+
+      this.selectTarget(node, c);
+
+      // TODO: refactor to join node class
+      node.selectedFields.set(c.fieldName, {
+        fullName: `${node.alias}.${c.fieldName}`,
+        column: c,
+      });
+    }
+
+    for (const key in node.joins) {
+      this.selectTargetsFromJoinNode(node.joins[key]!);
+    }
+  };
+
+  private selectTargetsFromSelectArg<E extends AnEntity>(
+    targets: SelectTargetArgs<E>,
+    joinNode: JoinNode<E>
+  ): void {
+    for (const key in targets) {
+      const target = targets[key];
+
+      if (target === true) {
+        const column = METADATA_STORE.getColumn(joinNode.klass, key);
+
+        this.selectTarget(joinNode, column);
+
+        // TODO: refactor to join node class
+        joinNode.selectedFields.set(column.fieldName, {
+          fullName: `${joinNode.alias}.${column.fieldName}`,
+          column: column,
+        });
+      } else if ((target as any) instanceof Object) {
+        const nextJoinNode = joinNode.joins[key] as JoinNode<AnEntity>;
+
+        return this.selectTargetsFromSelectArg(
+          target as SelectTargetArgs<AnEntity>,
+          nextJoinNode
+        );
+      }
+    }
+  }
+
+  private selectTarget<E extends AnEntity>(
+    node: JoinNode<E>,
+    c: ColumnMetadata
+  ): void {
+    this.selectTargets.push(
+      `${dQ(node.alias)}.${dQ(c.name)} AS ${dQ(`${node.alias}.${c.fieldName}`)}`
+    );
   }
 }
