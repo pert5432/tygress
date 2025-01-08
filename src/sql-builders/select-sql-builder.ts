@@ -342,8 +342,6 @@ export class SelectSqlBuilder<T extends Entity<unknown>> {
   }
 
   private selectTargetsFromJoinNodes(node: JoinNode<AnEntity>): void {
-    node.ensureUniqueIdentifierSelection();
-
     for (const { column } of node.selectedFields.values()) {
       this.selectTarget(node, column);
     }

@@ -21,7 +21,7 @@ export class TableMetadata {
   columns: ColumnMetadata[] = [];
   columnsMap: Map<string, ColumnMetadata> = new Map();
 
-  uniqueConstraint: UniqueConstraintMetadata<AnEntity>;
+  primaryKey: UniqueConstraintMetadata<AnEntity>;
 
   relations: Map<string, RelationMetadata> = new Map();
 }

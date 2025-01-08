@@ -38,6 +38,12 @@ class MetadataStore {
     return res;
   }
 
+  public getTablePrimaryKey<T extends AnEntity>(table: T): ColumnMetadata {
+    const tableMeta = this.getTable(table);
+
+    return tableMeta.columnsMap.get(tableMeta.primaryKey.fieldName)!;
+  }
+
   public getColumn<T extends AnEntity>(
     table: T,
     fieldName: keyof T

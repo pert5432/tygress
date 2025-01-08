@@ -39,7 +39,7 @@ export abstract class TableMetadataFactory {
       }
     }
 
-    e.uniqueConstraint = uniqueConstraint;
+    e.primaryKey = uniqueConstraint;
 
     return e;
   }

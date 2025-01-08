@@ -50,16 +50,4 @@ export class JoinNode<T extends Entity<unknown>> {
       column,
     });
   }
-
-  public ensureUniqueIdentifierSelection(): void {
-    const table = METADATA_STORE.getTable(this.klass);
-
-    if (this.selectedFields.has(table.uniqueConstraint.fieldName)) {
-      return;
-    }
-
-    const column = table.columnsMap.get(table.uniqueConstraint.fieldName)!;
-
-    this.selectField(column);
-  }
 }
