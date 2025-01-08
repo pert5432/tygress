@@ -5,3 +5,4 @@ export { JoinNodeFactory } from "./join-node";
 export { ComparisonFactory } from "./comparison";
 export { ParametrizedConditionFactory } from "./parametrized-condition";
 export { ConditionWrapperFactory } from "./parametrized-condition-wrapper";
+export { UniqueConstraintMetadataFactory } from "./unique-constraint-metadata";

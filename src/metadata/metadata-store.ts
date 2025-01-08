@@ -3,20 +3,28 @@ import {
   ColumnMetadataFactory,
   RelationMetadataFactory,
   TableMetadataFactory,
+  UniqueConstraintMetadataFactory,
 } from "../factories";
 import { RelationMetadata, TableMetadata, ColumnMetadata } from ".";
 import {
   ColumnMetadataArgs,
   RelationMetadataArgs,
   TableMetadataArgs,
+  UniqueConstraintMetadataArgs,
 } from "../types/create-args";
 import { AnEntity, Entity } from "../types";
+import { UniqueConstraintMetadata } from "./unique-constraint";
 
 class MetadataStore {
   public tables = new Map<Entity<unknown>, TableMetadata>();
   public columns = new Map<Entity<unknown>, ColumnMetadata[]>();
 
   public relations: RelationMetadata[] = [];
+
+  public uniqueConstraints = new Map<
+    AnEntity,
+    UniqueConstraintMetadata<AnEntity>
+  >();
 
   //
   // Getters
@@ -53,33 +61,28 @@ class MetadataStore {
   // Modifiers
   //
   public addTable(args: TableMetadataArgs): void {
-    const metadata = TableMetadataFactory.create(args);
-
-    if (this.tables.get(metadata.klass)) {
-      throw new Error(
-        `Metadata for table ${metadata.klass} already registered`
-      );
+    if (this.tables.get(args.klass)) {
+      throw new Error(`Metadata for table ${args.klass} already registered`);
     }
 
-    // Add existing columns to this tables metadata
-    const columns = this.columns.get(metadata.klass) ?? [];
-    metadata.columns = columns;
-
-    for (const column of columns) {
-      // Add column to map on table
-      metadata.columnsMap.set(column.fieldName, column);
-
-      // Add table metadata to column
-      column.table = metadata;
+    const uniqueConstraint = this.uniqueConstraints.get(args.klass);
+    if (!uniqueConstraint) {
+      throw new Error(`No unique constraint found for table ${args.klass}`);
     }
 
-    // Add relations to map on table metadata
-    this.relations
-      .filter((e) => e.primary === metadata.klass)
-      .forEach((e) => metadata.relations.set(e.primaryField, e));
-    this.relations
-      .filter((e) => e.foreign === metadata.klass)
-      .forEach((e) => metadata.relations.set(e.foreignField, e));
+    const columns = this.columns.get(args.klass);
+    if (!columns) {
+      throw new Error(`No columns found for table ${args.klass}`);
+    }
+
+    const metadata = TableMetadataFactory.create(
+      args,
+      columns,
+      this.relations.filter(
+        (e) => e.primary === args.klass || e.foreign === args.klass
+      ),
+      uniqueConstraint
+    );
 
     this.tables.set(metadata.klass, metadata);
   }
@@ -91,6 +94,21 @@ class MetadataStore {
     newColumns.push(metadata);
 
     this.columns.set(args.klass, newColumns);
+  }
+
+  public addUniqueConstraint(args: UniqueConstraintMetadataArgs) {
+    const existingConstraint = this.uniqueConstraints.get(args.klass);
+
+    if (existingConstraint) {
+      throw new Error(
+        `Unique constraint for table ${args.klass} already exists`
+      );
+    }
+
+    this.uniqueConstraints.set(
+      args.klass,
+      UniqueConstraintMetadataFactory.create(args)
+    );
   }
 
   public addRelation(args: RelationMetadataArgs) {

@@ -1,11 +1,12 @@
 import { ColumnMetadata } from "./column-metadata";
 import { RelationMetadata } from "./relation-metadata";
-import { Entity } from "../types/entity";
+import { AnEntity, Entity } from "../types/entity";
+import { UniqueConstraintMetadata } from "./unique-constraint";
 
 export class TableMetadata {
   tablename: string;
 
-  klass: Entity<unknown>;
+  klass: AnEntity;
 
   schemaname?: string;
 
@@ -19,6 +20,8 @@ export class TableMetadata {
 
   columns: ColumnMetadata[] = [];
   columnsMap: Map<string, ColumnMetadata> = new Map();
+
+  uniqueConstraint: UniqueConstraintMetadata<AnEntity>;
 
   relations: Map<string, RelationMetadata> = new Map();
 }

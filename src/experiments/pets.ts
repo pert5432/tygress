@@ -1,9 +1,9 @@
 import { Users } from "./users";
-import { Column, Table, ManyToOne } from "../decorators";
+import { Column, Table, ManyToOne, PrimaryKey } from "../decorators";
 
 @Table("pets")
 export class Pets {
-  @Column("id")
+  @PrimaryKey("id")
   id: number;
 
   @Column("name")
