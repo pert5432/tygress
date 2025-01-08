@@ -39,6 +39,8 @@ export abstract class TableMetadataFactory {
       }
     }
 
+    e.uniqueConstraint = uniqueConstraint;
+
     return e;
   }
 }

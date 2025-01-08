@@ -14,7 +14,7 @@ const main = async () => {
     joins: {
       pets: true,
     },
-    select: { id: true, pets: { id: true } },
+    select: { pets: { name: true } },
   });
 
   console.log(users[0]);

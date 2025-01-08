@@ -1,8 +1,13 @@
 import { Entity } from "..";
 import { Relation } from "../../enums";
-import { ColumnMetadata } from "../../metadata";
+import { ColumnMetadata, METADATA_STORE } from "../../metadata";
 
-export type JoinNode<T extends Entity<unknown>> = {
+export class JoinNode<T extends Entity<unknown>> {
+  constructor(klass: T, alias: string) {
+    this.klass = klass;
+    this.alias = alias;
+  }
+
   // The class that is joined-in
   klass: T;
   // Alias of the joined-in class
@@ -13,24 +18,48 @@ export type JoinNode<T extends Entity<unknown>> = {
   parentField?: string;
   relationToParent?: Relation;
 
-  selectedFields: Map<string, { fullName: string; column: ColumnMetadata }>;
+  selectedFields: Map<string, { fullName: string; column: ColumnMetadata }> =
+    new Map();
 
   // Path of keys from root node
-  path: string[];
+  path: string[] = [];
 
   //
   // Data for query runner
   //
 
   // Keys of ids of all parent nodes, aliased
-  idKeys: string[];
+  idKeys: string[] = [];
   // Instances of this entity that belong to a specific parent entity
   // Indexed by ids of all parent entities to this one
-  entitiesByParentsIdPath: Map<string, Entity<unknown>[]>;
+  entitiesByParentsIdPath: Map<string, Entity<unknown>[]> = new Map();
   // Instance of this entity, indexed by ids of all parents + this entity
-  entityByIdPath: Map<string, Entity<unknown>>;
+  entityByIdPath: Map<string, Entity<unknown>> = new Map();
 
   joins: {
     [K in keyof T]?: JoinNode<Entity<unknown>>;
-  };
-};
+  } = {};
+
+  public selectField(column: ColumnMetadata): void {
+    if (this.selectedFields.has(column.fieldName)) {
+      return;
+    }
+
+    this.selectedFields.set(column.fieldName, {
+      fullName: `${this.alias}.${column.fieldName}`,
+      column,
+    });
+  }
+
+  public ensureUniqueIdentifierSelection(): void {
+    const table = METADATA_STORE.getTable(this.klass);
+
+    if (this.selectedFields.has(table.uniqueConstraint.fieldName)) {
+      return;
+    }
+
+    const column = table.columnsMap.get(table.uniqueConstraint.fieldName)!;
+
+    this.selectField(column);
+  }
+}

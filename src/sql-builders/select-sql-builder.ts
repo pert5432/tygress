@@ -23,7 +23,6 @@ import {
 } from "../types/where-args";
 import { dQ } from "../utils";
 import { Order, OrderArgs } from "../types/order-args";
-import { join } from "path";
 
 export class SelectSqlBuilder<T extends Entity<unknown>> {
   constructor(private entity: T, private args: SelectArgs<InstanceType<T>>) {
@@ -49,10 +48,12 @@ export class SelectSqlBuilder<T extends Entity<unknown>> {
     this.buildOrder();
 
     if (this.args.select) {
-      this.selectTargetsFromSelectArg(this.args.select, this.joinNodes);
+      this.selectFieldsFromSelectArg(this.args.select, this.joinNodes);
     } else {
-      this.selectTargetsFromJoinNode(this.joinNodes);
+      this.selectFieldsFromJoinNode(this.joinNodes);
     }
+
+    this.selectTargetsFromJoinNodes(this.joinNodes);
 
     let sql = `SELECT ${this.selectTargets.join(", ")} FROM ${dQ(
       this.table.tablename
@@ -302,7 +303,7 @@ export class SelectSqlBuilder<T extends Entity<unknown>> {
     return this.params.length;
   }
 
-  private selectTargetsFromJoinNode = <E extends Entity<unknown>>(
+  private selectFieldsFromJoinNode = <E extends Entity<unknown>>(
     node: JoinNode<E>
   ): void => {
     for (const c of METADATA_STORE.getTable(node.klass).columns) {
@@ -310,21 +311,15 @@ export class SelectSqlBuilder<T extends Entity<unknown>> {
         return;
       }
 
-      this.selectTarget(node, c);
-
-      // TODO: refactor to join node class
-      node.selectedFields.set(c.fieldName, {
-        fullName: `${node.alias}.${c.fieldName}`,
-        column: c,
-      });
+      node.selectField(c);
     }
 
     for (const key in node.joins) {
-      this.selectTargetsFromJoinNode(node.joins[key]!);
+      this.selectFieldsFromJoinNode(node.joins[key]!);
     }
   };
 
-  private selectTargetsFromSelectArg<E extends AnEntity>(
+  private selectFieldsFromSelectArg<E extends AnEntity>(
     targets: SelectTargetArgs<E>,
     joinNode: JoinNode<E>
   ): void {
@@ -334,21 +329,27 @@ export class SelectSqlBuilder<T extends Entity<unknown>> {
       if (target === true) {
         const column = METADATA_STORE.getColumn(joinNode.klass, key);
 
-        this.selectTarget(joinNode, column);
-
-        // TODO: refactor to join node class
-        joinNode.selectedFields.set(column.fieldName, {
-          fullName: `${joinNode.alias}.${column.fieldName}`,
-          column: column,
-        });
+        joinNode.selectField(column);
       } else if ((target as any) instanceof Object) {
         const nextJoinNode = joinNode.joins[key] as JoinNode<AnEntity>;
 
-        return this.selectTargetsFromSelectArg(
+        return this.selectFieldsFromSelectArg(
           target as SelectTargetArgs<AnEntity>,
           nextJoinNode
         );
       }
+    }
+  }
+
+  private selectTargetsFromJoinNodes(node: JoinNode<AnEntity>): void {
+    node.ensureUniqueIdentifierSelection();
+
+    for (const { column } of node.selectedFields.values()) {
+      this.selectTarget(node, column);
+    }
+
+    for (const key in node.joins) {
+      this.selectTargetsFromJoinNodes(node.joins[key]!);
     }
   }
 

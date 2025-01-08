@@ -12,47 +12,26 @@ export abstract class JoinNodeFactory {
   ): JoinNode<T> {
     const alias = `${previousNode.alias}_${entityNameToAlias(klass.name)}`;
 
-    return {
-      klass,
-      alias,
+    const e = new JoinNode(klass, alias);
 
-      parentField: fieldName,
-      relationToParent: this.getRelationToParent(relation),
+    e.parentField = fieldName;
+    e.relationToParent = this.getRelationToParent(relation);
 
-      idKeys: [...previousNode.idKeys, `${alias}.id`],
+    e.idKeys = [...previousNode.idKeys, `${alias}.id`];
 
-      path: [...previousNode.path, fieldName],
-      joins: {},
+    e.path = [...previousNode.path, fieldName];
 
-      ...this.defaults(),
-    };
+    return e;
   }
 
   public static createRoot<T extends Entity<unknown>>(klass: T): JoinNode<T> {
     const alias = entityNameToAlias(klass.name);
 
-    return {
-      klass,
-      alias,
+    const e = new JoinNode(klass, alias);
 
-      idKeys: [`${alias}.id`],
+    e.idKeys = [`${alias}.id`];
 
-      path: [],
-      joins: {},
-
-      ...this.defaults(),
-    };
-  }
-
-  private static defaults<T extends Entity<unknown>>(): Pick<
-    JoinNode<T>,
-    "selectedFields" | "entitiesByParentsIdPath" | "entityByIdPath"
-  > {
-    return {
-      selectedFields: new Map(),
-      entitiesByParentsIdPath: new Map(),
-      entityByIdPath: new Map(),
-    };
+    return e;
   }
 
   private static getRelationToParent(relation: Relation): Relation {
