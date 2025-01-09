@@ -327,9 +327,23 @@ export class SelectSqlBuilder<T extends Entity<unknown>> {
       const target = targets[key];
 
       if (target === true) {
-        const column = METADATA_STORE.getColumn(joinNode.klass, key);
+        const table = METADATA_STORE.getTable(joinNode.klass);
 
-        joinNode.selectField(column);
+        const column = table.columnsMap.get(key);
+        if (column) {
+          joinNode.selectField(column);
+        } else {
+          // Select all fields on the next relation if the whole relation is `true`
+          if (table.relations.get(key)) {
+            const nextJoinNode = joinNode.joins[key] as JoinNode<AnEntity>;
+
+            nextJoinNode.selectAllFields();
+          } else {
+            throw new Error(
+              `No column or relation found for table ${joinNode.klass.name}, field ${key}`
+            );
+          }
+        }
       } else if ((target as any) instanceof Object) {
         const nextJoinNode = joinNode.joins[key] as JoinNode<AnEntity>;
 

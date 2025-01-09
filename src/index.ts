@@ -4,6 +4,7 @@ import { Users } from "./experiments/users";
 import { Repository } from "./repository";
 import { Pets } from "./experiments/pets";
 import { And, Eq, Gt, In, Lt, Not, Or } from "./api";
+import { METADATA_STORE } from "./metadata";
 
 const main = async () => {
   const client = new Client("postgres://petr@localhost:5437/tygress");
@@ -14,7 +15,7 @@ const main = async () => {
     joins: {
       pets: true,
     },
-    select: { pets: { name: true } },
+    select: { pets: true },
   });
 
   console.log(users[0]);
