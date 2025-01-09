@@ -333,11 +333,9 @@ export class SelectSqlBuilder<T extends Entity<unknown>> {
         if (column) {
           joinNode.selectField(column);
         } else {
-          // Select all fields on the next relation if the whole relation is `true`
+          // Select next relation by key and all relations under it
           if (table.relations.get(key)) {
-            const nextJoinNode = joinNode.joins[key] as JoinNode<AnEntity>;
-
-            nextJoinNode.selectAllFields();
+            this.selectTargetsFromJoinNodes(joinNode.joins[key]!);
           } else {
             throw new Error(
               `No column or relation found for table ${joinNode.klass.name}, field ${key}`
@@ -356,9 +354,7 @@ export class SelectSqlBuilder<T extends Entity<unknown>> {
   }
 
   private selectTargetsFromJoinNodes(node: JoinNode<AnEntity>): void {
-    for (const { column } of node.selectedFields.values()) {
-      this.selectTarget(node, column);
-    }
+    node.selectAllFields();
 
     for (const key in node.joins) {
       this.selectTargetsFromJoinNodes(node.joins[key]!);
