@@ -1,6 +1,12 @@
 import { TargetNodeFactory } from "../factories";
 import { ColumnMetadata, METADATA_STORE, TableMetadata } from "../metadata";
-import { Entity, SelectQueryArgs, AnEntity, SelectTargetArgs } from "../types";
+import {
+  Entity,
+  SelectQueryArgs,
+  AnEntity,
+  SelectTargetArgs,
+  SelectQueryTarget,
+} from "../types";
 import { TargetNode, Query } from "../types/query";
 import { dQ } from "../utils";
 import { OrderArgs } from "../types/order-args";
@@ -41,14 +47,14 @@ export class SelectSqlBuilder<T extends AnEntity> {
     this.buildOrder();
 
     // Set which fields should be selected
-    if (this.args.select) {
-      this.selectFieldsFromSelectArg(this.args.select, this.targetNodes);
+    if (this.args.selects.length) {
+      this.selectFieldsFromSelectTargets(this.args.selects);
     } else {
       this.selectFieldsFromJoinNode(this.targetNodes);
     }
 
     // Turn selected fields into SQL statements
-    this.selectTargetsFromJoinNodes(this.targetNodes);
+    this.selectedFieldsToSqlTargets(this.targetNodes);
 
     let sql = `SELECT ${this.selectTargets.join(", ")} FROM ${dQ(
       this.table.tablename
@@ -175,56 +181,31 @@ export class SelectSqlBuilder<T extends AnEntity> {
     }
   };
 
-  private selectFieldsFromSelectArg<E extends AnEntity>(
-    targets: SelectTargetArgs<E>,
-    joinNode: TargetNode<E>
-  ): void {
-    for (const key in targets) {
-      const target = targets[key];
+  private selectFieldsFromSelectTargets(targets: SelectQueryTarget[]): void {
+    for (const target of targets) {
+      const node = this.targetNodesByAlias.get(target.alias);
 
-      if (target === true) {
-        const table = METADATA_STORE.getTable(joinNode.klass);
-
-        const column = table.columnsMap.get(key);
-        if (column) {
-          joinNode.selectField(column);
-        } else {
-          // Select next relation by key and all relations under it
-          if (table.relations.get(key)) {
-            this.selectTargetsFromJoinNodes(joinNode.joins[key]!);
-          } else {
-            throw new Error(
-              `No column or relation found for table ${joinNode.klass.name}, field ${key}`
-            );
-          }
-        }
-      } else if ((target as any) instanceof Object) {
-        const nextJoinNode = joinNode.joins[key] as TargetNode<AnEntity>;
-
-        return this.selectFieldsFromSelectArg(
-          target as SelectTargetArgs<AnEntity>,
-          nextJoinNode
-        );
+      if (!node) {
+        throw new Error(`No target with alias ${target.alias}`);
       }
+
+      node.selectField(target.column);
     }
   }
 
-  private selectTargetsFromJoinNodes(node: TargetNode<AnEntity>): void {
+  private selectedFieldsToSqlTargets(node: TargetNode<AnEntity>): void {
     for (const target of node.selectedFields.values()) {
-      this.selectTarget(node, target.column);
+      this.selectTarget(node.alias, target.column);
     }
 
     for (const key in node.joins) {
-      this.selectTargetsFromJoinNodes(node.joins[key]!);
+      this.selectedFieldsToSqlTargets(node.joins[key]!);
     }
   }
 
-  private selectTarget<E extends AnEntity>(
-    node: TargetNode<E>,
-    c: ColumnMetadata
-  ): void {
+  private selectTarget(alias: string, c: ColumnMetadata): void {
     this.selectTargets.push(
-      `${dQ(node.alias)}.${dQ(c.name)} AS ${dQ(`${node.alias}.${c.fieldName}`)}`
+      `${dQ(alias)}.${dQ(c.name)} AS ${dQ(`${alias}.${c.fieldName}`)}`
     );
   }
 }

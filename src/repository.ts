@@ -6,6 +6,8 @@ import {
   Parametrizable,
   SelectArgs,
   SelectQueryArgs,
+  SelectQueryTarget,
+  SelectTargetArgs,
   Wheres,
 } from "./types";
 import { SelectSqlBuilder } from "./sql-builders/select-sql-builder";
@@ -27,6 +29,12 @@ import {
   ParametrizedConditionWrapper,
 } from "./types/where-args";
 
+type ArgsTransformations = {
+  joins: JoinArg<AnEntity>[];
+  wheres: ComparisonSqlBuilder[];
+  selects: SelectQueryTarget[];
+};
+
 export abstract class Repository {
   public static async select<T extends AnEntity>(
     client: Client,
@@ -37,7 +45,7 @@ export abstract class Repository {
 
     const queryArgs: SelectQueryArgs<T> = {
       ...args,
-      ...this.transformArgs(entity, args.joins, args.where),
+      ...this.transformArgs(entity, args.joins, args.where, args.select),
     };
 
     const query = new SelectSqlBuilder(queryArgs, paramBuilder).buildSelect();
@@ -51,34 +59,41 @@ export abstract class Repository {
   private static transformArgs<T extends AnEntity>(
     entity: T,
     joins?: Joins<InstanceType<T>>,
-    wheres?: Wheres<InstanceType<T>>
-  ): { joins: JoinArg<AnEntity>[]; wheres: ComparisonSqlBuilder[] } {
+    wheres?: Wheres<InstanceType<T>>,
+    selects?: SelectTargetArgs<InstanceType<T>>
+  ): ArgsTransformations {
+    const data: {
+      joins: JoinArg<AnEntity>[];
+      wheres: ComparisonSqlBuilder[];
+      selects: SelectQueryTarget[];
+    } = { joins: [], wheres: [], selects: [] };
+
     if (!joins) {
-      return { joins: [], wheres: [] };
+      return data;
     }
 
-    const data: { joins: JoinArg<AnEntity>[]; wheres: ComparisonSqlBuilder[] } =
-      {
-        joins: [
-          JoinArgFactory.createRoot(entity, entityNameToAlias(entity.name)),
-        ],
-        wheres: [],
-      };
+    data.joins.push(
+      JoinArgFactory.createRoot(entity, entityNameToAlias(entity.name))
+    );
 
-    this.processLevel(data, data.joins[0], joins, wheres);
+    this.processLevel(data, data.joins[0], joins, wheres, selects);
 
     return data;
   }
 
-  private static processLevel<E extends Entity<unknown>>(
-    data: { joins: JoinArg<AnEntity>[]; wheres: ComparisonSqlBuilder[] },
+  private static processLevel<E extends AnEntity>(
+    data: ArgsTransformations,
     parentJoinArg: JoinArg<E>,
     joins: Joins<InstanceType<E>>,
-    wheres?: Wheres<E>
+    wheres?: Wheres<E>,
+    selects?: SelectTargetArgs<InstanceType<E>> | true
   ): void {
     // Table we are joining to
     const parentTableMeta = METADATA_STORE.getTable(parentJoinArg.klass);
 
+    //
+    // Collect desired where conditions
+    //
     for (const fieldName in wheres) {
       const column = parentTableMeta.columnsMap.get(fieldName);
 
@@ -106,6 +121,37 @@ export abstract class Repository {
       );
     }
 
+    //
+    // Collect desired selects
+    //
+
+    // The entire relation is supposed to be selected
+    if (selects === true) {
+      data.selects.push(
+        ...parentTableMeta.columns.map((column) => ({
+          alias: parentJoinArg.alias,
+          column,
+        }))
+      );
+    } else {
+      // Select individual desired fields
+      for (const fieldName in selects) {
+        if (selects[fieldName] === true) {
+          const column = parentTableMeta.columnsMap.get(fieldName);
+
+          // If there is no column, there will be a relation which will get processed in next level
+          if (!column) {
+            continue;
+          }
+
+          data.selects.push({ alias: parentJoinArg.alias, column });
+        }
+      }
+    }
+
+    //
+    // Collect join and process rest of the tree
+    //
     for (const key in joins) {
       const join = joins[key];
 
@@ -154,7 +200,9 @@ export abstract class Repository {
         data,
         nextJoinArg,
         join as Joins<typeof inverseTable>,
-        wheres ? wheres[key] : undefined
+        wheres ? wheres[key] : undefined,
+        // If selects is true, pass true otherwise pass selects[key]
+        selects === true ? true : selects ? selects[key] : undefined
       );
     }
   }
