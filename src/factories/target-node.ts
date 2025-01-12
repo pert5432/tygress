@@ -15,8 +15,6 @@ export abstract class TargetNodeFactory {
     const e = new TargetNode(klass, alias);
 
     e.parentField = fieldName;
-    e.parentFieldIsArray =
-      Reflect.getMetadata("design:type", parentNode.klass, fieldName) === Array;
 
     e.idKeys = [...parentNode.idKeys, `${alias}.${primaryKey.fieldName}`];
 

@@ -15,8 +15,6 @@ export class TargetNode<T extends AnEntity> {
   // Undefined for root node
   // Which field on the parent leads to this join
   parentField?: string;
-  // To know if entities should be inserted into the parent as an array or not
-  parentFieldIsArray?: boolean;
 
   selectedFields: Map<string, { fullName: string; column: ColumnMetadata }> =
     new Map();
