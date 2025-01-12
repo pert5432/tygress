@@ -16,5 +16,5 @@ export type ColColComparisonArgs = ComparisonArgs & {
 };
 
 export type ColParamComparisonArgs = ComparisonArgs & {
-  paramNumbers: number[];
+  params: any[];
 };

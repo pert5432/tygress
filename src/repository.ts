@@ -1,11 +1,31 @@
 import { Client } from "pg";
-import { AnEntity, Entity, Joins, SelectArgs, SelectQueryArgs } from "./types";
+import {
+  AnEntity,
+  Entity,
+  Joins,
+  Parametrizable,
+  SelectArgs,
+  SelectQueryArgs,
+  Wheres,
+} from "./types";
 import { SelectSqlBuilder } from "./sql-builders/select-sql-builder";
 import { QueryRunner } from "./query-runner";
 import { JoinArg } from "./types/query/join-arg";
-import { METADATA_STORE } from "./metadata";
+import { ColumnMetadata, METADATA_STORE } from "./metadata";
 import { ComparisonFactory, JoinArgFactory } from "./factories";
 import { entityNameToAlias } from "./utils";
+import {
+  ComparisonSqlBuilder,
+  ComparisonWrapper,
+  NotComparisonWrapper,
+  ParamBuilder,
+} from "./sql-builders";
+import {
+  NotConditionWrapper,
+  ParameterArgs,
+  ParametrizedCondition,
+  ParametrizedConditionWrapper,
+} from "./types/where-args";
 
 export abstract class Repository {
   public static async select<T extends AnEntity>(
@@ -13,12 +33,14 @@ export abstract class Repository {
     entity: T,
     args: SelectArgs<InstanceType<T>>
   ): Promise<InstanceType<T>[]> {
+    const paramBuilder = new ParamBuilder();
+
     const queryArgs: SelectQueryArgs<T> = {
       ...args,
-      joins: this.transformJoins(entity, args.joins),
+      ...this.transformArgs(entity, args.joins, args.where),
     };
 
-    const query = new SelectSqlBuilder(queryArgs).buildSelect();
+    const query = new SelectSqlBuilder(queryArgs, paramBuilder).buildSelect();
 
     console.log(query.sql);
     console.log(query.params);
@@ -26,77 +48,174 @@ export abstract class Repository {
     return await new QueryRunner(client, query).run();
   }
 
-  private static transformJoins<T extends AnEntity>(
+  private static transformArgs<T extends AnEntity>(
     entity: T,
-    joins?: Joins<InstanceType<T>>
-  ): JoinArg<AnEntity>[] {
+    joins?: Joins<InstanceType<T>>,
+    wheres?: Wheres<InstanceType<T>>
+  ): { joins: JoinArg<AnEntity>[]; wheres: ComparisonSqlBuilder[] } {
     if (!joins) {
-      return [];
+      return { joins: [], wheres: [] };
     }
 
-    const joinArgs: JoinArg<AnEntity>[] = [
-      JoinArgFactory.createRoot(entity, entityNameToAlias(entity.name)),
-    ];
+    const data: { joins: JoinArg<AnEntity>[]; wheres: ComparisonSqlBuilder[] } =
+      {
+        joins: [
+          JoinArgFactory.createRoot(entity, entityNameToAlias(entity.name)),
+        ],
+        wheres: [],
+      };
 
-    // TODO: clean up naming in this function
-    const joinTable = <E extends Entity<unknown>>(
-      parentJoinArg: JoinArg<E>,
-      joins: Joins<InstanceType<E>>
-    ): void => {
-      // Table we are joining to
-      const parentTableMeta = METADATA_STORE.getTable(parentJoinArg.klass);
+    this.processLevel(data, data.joins[0], joins, wheres);
 
-      for (const key in joins) {
-        const join = joins[key];
-
-        // Get meta needed for join
-        const relation = parentTableMeta.relations.get(key);
-        if (!relation) {
-          throw new Error(
-            `No relation found on table ${parentTableMeta}, field ${key}`
-          );
-        }
-
-        // Table we are joining in
-        const inverseTable = relation.getOtherTable(parentTableMeta.klass);
-
-        const nextJoinArgAlias = `${parentJoinArg.alias}_${entityNameToAlias(
-          inverseTable.name
-        )}`;
-
-        const [primaryAlias, foreignAlias] =
-          relation.primary === parentJoinArg.klass
-            ? [parentJoinArg.alias, nextJoinArgAlias]
-            : [nextJoinArgAlias, parentJoinArg.alias];
-
-        // Column comparison for the join
-        const comparison = ComparisonFactory.createColCol({
-          leftAlias: foreignAlias,
-          leftColumn: relation.foreignKey,
-          comparator: "eq",
-          rightAlias: primaryAlias,
-          rightColumn: relation.primaryKey,
-        });
-
-        const nextJoinArg = JoinArgFactory.create(
-          parentJoinArg.alias,
-          key,
-          inverseTable,
-          nextJoinArgAlias,
-          comparison
-        );
-
-        joinArgs.push(nextJoinArg);
-
-        // Keep processing deeper joins if argument is an object
-        if (join instanceof Object) {
-          joinTable(nextJoinArg, join as Joins<typeof inverseTable>);
-        }
-      }
-    };
-
-    joinTable(joinArgs[0], joins);
-
-    return joinArgs;
+    return data;
   }
+
+  private static processLevel<E extends Entity<unknown>>(
+    data: { joins: JoinArg<AnEntity>[]; wheres: ComparisonSqlBuilder[] },
+    parentJoinArg: JoinArg<E>,
+    joins: Joins<InstanceType<E>>,
+    wheres?: Wheres<E>
+  ): void {
+    // Table we are joining to
+    const parentTableMeta = METADATA_STORE.getTable(parentJoinArg.klass);
+
+    for (const fieldName in wheres) {
+      const column = parentTableMeta.columnsMap.get(fieldName);
+
+      if (!column) {
+        const relation = parentTableMeta.relations.get(fieldName);
+
+        // If the field is a relation we go next
+        // The condition will get processed in the next level, based no joins
+        if (relation) {
+          continue;
+        }
+
+        // If no column or relation was found we throw because this condition is bogus
+        throw new Error(
+          `No column found in table ${parentTableMeta.klass.name}, with fieldName ${fieldName}`
+        );
+      }
+
+      data.wheres.push(
+        this.comparisonFromCondition(
+          parentJoinArg.alias,
+          column,
+          wheres[fieldName]!
+        )
+      );
+    }
+
+    for (const key in joins) {
+      const join = joins[key];
+
+      // Get meta needed for join
+      const relation = parentTableMeta.relations.get(key);
+      if (!relation) {
+        throw new Error(
+          `No relation found on table ${parentTableMeta}, field ${key}`
+        );
+      }
+
+      // Table we are joining in
+      const inverseTable = relation.getOtherTable(parentTableMeta.klass);
+
+      const nextJoinArgAlias = `${parentJoinArg.alias}_${entityNameToAlias(
+        inverseTable.name
+      )}`;
+
+      const [primaryAlias, foreignAlias] =
+        relation.primary === parentJoinArg.klass
+          ? [parentJoinArg.alias, nextJoinArgAlias]
+          : [nextJoinArgAlias, parentJoinArg.alias];
+
+      // Column comparison for the join
+      const comparison = ComparisonFactory.createColCol({
+        leftAlias: foreignAlias,
+        leftColumn: relation.foreignKey,
+        comparator: "eq",
+        rightAlias: primaryAlias,
+        rightColumn: relation.primaryKey,
+      });
+
+      const nextJoinArg = JoinArgFactory.create(
+        parentJoinArg.alias,
+        key,
+        inverseTable,
+        nextJoinArgAlias,
+        comparison
+      );
+
+      data.joins.push(nextJoinArg);
+
+      // Keep processing deeper joins and wheres
+      // We need to go to the next level to process wheres even if there are no more joins in the next level
+      this.processLevel(
+        data,
+        nextJoinArg,
+        join as Joins<typeof inverseTable>,
+        wheres ? wheres[key] : undefined
+      );
+    }
+  }
+
+  private static comparisonFromCondition = (
+    alias: string,
+    column: ColumnMetadata,
+    condition: ParameterArgs<Parametrizable>
+  ): ComparisonSqlBuilder => {
+    if ((condition as Object) instanceof ParametrizedCondition) {
+      // To get type safety because inference doesn't work here for some reason ¯\_(ツ)_/¯
+      const parametrizedCondition =
+        condition as ParametrizedCondition<Parametrizable>;
+
+      return ComparisonFactory.createColParam({
+        leftAlias: alias,
+        leftColumn: column.name,
+        comparator: parametrizedCondition.comparator,
+        params: parametrizedCondition.parameters,
+      });
+    } else if (
+      condition === "number" ||
+      typeof condition === "string" ||
+      typeof condition === "boolean"
+    ) {
+      return ComparisonFactory.createColParam({
+        leftAlias: alias,
+        leftColumn: column.name,
+        comparator: "eq",
+        params: [condition],
+      });
+    } else if ((condition as Object) instanceof ParametrizedConditionWrapper) {
+      const conditionWrapper =
+        condition as ParametrizedConditionWrapper<Parametrizable>;
+
+      const comparisons = conditionWrapper.conditions.map((c) =>
+        ComparisonFactory.createColParam({
+          leftAlias: alias,
+          leftColumn: column.name,
+          comparator: c.comparator,
+          params: c.parameters,
+        })
+      );
+
+      return new ComparisonWrapper(
+        comparisons,
+        conditionWrapper.logicalOperator
+      );
+    } else if ((condition as Object) instanceof NotConditionWrapper) {
+      const notConditionWrapper =
+        condition as NotConditionWrapper<Parametrizable>;
+
+      return new NotComparisonWrapper(
+        this.comparisonFromCondition(
+          alias,
+          column,
+          notConditionWrapper.condition
+        )
+      );
+    } else {
+      throw new Error(`bogus condition ${condition}`);
+    }
+  };
 }

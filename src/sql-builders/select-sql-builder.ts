@@ -1,31 +1,17 @@
-import { ComparisonFactory, TargetNodeFactory } from "../factories";
+import { TargetNodeFactory } from "../factories";
 import { ColumnMetadata, METADATA_STORE, TableMetadata } from "../metadata";
-import {
-  NotComparisonWrapper,
-  ComparisonWrapper,
-  ComparisonSqlBuilder,
-} from "./comparison";
-import {
-  Entity,
-  SelectQueryArgs,
-  ParametrizedCondition,
-  Wheres,
-  Parametrizable,
-  AnEntity,
-  SelectTargetArgs,
-} from "../types";
+import { Entity, SelectQueryArgs, AnEntity, SelectTargetArgs } from "../types";
 import { TargetNode, Query } from "../types/query";
-import {
-  NotConditionWrapper,
-  ParameterArgs,
-  ParametrizedConditionWrapper,
-} from "../types/where-args";
 import { dQ } from "../utils";
 import { OrderArgs } from "../types/order-args";
 import { JoinArg } from "../types/query/join-arg";
+import { ParamBuilder } from "./param-builder";
 
 export class SelectSqlBuilder<T extends AnEntity> {
-  constructor(private args: SelectQueryArgs<T>) {
+  constructor(
+    private args: SelectQueryArgs<T>,
+    private paramBuilder: ParamBuilder
+  ) {
     const rootJoinArg = args.joins[0]! as JoinArg<T>;
 
     this.table = METADATA_STORE.getTable(rootJoinArg.klass);
@@ -46,8 +32,6 @@ export class SelectSqlBuilder<T extends AnEntity> {
 
   private targetNodes: TargetNode<T>;
   private targetNodesByAlias = new Map<string, TargetNode<AnEntity>>();
-
-  private params: any[] = [];
 
   private selectTargets: string[] = [];
 
@@ -98,116 +82,21 @@ export class SelectSqlBuilder<T extends AnEntity> {
       sql += ` OFFSET ${this.args.offset}`;
     }
 
-    return { sql, params: this.params, joinNodes: this.targetNodes };
+    return {
+      sql,
+      params: this.paramBuilder.params,
+      joinNodes: this.targetNodes,
+    };
   }
 
   private buildWhereConditions(): void {
-    if (!this.args.where) {
+    if (!this.args.wheres) {
       return;
     }
 
-    const buildWhere = <E extends Entity<unknown>>(
-      table: TableMetadata,
-      where: Wheres<E>,
-      joinNode: TargetNode<E>
-    ): void => {
-      for (const fieldName in where) {
-        let column = table.columnsMap.get(fieldName);
-
-        // Fetch the column meta from a relation instead
-        // Maybe this should be a different branch alltogether (i.e. we want to handle conditions for columns and for relations separately)
-        if (!column) {
-          const relation = table.relations.get(fieldName);
-
-          if (relation) {
-            const { field, klass } = relation.getOtherSide(table.klass);
-            const otherTable = METADATA_STORE.getTable(klass);
-
-            column = otherTable.columnsMap.get(field);
-          }
-        }
-
-        if (!column) {
-          throw new Error(
-            `Column ${fieldName} not found in table ${table.klass.name}`
-          );
-        }
-
-        const condition = where[fieldName];
-
-        // Go process conditions for joined entity if the key coresponds to a relation
-        const relation = table.relations.get(fieldName);
-        if (relation) {
-          return buildWhere(
-            METADATA_STORE.getTable(relation.getOtherTable(table.klass)),
-            condition as Wheres<Entity<unknown>>,
-            joinNode.joins[fieldName]!
-          );
-        }
-
-        const getComparison = (
-          condition: ParameterArgs<Parametrizable>
-        ): ComparisonSqlBuilder => {
-          if ((condition as Object) instanceof ParametrizedCondition) {
-            // To get type safety because inference doesn't work here for some reason ¯\_(ツ)_/¯
-            const parametrizedCondition =
-              condition as ParametrizedCondition<Parametrizable>;
-
-            return ComparisonFactory.createColParam({
-              leftAlias: joinNode.alias,
-              leftColumn: column.name,
-              comparator: parametrizedCondition.comparator,
-              paramNumbers: parametrizedCondition.parameters.map((e) =>
-                this.addParam(e)
-              ),
-            });
-          } else if (
-            condition === "number" ||
-            typeof condition === "string" ||
-            typeof condition === "boolean"
-          ) {
-            return ComparisonFactory.createColParam({
-              leftAlias: joinNode.alias,
-              leftColumn: column.name,
-              comparator: "eq",
-              paramNumbers: [this.addParam(condition)],
-            });
-          } else if (
-            (condition as Object) instanceof ParametrizedConditionWrapper
-          ) {
-            const conditionWrapper =
-              condition as ParametrizedConditionWrapper<Parametrizable>;
-
-            const comparisons = conditionWrapper.conditions.map((c) =>
-              ComparisonFactory.createColParam({
-                leftAlias: joinNode.alias,
-                leftColumn: column.name,
-                comparator: c.comparator,
-                paramNumbers: c.parameters.map((e) => this.addParam(e)),
-              })
-            );
-
-            return new ComparisonWrapper(
-              comparisons,
-              conditionWrapper.logicalOperator
-            );
-          } else if ((condition as Object) instanceof NotConditionWrapper) {
-            const notConditionWrapper =
-              condition as NotConditionWrapper<Parametrizable>;
-
-            return new NotComparisonWrapper(
-              getComparison(notConditionWrapper.condition)
-            );
-          } else {
-            throw new Error(`bogus condition ${condition}`);
-          }
-        };
-
-        this.whereConditions.push(getComparison(condition!).sql());
-      }
-    };
-
-    buildWhere(this.table, this.args.where, this.targetNodes);
+    for (const comparison of this.args.wheres) {
+      this.whereConditions.push(comparison.sql(this.paramBuilder));
+    }
   }
 
   private buildJoins(): void {
@@ -233,7 +122,7 @@ export class SelectSqlBuilder<T extends AnEntity> {
       this.sqlJoins.push(
         `INNER JOIN ${dQ(tableMeta.fullName)} ${dQ(
           join.alias
-        )} ON ${join.comparison!.sql()}`
+        )} ON ${join.comparison!.sql(this.paramBuilder)}`
       );
     }
   }
@@ -270,12 +159,6 @@ export class SelectSqlBuilder<T extends AnEntity> {
   //
   // HELPER FUNCTIONS
   //
-  private addParam(val: number | string | boolean): number {
-    this.params.push(val);
-
-    return this.params.length;
-  }
-
   private selectFieldsFromJoinNode = <E extends Entity<unknown>>(
     node: TargetNode<E>
   ): void => {

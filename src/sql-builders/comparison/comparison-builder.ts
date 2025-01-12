@@ -1,3 +1,5 @@
+import { ParamBuilder } from "../param-builder";
+
 export abstract class ComparisonSqlBuilder {
-  public abstract sql(): string;
+  public abstract sql(paramBuilder: ParamBuilder): string;
 }

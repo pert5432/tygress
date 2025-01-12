@@ -26,7 +26,7 @@ const main = async () => {
       pets: true,
     },
     where: {
-      pets: { name: Gt("a") },
+      pets: { name: In(["a", "pootis", "moofis"]) },
     },
   });
 

@@ -6,6 +6,7 @@ import {
 } from "../../types/create-args/comparison";
 import { ComparisonSqlBuilder } from "./comparison-builder";
 import { WhereComparator } from "../../types";
+import { ParamBuilder } from "../param-builder";
 
 export abstract class Comparison extends ComparisonSqlBuilder {
   leftAlias: string;
@@ -17,15 +18,11 @@ export abstract class Comparison extends ComparisonSqlBuilder {
   rightAlias?: string;
   rightColumn?: string;
 
-  paramNumbers?: number[];
+  params?: any[];
 
   rightCast?: string;
 
-  protected abstract _sql(): string;
-
-  public sql(): string {
-    return this._sql();
-  }
+  public abstract sql(paramBuilder: ParamBuilder): string;
 
   protected formatCol(alias: string, col: string, cast?: string): string {
     return `${dQ(alias)}.${dQ(col)}${cast ? `::${cast}` : ""}`;
@@ -62,7 +59,7 @@ export class ColColComparison extends Comparison {
   rightAlias: string;
   rightColumn: string;
 
-  protected _sql(): string {
+  public sql(): string {
     const left = this.formatCol(this.leftAlias, this.leftColumn, this.leftCast);
     const right = this.formatCol(
       this.rightAlias,
@@ -80,7 +77,7 @@ export class ColParamComparison extends Comparison {
     leftColumn,
     leftCast,
     comparator,
-    paramNumbers,
+    params,
     rightCast,
   }: ColParamComparisonArgs) {
     super();
@@ -91,17 +88,17 @@ export class ColParamComparison extends Comparison {
 
     this.comparator = comparator;
 
-    this.paramNumbers = paramNumbers;
+    this.params = params;
     this.rightCast = rightCast;
   }
 
-  paramNumbers: number[];
+  params: any[];
 
-  protected _sql(): string {
+  public sql(paramBuilder: ParamBuilder): string {
     const left = this.formatCol(this.leftAlias, this.leftColumn, this.leftCast);
-    const right = this.paramNumbers!?.map(
-      (p) => `$${p}${this.rightCast ? `::${this.rightCast}` : ""}`
-    );
+    const right = this.params
+      ?.map((val) => paramBuilder.addParam(val))
+      .map((pNum) => `$${pNum}${this.rightCast ? `::${this.rightCast}` : ""}`);
 
     return `${left} ${this.comparatorF(right)}`;
   }

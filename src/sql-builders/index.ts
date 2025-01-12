@@ -6,3 +6,4 @@ export {
   ComparisonWrapper,
   NotComparisonWrapper,
 } from "./comparison";
+export { ParamBuilder } from "./param-builder";
