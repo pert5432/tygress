@@ -28,6 +28,10 @@ const main = async () => {
     where: {
       pets: { name: In(["a", "pootis", "moofis"]) },
     },
+    order: {
+      pets: { name: "DESC" },
+      fullName: "ASC",
+    },
   });
 
   console.log(users[0]);

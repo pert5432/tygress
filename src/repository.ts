@@ -1,11 +1,12 @@
 import { Client } from "pg";
 import {
   AnEntity,
-  Entity,
   Joins,
+  OrderArgs,
   Parametrizable,
   SelectArgs,
   SelectQueryArgs,
+  SelectQueryOrder,
   SelectQueryTarget,
   SelectTargetArgs,
   Wheres,
@@ -33,6 +34,7 @@ type ArgsTransformations = {
   joins: JoinArg<AnEntity>[];
   wheres: ComparisonSqlBuilder[];
   selects: SelectQueryTarget[];
+  orderBys: SelectQueryOrder[];
 };
 
 export abstract class Repository {
@@ -43,12 +45,23 @@ export abstract class Repository {
   ): Promise<InstanceType<T>[]> {
     const paramBuilder = new ParamBuilder();
 
-    const queryArgs: SelectQueryArgs<T> = {
+    const transformedArgs = this.transformArgs(
+      entity,
+      args.joins,
+      args.where,
+      args.select,
+      args.order
+    );
+
+    const queryArgs: SelectQueryArgs = {
       ...args,
-      ...this.transformArgs(entity, args.joins, args.where, args.select),
+      ...transformedArgs,
     };
 
-    const query = new SelectSqlBuilder(queryArgs, paramBuilder).buildSelect();
+    const query = new SelectSqlBuilder<T>(
+      queryArgs,
+      paramBuilder
+    ).buildSelect();
 
     console.log(query.sql);
     console.log(query.params);
@@ -60,13 +73,15 @@ export abstract class Repository {
     entity: T,
     joins?: Joins<InstanceType<T>>,
     wheres?: Wheres<InstanceType<T>>,
-    selects?: SelectTargetArgs<InstanceType<T>>
+    selects?: SelectTargetArgs<InstanceType<T>>,
+    orders?: OrderArgs<InstanceType<T>>
   ): ArgsTransformations {
-    const data: {
-      joins: JoinArg<AnEntity>[];
-      wheres: ComparisonSqlBuilder[];
-      selects: SelectQueryTarget[];
-    } = { joins: [], wheres: [], selects: [] };
+    const data: ArgsTransformations = {
+      joins: [],
+      wheres: [],
+      selects: [],
+      orderBys: [],
+    };
 
     if (!joins) {
       return data;
@@ -76,17 +91,21 @@ export abstract class Repository {
       JoinArgFactory.createRoot(entity, entityNameToAlias(entity.name))
     );
 
-    this.processLevel(data, data.joins[0], joins, wheres, selects);
+    this.processLevel(data, data.joins[0], joins, wheres, selects, orders);
 
     return data;
   }
 
+  //
+  // Uses join arguments to recursively go thru all the nested arguments and transform them to arrays of arguments for sql builder
+  //
   private static processLevel<E extends AnEntity>(
     data: ArgsTransformations,
     parentJoinArg: JoinArg<E>,
     joins: Joins<InstanceType<E>>,
     wheres?: Wheres<E>,
-    selects?: SelectTargetArgs<InstanceType<E>> | true
+    selects?: SelectTargetArgs<InstanceType<E>> | true,
+    orders?: OrderArgs<InstanceType<E>>
   ): void {
     // Table we are joining to
     const parentTableMeta = METADATA_STORE.getTable(parentJoinArg.klass);
@@ -150,6 +169,32 @@ export abstract class Repository {
     }
 
     //
+    // Collect desired ORDER BYs
+    //
+    for (const fieldName in orders) {
+      const order = orders[fieldName]!;
+
+      if (typeof order !== "string" || !["ASC", "DESC"].includes(order)) {
+        continue;
+      }
+
+      const column = parentTableMeta.columnsMap.get(fieldName);
+
+      if (!column) {
+        throw new Error(
+          `No column found for table ${parentTableMeta.klass.name}, field name ${fieldName}`
+        );
+      }
+
+      data.orderBys.push({
+        alias: parentJoinArg.alias,
+        column,
+        // What is type inferrence? ¯\_(ツ)_/¯
+        order: order as "ASC" | "DESC",
+      });
+    }
+
+    //
     // Collect join and process rest of the tree
     //
     for (const key in joins) {
@@ -202,7 +247,8 @@ export abstract class Repository {
         join as Joins<typeof inverseTable>,
         wheres ? wheres[key] : undefined,
         // If selects is true, pass true otherwise pass selects[key]
-        selects === true ? true : selects ? selects[key] : undefined
+        selects === true ? true : selects ? selects[key] : undefined,
+        orders ? orders[key] : undefined
       );
     }
   }

@@ -1,21 +1,14 @@
 import { TargetNodeFactory } from "../factories";
 import { ColumnMetadata, METADATA_STORE, TableMetadata } from "../metadata";
-import {
-  Entity,
-  SelectQueryArgs,
-  AnEntity,
-  SelectTargetArgs,
-  SelectQueryTarget,
-} from "../types";
+import { Entity, SelectQueryArgs, AnEntity, SelectQueryTarget } from "../types";
 import { TargetNode, Query } from "../types/query";
 import { dQ } from "../utils";
-import { OrderArgs } from "../types/order-args";
 import { JoinArg } from "../types/query/join-arg";
 import { ParamBuilder } from "./param-builder";
 
 export class SelectSqlBuilder<T extends AnEntity> {
   constructor(
-    private args: SelectQueryArgs<T>,
+    private args: SelectQueryArgs,
     private paramBuilder: ParamBuilder
   ) {
     const rootJoinArg = args.joins[0]! as JoinArg<T>;
@@ -32,14 +25,13 @@ export class SelectSqlBuilder<T extends AnEntity> {
   }
 
   private table: TableMetadata;
+  private selectTargets: string[] = [];
   private whereConditions: string[] = [];
   private sqlJoins: string[] = [];
   private orderBys: string[] = [];
 
   private targetNodes: TargetNode<T>;
   private targetNodesByAlias = new Map<string, TargetNode<AnEntity>>();
-
-  private selectTargets: string[] = [];
 
   public buildSelect(): Query<T> {
     this.buildJoins();
@@ -134,32 +126,13 @@ export class SelectSqlBuilder<T extends AnEntity> {
   }
 
   private buildOrder(): void {
-    if (!this.args?.order) {
+    if (!this.args.orderBys.length) {
       return;
     }
 
-    const createOrder = <E extends AnEntity>(
-      order: OrderArgs<E>,
-      joinNode: TargetNode<E>
-    ): void => {
-      for (const key in order) {
-        const val = order[key];
-
-        if (val === "ASC" || val === "DESC") {
-          const column = METADATA_STORE.getColumn(joinNode.klass, key);
-
-          this.orderBys.push(`${dQ(joinNode.alias)}.${dQ(column.name)} ${val}`);
-        } else if ((val as any) instanceof Object) {
-          const nextJoinNode = joinNode.joins[key] as TargetNode<AnEntity>;
-
-          return createOrder(val as OrderArgs<AnEntity>, nextJoinNode);
-        } else {
-          throw new Error(`Bogus order by ${val}`);
-        }
-      }
-    };
-
-    return createOrder(this.args.order, this.targetNodes);
+    for (const { alias, column, order } of this.args.orderBys) {
+      this.orderBys.push(`${dQ(alias)}.${dQ(column.name)} ${order}`);
+    }
   }
 
   //
