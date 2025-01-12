@@ -5,20 +5,31 @@ import { Repository } from "./repository";
 import { Pets } from "./experiments/pets";
 import { And, Eq, Gt, In, Lt, Not, Or } from "./api";
 import { METADATA_STORE } from "./metadata";
+import { QueryBuilder } from "./query-builder";
 
 const main = async () => {
-  const client = new Client("postgres://petr@localhost:5437/tygress");
-  await client.connect();
+  const builder = new QueryBuilder({ pet: Pets })
+    .add({
+      asdf: Users,
+    })
+    .add({ pervitin: Pets });
 
-  const users = await Repository.select(client, Users, {
-    where: { pets: { name: Not(Lt("a")) } },
-    joins: {
-      pets: true,
-    },
-    select: { pets: true },
-  });
+  const a = builder.join("asdf", "pets", { piko: Pets });
 
-  console.log(users[0]);
+  a.has("piko");
+
+  // const client = new Client("postgres://petr@localhost:5437/tygress");
+  // await client.connect();
+
+  // const users = await Repository.select(client, Users, {
+  //   where: { pets: { name: Not(Lt("a")) } },
+  //   joins: {
+  //     pets: true,
+  //   },
+  //   select: { pets: true },
+  // });
+
+  // console.log(users[0]);
 };
 
 main();

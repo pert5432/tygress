@@ -1,8 +1,8 @@
-import { Entity } from "..";
+import { AnEntity, Entity } from "..";
 import { Relation } from "../../enums";
 import { ColumnMetadata, METADATA_STORE } from "../../metadata";
 
-export class JoinNode<T extends Entity<unknown>> {
+export class JoinNode<T extends AnEntity> {
   constructor(klass: T, alias: string) {
     this.klass = klass;
     this.alias = alias;
@@ -20,9 +20,6 @@ export class JoinNode<T extends Entity<unknown>> {
 
   selectedFields: Map<string, { fullName: string; column: ColumnMetadata }> =
     new Map();
-
-  // Path of keys from root node
-  path: string[] = [];
 
   //
   // Data for query runner

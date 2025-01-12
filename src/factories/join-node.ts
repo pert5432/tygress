@@ -20,7 +20,6 @@ export abstract class JoinNodeFactory {
     e.relationToParent = this.getRelationToParent(relation);
 
     e.idKeys = [...previousNode.idKeys, `${alias}.${primaryKey.fieldName}`];
-    e.path = [...previousNode.path, fieldName];
 
     e.selectField(METADATA_STORE.getColumn(klass, primaryKey.fieldName));
 
