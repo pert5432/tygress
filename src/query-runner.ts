@@ -1,12 +1,11 @@
 import { Client } from "pg";
-import { Entity } from "./types";
-import { JoinNode, Query } from "./types/query";
-import { Relation } from "./enums";
+import { AnEntity, Entity } from "./types";
+import { TargetNode, Query } from "./types/query";
 
 export class QueryRunner<T extends Entity<unknown>> {
   private sql: string;
   private params: any[];
-  private joinNodes: JoinNode<T>;
+  private joinNodes: TargetNode<T>;
 
   constructor(private client: Client, query: Query<T>) {
     this.sql = query.sql;
@@ -17,10 +16,10 @@ export class QueryRunner<T extends Entity<unknown>> {
   public async run(): Promise<InstanceType<T>[]> {
     const { rows } = await this.client.query(this.sql, this.params);
 
-    let paths: JoinNode<Entity<unknown>>[][] = [];
+    let paths: TargetNode<Entity<unknown>>[][] = [];
 
-    const buildPath = (parent: JoinNode<Entity<unknown>>[]): void => {
-      let node: JoinNode<Entity<unknown>> = parent[parent.length - 1];
+    const buildPath = (parent: TargetNode<Entity<unknown>>[]): void => {
+      let node: TargetNode<Entity<unknown>> = parent[parent.length - 1];
 
       const keys = Object.keys(node.joins);
 
@@ -116,15 +115,19 @@ export class QueryRunner<T extends Entity<unknown>> {
   }
 
   // Util to propagate entity instances into relation fields on its parent
-  private propagateEntitiesToParent = (
-    parentEntityMap: Map<string, InstanceType<Entity<unknown>>>,
-    node: JoinNode<Entity<unknown>>
+  private propagateEntitiesToParent = <P extends AnEntity, C extends AnEntity>(
+    parentEntityMap: Map<string, InstanceType<P>>,
+    node: TargetNode<C>
   ) => {
     for (const [key, entities] of node.entitiesByParentsIdPath.entries()) {
       const parentEntity: any = parentEntityMap.get(key)!;
 
+      // Push values to parent as an array if parent field is array
       parentEntity[node.parentField!] =
-        node.relationToParent === Relation.MANY_TO_ONE ? entities : entities[0];
+        Reflect.getMetadata("design:type", parentEntity, node.parentField!) ===
+        Array
+          ? entities
+          : entities[0];
     }
   };
 }

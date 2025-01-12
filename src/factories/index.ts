@@ -1,8 +1,9 @@
 export { TableMetadataFactory } from "./table-metadata";
 export { ColumnMetadataFactory } from "./column-metadata";
 export { RelationMetadataFactory } from "./relation-metadata";
-export { JoinNodeFactory } from "./join-node";
+export { TargetNodeFactory } from "./target-node";
 export { ComparisonFactory } from "./comparison";
 export { ParametrizedConditionFactory } from "./parametrized-condition";
 export { ConditionWrapperFactory } from "./parametrized-condition-wrapper";
 export { UniqueConstraintMetadataFactory } from "./unique-constraint-metadata";
+export { JoinArgFactory } from "./join-arg";

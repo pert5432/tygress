@@ -1,36 +1,37 @@
 import { Relation } from "../enums";
 import { METADATA_STORE } from "../metadata";
-import { Entity } from "../types";
-import { JoinNode } from "../types/query";
-import { entityNameToAlias } from "../utils";
+import { AnEntity, Entity } from "../types";
+import { TargetNode } from "../types/query";
 
-export abstract class JoinNodeFactory {
+export abstract class TargetNodeFactory {
   public static create<T extends Entity<unknown>>(
-    previousNode: JoinNode<Entity<unknown>>,
+    alias: string,
+    parentNode: TargetNode<AnEntity>,
     klass: T,
-    fieldName: string,
-    relation: Relation
-  ): JoinNode<T> {
-    const alias = `${previousNode.alias}_${entityNameToAlias(klass.name)}`;
+    fieldName: string
+  ): TargetNode<T> {
     const primaryKey = METADATA_STORE.getTablePrimaryKey(klass);
 
-    const e = new JoinNode(klass, alias);
+    const e = new TargetNode(klass, alias);
 
     e.parentField = fieldName;
-    e.relationToParent = this.getRelationToParent(relation);
+    e.parentFieldIsArray =
+      Reflect.getMetadata("design:type", parentNode.klass, fieldName) === Array;
 
-    e.idKeys = [...previousNode.idKeys, `${alias}.${primaryKey.fieldName}`];
+    e.idKeys = [...parentNode.idKeys, `${alias}.${primaryKey.fieldName}`];
 
     e.selectField(METADATA_STORE.getColumn(klass, primaryKey.fieldName));
 
     return e;
   }
 
-  public static createRoot<T extends Entity<unknown>>(klass: T): JoinNode<T> {
-    const alias = entityNameToAlias(klass.name);
+  public static createRoot<T extends AnEntity>(
+    klass: T,
+    alias: string
+  ): TargetNode<T> {
     const primaryKey = METADATA_STORE.getTablePrimaryKey(klass);
 
-    const e = new JoinNode(klass, alias);
+    const e = new TargetNode(klass, alias);
 
     e.idKeys = [`${alias}.${primaryKey.fieldName}`];
 

@@ -1,4 +1,4 @@
-import { ComparisonFactory, JoinNodeFactory } from "../factories";
+import { ComparisonFactory, TargetNodeFactory } from "../factories";
 import { ColumnMetadata, METADATA_STORE, TableMetadata } from "../metadata";
 import {
   NotComparisonWrapper,
@@ -7,28 +7,36 @@ import {
 } from "./comparison";
 import {
   Entity,
-  Joins,
-  SelectArgs,
+  SelectQueryArgs,
   ParametrizedCondition,
   Wheres,
   Parametrizable,
   AnEntity,
   SelectTargetArgs,
 } from "../types";
-import { JoinNode, Query } from "../types/query";
+import { TargetNode, Query } from "../types/query";
 import {
   NotConditionWrapper,
   ParameterArgs,
   ParametrizedConditionWrapper,
 } from "../types/where-args";
 import { dQ } from "../utils";
-import { Order, OrderArgs } from "../types/order-args";
+import { OrderArgs } from "../types/order-args";
+import { JoinArg } from "../types/query/join-arg";
 
-export class SelectSqlBuilder<T extends Entity<unknown>> {
-  constructor(private entity: T, private args: SelectArgs<InstanceType<T>>) {
-    this.table = METADATA_STORE.getTable(this.entity);
+export class SelectSqlBuilder<T extends AnEntity> {
+  constructor(private args: SelectQueryArgs<T>) {
+    const rootJoinArg = args.joins[0]! as JoinArg<T>;
 
-    this.joinNodes = JoinNodeFactory.createRoot(entity);
+    this.table = METADATA_STORE.getTable(rootJoinArg.klass);
+
+    const rootTargetNode = TargetNodeFactory.createRoot<T>(
+      rootJoinArg.klass,
+      rootJoinArg.alias
+    );
+
+    this.targetNodes = rootTargetNode;
+    this.targetNodesByAlias.set(rootJoinArg.alias, rootTargetNode);
   }
 
   private table: TableMetadata;
@@ -36,7 +44,8 @@ export class SelectSqlBuilder<T extends Entity<unknown>> {
   private sqlJoins: string[] = [];
   private orderBys: string[] = [];
 
-  private joinNodes: JoinNode<T>;
+  private targetNodes: TargetNode<T>;
+  private targetNodesByAlias = new Map<string, TargetNode<AnEntity>>();
 
   private params: any[] = [];
 
@@ -47,17 +56,19 @@ export class SelectSqlBuilder<T extends Entity<unknown>> {
     this.buildWhereConditions();
     this.buildOrder();
 
+    // Set which fields should be selected
     if (this.args.select) {
-      this.selectFieldsFromSelectArg(this.args.select, this.joinNodes);
+      this.selectFieldsFromSelectArg(this.args.select, this.targetNodes);
     } else {
-      this.selectFieldsFromJoinNode(this.joinNodes);
+      this.selectFieldsFromJoinNode(this.targetNodes);
     }
 
-    this.selectTargetsFromJoinNodes(this.joinNodes);
+    // Turn selected fields into SQL statements
+    this.selectTargetsFromJoinNodes(this.targetNodes);
 
     let sql = `SELECT ${this.selectTargets.join(", ")} FROM ${dQ(
       this.table.tablename
-    )} ${dQ(this.joinNodes.alias)}`;
+    )} ${dQ(this.targetNodes.alias)}`;
 
     if (this.sqlJoins.length) {
       sql += ` ${this.sqlJoins.join(" ")}`;
@@ -87,7 +98,7 @@ export class SelectSqlBuilder<T extends Entity<unknown>> {
       sql += ` OFFSET ${this.args.offset}`;
     }
 
-    return { sql, params: this.params, joinNodes: this.joinNodes };
+    return { sql, params: this.params, joinNodes: this.targetNodes };
   }
 
   private buildWhereConditions(): void {
@@ -98,7 +109,7 @@ export class SelectSqlBuilder<T extends Entity<unknown>> {
     const buildWhere = <E extends Entity<unknown>>(
       table: TableMetadata,
       where: Wheres<E>,
-      joinNode: JoinNode<E>
+      joinNode: TargetNode<E>
     ): void => {
       for (const fieldName in where) {
         let column = table.columnsMap.get(fieldName);
@@ -151,7 +162,7 @@ export class SelectSqlBuilder<T extends Entity<unknown>> {
               ),
             });
           } else if (
-            typeof condition === "number" ||
+            condition === "number" ||
             typeof condition === "string" ||
             typeof condition === "boolean"
           ) {
@@ -196,7 +207,7 @@ export class SelectSqlBuilder<T extends Entity<unknown>> {
       }
     };
 
-    buildWhere(this.table, this.args.where, this.joinNodes);
+    buildWhere(this.table, this.args.where, this.targetNodes);
   }
 
   private buildJoins(): void {
@@ -204,65 +215,27 @@ export class SelectSqlBuilder<T extends Entity<unknown>> {
       return;
     }
 
-    const joinTable = <E extends Entity<unknown>>(
-      joins: Joins<E>,
-      joinNode: JoinNode<E>
-    ): void => {
-      const currentTable = METADATA_STORE.getTable(joinNode.klass);
+    // Skip first node since its the root
+    for (const join of this.args.joins.slice(1)) {
+      const parentTargetNode = this.targetNodesByAlias.get(join.parentAlias!)!;
+      const tableMeta = METADATA_STORE.getTable(join.klass);
 
-      for (const key in joins) {
-        const join = joins[key];
+      const nextTargetNode = TargetNodeFactory.create(
+        join.alias,
+        parentTargetNode,
+        join.klass,
+        join.parentField!
+      );
 
-        // Get meta needed for join
-        const relation = currentTable.relations.get(key);
-        if (!relation) {
-          throw new Error(
-            `No relation found on table ${currentTable}, field ${key}`
-          );
-        }
-        const inverseTable = relation.getOtherTable(currentTable.klass);
-        const inverseMeta = METADATA_STORE.getTable(inverseTable);
+      parentTargetNode.joins[join.parentField!] = nextTargetNode;
+      this.targetNodesByAlias.set(join.alias, nextTargetNode);
 
-        const nextJoinNode = JoinNodeFactory.create(
-          joinNode,
-          inverseTable,
-          key,
-          relation.type
-        );
-
-        joinNode.joins[key] = nextJoinNode;
-
-        // Generate join
-        if (join === true || join instanceof Object) {
-          // Figure out which join node is foreign/primary and pick aliases for the join based on that
-          const [primaryAlias, foreignAlias] =
-            relation.primary === joinNode.klass
-              ? [joinNode.alias, nextJoinNode.alias]
-              : [nextJoinNode.alias, joinNode.alias];
-
-          const comparison = ComparisonFactory.createColCol({
-            leftAlias: foreignAlias,
-            leftColumn: relation.foreignKey,
-            comparator: "eq",
-            rightAlias: primaryAlias,
-            rightColumn: relation.primaryKey,
-          });
-
-          this.sqlJoins.push(
-            `INNER JOIN ${dQ(inverseMeta.fullName)} ${dQ(
-              nextJoinNode.alias
-            )} ON ${comparison.sql()}`
-          );
-        }
-
-        // Keep processing deeper joins if argument is an object
-        if (join instanceof Object) {
-          joinTable(join as Joins<typeof inverseTable>, nextJoinNode);
-        }
-      }
-    };
-
-    joinTable(this.args.joins, this.joinNodes);
+      this.sqlJoins.push(
+        `INNER JOIN ${dQ(tableMeta.fullName)} ${dQ(
+          join.alias
+        )} ON ${join.comparison!.sql()}`
+      );
+    }
   }
 
   private buildOrder(): void {
@@ -271,8 +244,8 @@ export class SelectSqlBuilder<T extends Entity<unknown>> {
     }
 
     const createOrder = <E extends AnEntity>(
-      order: Order<E>,
-      joinNode: JoinNode<E>
+      order: OrderArgs<E>,
+      joinNode: TargetNode<E>
     ): void => {
       for (const key in order) {
         const val = order[key];
@@ -282,7 +255,7 @@ export class SelectSqlBuilder<T extends Entity<unknown>> {
 
           this.orderBys.push(`${dQ(joinNode.alias)}.${dQ(column.name)} ${val}`);
         } else if ((val as any) instanceof Object) {
-          const nextJoinNode = joinNode.joins[key] as JoinNode<AnEntity>;
+          const nextJoinNode = joinNode.joins[key] as TargetNode<AnEntity>;
 
           return createOrder(val as OrderArgs<AnEntity>, nextJoinNode);
         } else {
@@ -291,7 +264,7 @@ export class SelectSqlBuilder<T extends Entity<unknown>> {
       }
     };
 
-    return createOrder(this.args.order, this.joinNodes);
+    return createOrder(this.args.order, this.targetNodes);
   }
 
   //
@@ -304,7 +277,7 @@ export class SelectSqlBuilder<T extends Entity<unknown>> {
   }
 
   private selectFieldsFromJoinNode = <E extends Entity<unknown>>(
-    node: JoinNode<E>
+    node: TargetNode<E>
   ): void => {
     for (const c of METADATA_STORE.getTable(node.klass).columns) {
       if (!c.select) {
@@ -321,7 +294,7 @@ export class SelectSqlBuilder<T extends Entity<unknown>> {
 
   private selectFieldsFromSelectArg<E extends AnEntity>(
     targets: SelectTargetArgs<E>,
-    joinNode: JoinNode<E>
+    joinNode: TargetNode<E>
   ): void {
     for (const key in targets) {
       const target = targets[key];
@@ -343,7 +316,7 @@ export class SelectSqlBuilder<T extends Entity<unknown>> {
           }
         }
       } else if ((target as any) instanceof Object) {
-        const nextJoinNode = joinNode.joins[key] as JoinNode<AnEntity>;
+        const nextJoinNode = joinNode.joins[key] as TargetNode<AnEntity>;
 
         return this.selectFieldsFromSelectArg(
           target as SelectTargetArgs<AnEntity>,
@@ -353,8 +326,10 @@ export class SelectSqlBuilder<T extends Entity<unknown>> {
     }
   }
 
-  private selectTargetsFromJoinNodes(node: JoinNode<AnEntity>): void {
-    node.selectAllFields();
+  private selectTargetsFromJoinNodes(node: TargetNode<AnEntity>): void {
+    for (const target of node.selectedFields.values()) {
+      this.selectTarget(node, target.column);
+    }
 
     for (const key in node.joins) {
       this.selectTargetsFromJoinNodes(node.joins[key]!);
@@ -362,7 +337,7 @@ export class SelectSqlBuilder<T extends Entity<unknown>> {
   }
 
   private selectTarget<E extends AnEntity>(
-    node: JoinNode<E>,
+    node: TargetNode<E>,
     c: ColumnMetadata
   ): void {
     this.selectTargets.push(

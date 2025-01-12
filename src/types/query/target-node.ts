@@ -1,8 +1,7 @@
 import { AnEntity, Entity } from "..";
-import { Relation } from "../../enums";
 import { ColumnMetadata, METADATA_STORE } from "../../metadata";
 
-export class JoinNode<T extends AnEntity> {
+export class TargetNode<T extends AnEntity> {
   constructor(klass: T, alias: string) {
     this.klass = klass;
     this.alias = alias;
@@ -13,17 +12,14 @@ export class JoinNode<T extends AnEntity> {
   // Alias of the joined-in class
   alias: string;
 
-  // Which field on the parent leads to this join
   // Undefined for root node
+  // Which field on the parent leads to this join
   parentField?: string;
-  relationToParent?: Relation;
+  // To know if entities should be inserted into the parent as an array or not
+  parentFieldIsArray?: boolean;
 
   selectedFields: Map<string, { fullName: string; column: ColumnMetadata }> =
     new Map();
-
-  //
-  // Data for query runner
-  //
 
   // Keys of ids of all parent nodes, aliased
   idKeys: string[] = [];
@@ -34,7 +30,7 @@ export class JoinNode<T extends AnEntity> {
   entityByIdPath: Map<string, Entity<unknown>> = new Map();
 
   joins: {
-    [K in keyof T]?: JoinNode<Entity<unknown>>;
+    [key: string]: TargetNode<Entity<unknown>>;
   } = {};
 
   public selectField(column: ColumnMetadata): void {
