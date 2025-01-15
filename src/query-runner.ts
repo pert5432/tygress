@@ -11,6 +11,9 @@ export class QueryRunner<T extends Entity<unknown>> {
     this.sql = query.sql;
     this.params = query.params;
     this.joinNodes = query.joinNodes;
+
+    console.log(this.sql);
+    console.log(this.params);
   }
 
   public async run(): Promise<InstanceType<T>[]> {

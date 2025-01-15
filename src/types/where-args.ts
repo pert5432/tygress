@@ -22,18 +22,17 @@ export class NotConditionWrapper<V> {
   condition: ParametrizedConditionWrapper<V>;
 }
 
-export type ParameterArgs<Property> =
+export type ParameterArgs<Property extends Parametrizable> =
   | ParametrizedCondition<Property>
   | ParametrizedConditionWrapper<Property>
-  | NotConditionWrapper<Property>
-  | Property;
+  | NotConditionWrapper<Property>;
 
 export type Where<Property> = Property extends Array<infer I>
   ? Wheres<I>
   : Property extends Entity<unknown>
   ? Wheres<Property>
   : Property extends Parametrizable
-  ? ParameterArgs<Property>
+  ? ParameterArgs<Property> | Property
   : never;
 
 export type Wheres<E extends InstanceType<Entity<unknown>>> = {

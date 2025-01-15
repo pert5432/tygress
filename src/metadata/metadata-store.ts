@@ -63,6 +63,18 @@ class MetadataStore {
     return column;
   }
 
+  public getRelation(entity: AnEntity, fieldName: string): RelationMetadata {
+    const relation = this.getTable(entity).relations.get(fieldName);
+
+    if (!relation) {
+      throw new Error(
+        `No relation found for entity ${entity.name}, fieldName ${fieldName}`
+      );
+    }
+
+    return relation;
+  }
+
   //
   // Modifiers
   //

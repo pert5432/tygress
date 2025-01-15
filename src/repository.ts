@@ -3,7 +3,6 @@ import {
   AnEntity,
   Joins,
   OrderArgs,
-  Parametrizable,
   SelectArgs,
   SelectQueryArgs,
   SelectQueryOrder,
@@ -14,21 +13,10 @@ import {
 import { SelectSqlBuilder } from "./sql-builders/select-sql-builder";
 import { QueryRunner } from "./query-runner";
 import { JoinArg } from "./types/query/join-arg";
-import { ColumnMetadata, METADATA_STORE } from "./metadata";
+import { METADATA_STORE } from "./metadata";
 import { ComparisonFactory, JoinArgFactory } from "./factories";
 import { entityNameToAlias } from "./utils";
-import {
-  ComparisonSqlBuilder,
-  ComparisonWrapper,
-  NotComparisonWrapper,
-  ParamBuilder,
-} from "./sql-builders";
-import {
-  NotConditionWrapper,
-  ParameterArgs,
-  ParametrizedCondition,
-  ParametrizedConditionWrapper,
-} from "./types/where-args";
+import { ComparisonSqlBuilder, ParamBuilder } from "./sql-builders";
 
 type ArgsTransformations = {
   joins: JoinArg<AnEntity>[];
@@ -62,9 +50,6 @@ export abstract class Repository {
       queryArgs,
       paramBuilder
     ).buildSelect();
-
-    console.log(query.sql);
-    console.log(query.params);
 
     return await new QueryRunner(client, query).run();
   }
@@ -132,7 +117,7 @@ export abstract class Repository {
       }
 
       data.wheres.push(
-        this.comparisonFromCondition(
+        ComparisonFactory.createFromCondition(
           parentJoinArg.alias,
           column,
           wheres[fieldName]!
@@ -215,19 +200,12 @@ export abstract class Repository {
         inverseTable.name
       )}`;
 
-      const [primaryAlias, foreignAlias] =
-        relation.primary === parentJoinArg.klass
-          ? [parentJoinArg.alias, nextJoinArgAlias]
-          : [nextJoinArgAlias, parentJoinArg.alias];
-
-      // Column comparison for the join
-      const comparison = ComparisonFactory.createColCol({
-        leftAlias: foreignAlias,
-        leftColumn: relation.foreignKey,
-        comparator: "eq",
-        rightAlias: primaryAlias,
-        rightColumn: relation.primaryKey,
-      });
+      const comparison = ComparisonFactory.createJoin(
+        parentJoinArg.alias,
+        parentTableMeta.klass,
+        nextJoinArgAlias,
+        relation
+      );
 
       const nextJoinArg = JoinArgFactory.create(
         parentJoinArg.alias,
@@ -252,64 +230,4 @@ export abstract class Repository {
       );
     }
   }
-
-  private static comparisonFromCondition = (
-    alias: string,
-    column: ColumnMetadata,
-    condition: ParameterArgs<Parametrizable>
-  ): ComparisonSqlBuilder => {
-    if ((condition as Object) instanceof ParametrizedCondition) {
-      // To get type safety because inference doesn't work here for some reason ¯\_(ツ)_/¯
-      const parametrizedCondition =
-        condition as ParametrizedCondition<Parametrizable>;
-
-      return ComparisonFactory.createColParam({
-        leftAlias: alias,
-        leftColumn: column.name,
-        comparator: parametrizedCondition.comparator,
-        params: parametrizedCondition.parameters,
-      });
-    } else if (
-      condition === "number" ||
-      typeof condition === "string" ||
-      typeof condition === "boolean"
-    ) {
-      return ComparisonFactory.createColParam({
-        leftAlias: alias,
-        leftColumn: column.name,
-        comparator: "eq",
-        params: [condition],
-      });
-    } else if ((condition as Object) instanceof ParametrizedConditionWrapper) {
-      const conditionWrapper =
-        condition as ParametrizedConditionWrapper<Parametrizable>;
-
-      const comparisons = conditionWrapper.conditions.map((c) =>
-        ComparisonFactory.createColParam({
-          leftAlias: alias,
-          leftColumn: column.name,
-          comparator: c.comparator,
-          params: c.parameters,
-        })
-      );
-
-      return new ComparisonWrapper(
-        comparisons,
-        conditionWrapper.logicalOperator
-      );
-    } else if ((condition as Object) instanceof NotConditionWrapper) {
-      const notConditionWrapper =
-        condition as NotConditionWrapper<Parametrizable>;
-
-      return new NotComparisonWrapper(
-        this.comparisonFromCondition(
-          alias,
-          column,
-          notConditionWrapper.condition
-        )
-      );
-    } else {
-      throw new Error(`bogus condition ${condition}`);
-    }
-  };
 }
