@@ -22,7 +22,7 @@ export class QueryRunner<T extends Entity<unknown>> {
     let paths: TargetNode<Entity<unknown>>[][] = [];
 
     const buildPath = (parent: TargetNode<Entity<unknown>>[]): void => {
-      let node: TargetNode<Entity<unknown>> = parent[parent.length - 1];
+      let node: TargetNode<Entity<unknown>> = parent[parent.length - 1]!;
 
       const keys = Object.keys(node.joins);
 
@@ -32,14 +32,14 @@ export class QueryRunner<T extends Entity<unknown>> {
 
       // Build new paths from first n-1 keys
       for (let i = 0; i < keys.length - 1; i += 1) {
-        const newPath = [...parent, node.joins[keys[i]]!];
+        const newPath = [...parent, node.joins[keys[i]!]!];
         paths.push(newPath);
 
         buildPath(newPath);
       }
 
       // Extend this path using the last join in this node
-      parent.push(node.joins[keys[keys.length - 1]]!);
+      parent.push(node.joins[keys[keys.length - 1]!]!);
       return buildPath(parent);
     };
 
@@ -103,14 +103,14 @@ export class QueryRunner<T extends Entity<unknown>> {
       // Propagate entities up to second to last node in path
       // After this all nodes in the path except the root will have their joined entities filled
       for (let i = 0; i < path.length - 2; i += 1) {
-        const node = path[i];
-        const parentNode = path[i + 1];
+        const node = path[i]!;
+        const parentNode = path[i + 1]!;
 
         this.propagateEntitiesToParent(parentNode.entityByIdPath, node);
       }
 
       // Propagate entities to root node
-      const penultimateNode = path[path.length - 2];
+      const penultimateNode = path[path.length - 2]!;
       this.propagateEntitiesToParent(rootEntities, penultimateNode);
     }
 

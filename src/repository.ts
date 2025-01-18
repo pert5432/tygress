@@ -76,7 +76,7 @@ export abstract class Repository {
       JoinArgFactory.createRoot(entity, entityNameToAlias(entity.name))
     );
 
-    this.processLevel(data, data.joins[0], joins, wheres, selects, orders);
+    this.processLevel(data, data.joins[0]!, joins, wheres, selects, orders);
 
     return data;
   }

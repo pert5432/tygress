@@ -23,7 +23,7 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
 
     // Set the first join to be the root entity
     const alias = Object.keys(a)[0]!;
-    this.joins = [{ alias, klass: a[alias] }];
+    this.joins = [{ alias, klass: a[alias]! }];
   }
 
   public log() {
@@ -110,7 +110,9 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
       throw new Error(`Entity with alias ${nextAlias} is already joined in`);
     }
 
-    if (!this.sourcesContext[parentAlias]) {
+    const parentEntity = this.sourcesContext[parentAlias];
+
+    if (!parentEntity) {
       throw new Error(
         `No entity with alias ${parentAlias.toString()} found in query`
       );
@@ -119,13 +121,13 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
     this.sourcesContext = { ...this.sourcesContext, ...target };
 
     const relation = METADATA_STORE.getRelation(
-      this.sourcesContext[parentAlias],
+      parentEntity,
       parentField.toString()
     );
 
     const comparison = ComparisonFactory.createJoin(
       parentAlias.toString(),
-      this.sourcesContext[parentAlias],
+      parentEntity,
       nextAlias,
       relation
     );

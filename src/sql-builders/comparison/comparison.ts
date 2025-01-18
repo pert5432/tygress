@@ -22,8 +22,6 @@ export abstract class Comparison extends ComparisonSqlBuilder {
 
   rightCast?: string;
 
-  public abstract sql(paramBuilder: ParamBuilder): string;
-
   protected formatCol(alias: string, col: string, cast?: string): string {
     return `${dQ(alias)}.${dQ(col)}${cast ? `::${cast}` : ""}`;
   }
@@ -56,8 +54,8 @@ export class ColColComparison extends Comparison {
     this.rightCast = rightCast;
   }
 
-  rightAlias: string;
-  rightColumn: string;
+  override rightAlias: string;
+  override rightColumn: string;
 
   public sql(): string {
     const left = this.formatCol(this.leftAlias, this.leftColumn, this.leftCast);
@@ -92,7 +90,7 @@ export class ColParamComparison extends Comparison {
     this.rightCast = rightCast;
   }
 
-  params: any[];
+  override params: any[];
 
   public sql(paramBuilder: ParamBuilder): string {
     const left = this.formatCol(this.leftAlias, this.leftColumn, this.leftCast);
