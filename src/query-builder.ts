@@ -22,6 +22,10 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
   constructor(a: T) {
     this.sourcesContext = a;
 
+    if (Object.keys(a).length !== 1) {
+      throw new Error("Source entity object has to have exactly one key");
+    }
+
     // Set the first join to be the root entity
     const alias = Object.keys(a)[0]!;
     this.joins = [{ alias, klass: a[alias]! }];
