@@ -9,6 +9,7 @@ import { AnEntity, Entity, Parametrizable, WhereComparator } from "./types";
 import { Query } from "./types/query";
 import { JoinArg } from "./types/query/join-arg";
 import { ParameterArgs } from "./types/where-args";
+import { dQ } from "./utils";
 
 type Extract<T> = T extends Array<infer I> | Promise<infer I> ? I : T;
 
@@ -29,6 +30,123 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
   public log() {
     console.log(this.joins);
     console.log(this.wheres);
+  }
+
+  public freestyleWhere(inputSql: string): QueryBuilder<E, T> {
+    const replacements: {
+      originalStart: number;
+      originalEnd: number;
+      replacement: string;
+    }[] = [];
+
+    let isWithinBrackets = false;
+    for (const { word, index } of this.wordsWithIndex(inputSql)) {
+      let isAnyPartOfWordWithinBrackets = isWithinBrackets;
+
+      // Read thru word, figuring out which parts are and are not within brackets
+      for (let i = 0; i < word.length; i += 1) {
+        const currentChar = word[i];
+        if (currentChar === `'`) {
+          if (!isWithinBrackets) {
+            isWithinBrackets = true;
+            isAnyPartOfWordWithinBrackets = true;
+
+            continue;
+          }
+
+          // Next char is also '
+          if (word[i + 1] === `'`) {
+            // Skip next char since its an escaped '
+            i += 1;
+
+            continue;
+          }
+
+          isWithinBrackets = false;
+        }
+      }
+
+      // If any part of this word is within brackets then it can't be a valid alias
+      if (isAnyPartOfWordWithinBrackets) {
+        continue;
+      }
+
+      const wordParts = word.split(".");
+
+      // Word doesn't have exactly one dot and 2 valid parts, skipping
+      if (
+        wordParts.length !== 2 ||
+        !wordParts[0]?.length ||
+        !wordParts[1]?.length
+      )
+        continue;
+
+      const [alias, fieldName] = wordParts as [string, string];
+
+      const entity = this.sourcesContext[alias];
+
+      // No entity found with this alias, skipping
+      if (!entity) continue;
+
+      const column = METADATA_STORE.getColumn(entity, fieldName);
+
+      const target = `${dQ(alias)}.${dQ(column.name)}`;
+
+      replacements.push({
+        originalStart: index,
+        originalEnd: index + word.length,
+        replacement: target,
+      });
+    }
+
+    const chunks: string[] = [];
+    let lastEnd = 0;
+    for (const { originalStart, originalEnd, replacement } of replacements) {
+      chunks.push(inputSql.slice(lastEnd, originalStart));
+      chunks.push(replacement);
+
+      lastEnd = originalEnd;
+    }
+
+    if (replacements.length) {
+      chunks.push(
+        inputSql.slice(replacements[replacements.length - 1]!.originalEnd)
+      );
+    }
+
+    const targetSql = chunks.join("");
+
+    this.wheres.push(ComparisonFactory.createSql(targetSql));
+
+    return this;
+  }
+
+  private *wordsWithIndex(
+    sql: string
+  ): Generator<{ index: number; word: string }> {
+    let currentWord = "";
+    let currentWordStart = 0;
+
+    for (let i = 0; i < sql.length; i += 1) {
+      const currentChar = sql[i];
+
+      if (currentChar === " ") {
+        if (currentWord.length === 0) continue;
+
+        yield { word: currentWord, index: currentWordStart };
+
+        currentWord = "";
+        continue;
+      }
+
+      if (currentWord === "") {
+        currentWordStart = i;
+      }
+
+      currentWord += currentChar;
+    }
+
+    return;
   }
 
   public where<K extends keyof T, F extends keyof InstanceType<T[K]>>(

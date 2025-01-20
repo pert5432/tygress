@@ -4,6 +4,7 @@ import {
   ComparisonWrapper,
   NotComparisonWrapper,
 } from "../sql-builders";
+import { SqlComparison } from "../sql-builders/comparison";
 import {
   ColColComparison,
   ColParamComparison,
@@ -29,6 +30,14 @@ export abstract class ComparisonFactory {
     args: ColParamComparisonArgs
   ): ColParamComparison {
     return new ColParamComparison(args);
+  }
+
+  public static createSql(sql: string): SqlComparison {
+    const e = new SqlComparison();
+
+    e._sql = sql;
+
+    return e;
   }
 
   public static createJoin(
