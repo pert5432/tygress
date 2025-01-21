@@ -89,6 +89,8 @@ export abstract class FieldNameToColumnReplacer {
       chunks.push(
         inputSql.slice(replacements[replacements.length - 1]!.originalEnd)
       );
+    } else {
+      chunks.push(inputSql);
     }
 
     return chunks.join("");

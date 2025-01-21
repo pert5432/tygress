@@ -36,7 +36,7 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
     console.log(this.wheres);
   }
 
-  public freestyleWhere(inputSql: string): QueryBuilder<E, T> {
+  public sqlWhere(inputSql: string): QueryBuilder<E, T> {
     const targetSql = FieldNameToColumnReplacer.replaceCondition(
       inputSql,
       this.sourcesContext
@@ -110,22 +110,87 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
     return this;
   }
 
+  public join<IE extends AnEntity, I extends { [key: string]: IE }>(
+    target: I,
+    sql: string
+  ): QueryBuilder<E, T & I>;
+
   public join<
     K extends keyof T,
     F extends keyof InstanceType<T[K]>,
     IE extends Entity<Extract<InstanceType<T[K]>[F]>>,
     I extends { [key: string]: IE }
-  >(parentAlias: K, parentField: F, target: I): QueryBuilder<E, T & I> {
-    if (Object.keys(target).length !== 1) {
+  >(parentAlias: K, parentField: F, target: I): QueryBuilder<E, T & I>;
+
+  public join<
+    K extends keyof T,
+    F extends keyof InstanceType<T[K]>,
+    IE extends Entity<Extract<InstanceType<T[K]>[F]>>,
+    I extends { [key: string]: IE }
+  >(
+    parentAliasOrTarget: K | I,
+    parentFieldOrSql: F | string,
+    optionalTarget?: I
+  ): QueryBuilder<E, T & I> {
+    let target: I;
+    // First arg is target
+    if (parentAliasOrTarget instanceof Object) {
+      target = parentAliasOrTarget;
+    } else {
+      target = optionalTarget!;
+    }
+
+    if (Object.keys(target!).length !== 1) {
       throw new Error(`You need to join in exactly one entity at a time`);
     }
 
-    const nextAlias = Object.keys(target)[0]!;
+    const nextAlias = Object.keys(target!)[0]!;
 
     if (this.sourcesContext[nextAlias]) {
       throw new Error(`Entity with alias ${nextAlias} is already joined in`);
     }
 
+    const nextEntity = target[nextAlias]!;
+
+    // Join either by sql or by relation based on args
+    if (parentAliasOrTarget instanceof Object) {
+      this.joinViaSql(nextAlias, nextEntity, parentFieldOrSql as string);
+    } else {
+      this.joinViaRelation(
+        parentAliasOrTarget,
+        parentFieldOrSql as F,
+        nextAlias,
+        nextEntity
+      );
+    }
+
+    return this as any;
+  }
+
+  private joinViaSql(nextAlias: string, nextEntity: AnEntity, sql: string) {
+    // Add the join we are currently creating to the contexts so it can be referenced in the sql
+    const targetSql = FieldNameToColumnReplacer.replaceCondition(sql, {
+      ...this.sourcesContext,
+      [nextAlias]: nextEntity,
+    });
+
+    console.log(sql, targetSql);
+
+    const comparison = ComparisonFactory.createSql(targetSql);
+
+    this.joins.push({
+      alias: nextAlias,
+      klass: nextEntity,
+      comparison,
+      select: false,
+    });
+  }
+
+  private joinViaRelation<
+    K extends keyof T,
+    F extends keyof InstanceType<T[K]>,
+    IE extends Entity<Extract<InstanceType<T[K]>[F]>>
+  >(parentAlias: K, parentField: F, nextAlias: string, nextEntity: IE) {
     const parentEntity = this.sourcesContext[parentAlias];
 
     if (!parentEntity) {
@@ -134,7 +199,10 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
       );
     }
 
-    this.sourcesContext = { ...this.sourcesContext, ...target };
+    this.sourcesContext = {
+      ...this.sourcesContext,
+      ...{ [nextAlias]: nextEntity },
+    };
 
     const relation = METADATA_STORE.getRelation(
       parentEntity,
@@ -150,13 +218,11 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
 
     this.joins.push({
       alias: nextAlias,
-      klass: target[nextAlias]!,
+      klass: nextEntity,
       parentAlias: parentAlias.toString(),
       parentField: parentField.toString(),
       comparison: comparison,
     });
-
-    return this as any;
   }
 
   public getQuery(): Query<E> {

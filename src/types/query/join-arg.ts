@@ -10,4 +10,6 @@ export class JoinArg<T extends AnEntity> {
 
   parentAlias?: string;
   parentField?: string;
+
+  select?: boolean;
 }

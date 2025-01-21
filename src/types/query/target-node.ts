@@ -12,6 +12,8 @@ export class TargetNode<T extends AnEntity> {
   // Alias of the joined-in class
   alias: string;
 
+  select: boolean;
+
   // Undefined for root node
   // Which field on the parent leads to this join
   parentField?: string;

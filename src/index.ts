@@ -15,7 +15,7 @@ const main = async () => {
     .join("pet", "user", {
       piko: Users,
     })
-    .freestyleWhere(`piko.fullName ILIKE '%karel%'`);
+    .join({ asdf: Pets }, `asdf.name ILIKE 'p%'`);
 
   const runner = new QueryRunner(client, builder.getQuery());
 

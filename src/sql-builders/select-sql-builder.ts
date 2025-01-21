@@ -104,17 +104,30 @@ export class SelectSqlBuilder<T extends AnEntity> {
 
     // Skip first node since its the root
     for (const join of this.args.joins.slice(1)) {
-      const parentTargetNode = this.targetNodesByAlias.get(join.parentAlias!)!;
       const tableMeta = METADATA_STORE.getTable(join.klass);
 
-      const nextTargetNode = TargetNodeFactory.create(
-        join.alias,
-        parentTargetNode,
-        join.klass,
-        join.parentField!
-      );
+      let nextTargetNode: TargetNode<AnEntity>;
+      if (join.parentAlias) {
+        const parentTargetNode = this.targetNodesByAlias.get(
+          join.parentAlias!
+        )!;
 
-      parentTargetNode.joins[join.parentField!] = nextTargetNode;
+        nextTargetNode = TargetNodeFactory.create(
+          join.alias,
+          parentTargetNode,
+          join.klass,
+          join.parentField!
+        );
+
+        parentTargetNode.joins[join.parentField!] = nextTargetNode;
+      } else {
+        nextTargetNode = TargetNodeFactory.createRoot(
+          join.klass,
+          join.alias,
+          false
+        );
+      }
+
       this.targetNodesByAlias.set(join.alias, nextTargetNode);
 
       this.sqlJoins.push(

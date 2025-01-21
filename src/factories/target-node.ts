@@ -8,7 +8,8 @@ export abstract class TargetNodeFactory {
     alias: string,
     parentNode: TargetNode<AnEntity>,
     klass: T,
-    fieldName: string
+    fieldName: string,
+    select?: boolean
   ): TargetNode<T> {
     const primaryKey = METADATA_STORE.getTablePrimaryKey(klass);
 
@@ -18,14 +19,18 @@ export abstract class TargetNodeFactory {
 
     e.idKeys = [...parentNode.idKeys, `${alias}.${primaryKey.fieldName}`];
 
+    // Always select primary key
     e.selectField(METADATA_STORE.getColumn(klass, primaryKey.fieldName));
+
+    e.select = select === false ? false : true;
 
     return e;
   }
 
   public static createRoot<T extends AnEntity>(
     klass: T,
-    alias: string
+    alias: string,
+    select?: boolean
   ): TargetNode<T> {
     const primaryKey = METADATA_STORE.getTablePrimaryKey(klass);
 
@@ -33,7 +38,10 @@ export abstract class TargetNodeFactory {
 
     e.idKeys = [`${alias}.${primaryKey.fieldName}`];
 
+    // Always select primary key
     e.selectField(METADATA_STORE.getColumn(klass, primaryKey.fieldName));
+
+    e.select = select === false ? false : true;
 
     return e;
   }
