@@ -1,3 +1,4 @@
+import { JoinStrategy, JoinType, Relation } from "./enums";
 import { ComparisonFactory } from "./factories";
 import { METADATA_STORE } from "./metadata";
 import {
@@ -12,6 +13,21 @@ import { JoinArg } from "./types/query/join-arg";
 import { ParameterArgs } from "./types/where-args";
 
 type Extract<T> = T extends Array<infer I> | Promise<infer I> ? I : T;
+
+type JoinImplArgs<I> = {
+  strategy: JoinStrategy;
+
+  target: I;
+
+  select: boolean;
+
+  type: JoinType;
+
+  parentAlias?: string;
+  parentField?: string;
+
+  sql?: string;
+};
 
 export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
   private sourcesContext: T;
@@ -110,6 +126,67 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
     return this;
   }
 
+  public joinAndSelect<
+    K extends keyof T,
+    F extends keyof InstanceType<T[K]>,
+    IE extends AnEntity,
+    I extends { [key: string]: IE }
+  >(
+    target: I,
+    parentAlias: K,
+    parentField: F,
+    sql: string
+  ): QueryBuilder<E, T & I>;
+
+  public joinAndSelect<
+    K extends keyof T,
+    F extends keyof InstanceType<T[K]>,
+    IE extends Entity<Extract<InstanceType<T[K]>[F]>>,
+    I extends { [key: string]: IE }
+  >(target: I, parentAlias: K, parentField: F): QueryBuilder<E, T & I>;
+
+  public joinAndSelect<
+    K extends keyof T,
+    F extends keyof InstanceType<T[K]>,
+    IE extends AnEntity,
+    I extends { [key: string]: IE }
+  >(
+    target: I,
+    parentAlias: K,
+    parentField: F,
+    sql?: string
+  ): QueryBuilder<E, T & I> {
+    // Join either by sql or by relation based on args
+    if (sql?.length) {
+      this.joinImpl({
+        strategy: JoinStrategy.SQL,
+        type: JoinType.INNER,
+
+        target,
+
+        parentAlias: parentAlias as string,
+        parentField: parentField as string,
+
+        sql,
+
+        select: true,
+      });
+    } else {
+      this.joinImpl({
+        strategy: JoinStrategy.RELATION,
+        type: JoinType.INNER,
+
+        target,
+        parentAlias: parentAlias as string,
+        parentField: parentField as string,
+
+        select: true,
+      });
+    }
+
+    return this as any;
+  }
+
   public join<IE extends AnEntity, I extends { [key: string]: IE }>(
     target: I,
     sql: string
@@ -132,6 +209,42 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
     parentAliasOrSql: K | string,
     optionalParentField?: F
   ): QueryBuilder<E, T & I> {
+    // Join either by sql or by relation based on args
+    if (optionalParentField) {
+      this.joinImpl({
+        strategy: JoinStrategy.RELATION,
+        type: JoinType.INNER,
+
+        target,
+        parentAlias: parentAliasOrSql as string,
+        parentField: optionalParentField as string,
+        select: false,
+      });
+    } else {
+      this.joinImpl({
+        strategy: JoinStrategy.SQL,
+        type: JoinType.INNER,
+
+        target,
+
+        sql: parentAliasOrSql as string,
+
+        select: false,
+      });
+    }
+
+    return this as any;
+  }
+
+  private joinImpl<I extends { [key: string]: AnEntity }>({
+    type,
+    select,
+    strategy,
+    target,
+    parentAlias,
+    parentField,
+    sql,
+  }: JoinImplArgs<I>): this {
     if (Object.keys(target!).length !== 1) {
       throw new Error(`You need to join in exactly one entity at a time`);
     }
@@ -144,29 +257,50 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
 
     const nextEntity = target[nextAlias]!;
 
-    // Join either by sql or by relation based on args
-    if (optionalParentField) {
-      this.joinViaRelation(
-        parentAliasOrSql as K,
-        optionalParentField as F,
-        nextAlias,
-        nextEntity
-      );
-    } else {
-      this.joinViaSql(nextAlias, nextEntity, parentAliasOrSql as string);
+    switch (strategy) {
+      case JoinStrategy.RELATION:
+        this.joinViaRelation(
+          parentAlias!,
+          parentField!,
+          nextAlias,
+          nextEntity,
+          select
+        );
+        break;
+
+      case JoinStrategy.SQL:
+        this.joinViaSql(
+          nextAlias,
+          nextEntity,
+          sql!,
+          select,
+          parentAlias,
+          parentField
+        );
     }
 
-    return this as any;
+    return this;
   }
 
-  private joinViaSql(nextAlias: string, nextEntity: AnEntity, sql: string) {
+  private joinViaSql(
+    nextAlias: string,
+    nextEntity: AnEntity,
+    sql: string,
+    select: boolean,
+    parentAlias?: string,
+    parentField?: string
+  ) {
+    if (select && !(parentAlias?.length && parentField?.length)) {
+      throw new Error(
+        `SQL join needs parent alias and parent field with select set to true`
+      );
+    }
+
     // Add the join we are currently creating to the contexts so it can be referenced in the sql
     const targetSql = FieldNameToColumnReplacer.replaceCondition(sql, {
       ...this.sourcesContext,
       [nextAlias]: nextEntity,
     });
-
-    console.log(sql, targetSql);
 
     const comparison = ComparisonFactory.createSql(targetSql);
 
@@ -174,15 +308,20 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
       alias: nextAlias,
       klass: nextEntity,
       comparison,
-      select: false,
+      select,
+
+      parentAlias,
+      parentField,
     });
   }
 
-  private joinViaRelation<
-    K extends keyof T,
-    F extends keyof InstanceType<T[K]>,
-    IE extends Entity<Extract<InstanceType<T[K]>[F]>>
-  >(parentAlias: K, parentField: F, nextAlias: string, nextEntity: IE) {
+  private joinViaRelation(
+    parentAlias: string,
+    parentField: string,
+    nextAlias: string,
+    nextEntity: AnEntity,
+    select: boolean
+  ) {
     const parentEntity = this.sourcesContext[parentAlias];
 
     if (!parentEntity) {
@@ -214,6 +353,7 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
       parentAlias: parentAlias.toString(),
       parentField: parentField.toString(),
       comparison: comparison,
+      select,
     });
   }
 

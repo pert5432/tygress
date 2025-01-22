@@ -19,7 +19,7 @@ const main = async () => {
       "pet",
       "user"
     )
-    .join({ asdf: Pets }, `asdf.name ILIKE 'p%'`);
+    .join({ asdf: Pets }, `asdf.name ILIKE '%o%'`);
 
   const runner = new QueryRunner(client, builder.getQuery());
 
