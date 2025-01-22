@@ -12,9 +12,13 @@ const main = async () => {
   await client.connect();
 
   const builder = new QueryBuilder({ pet: Pets })
-    .join("pet", "user", {
-      piko: Users,
-    })
+    .join(
+      {
+        piko: Users,
+      },
+      "pet",
+      "user"
+    )
     .join({ asdf: Pets }, `asdf.name ILIKE 'p%'`);
 
   const runner = new QueryRunner(client, builder.getQuery());

@@ -120,7 +120,7 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
     F extends keyof InstanceType<T[K]>,
     IE extends Entity<Extract<InstanceType<T[K]>[F]>>,
     I extends { [key: string]: IE }
-  >(parentAlias: K, parentField: F, target: I): QueryBuilder<E, T & I>;
+  >(target: I, parentAlias: K, parentField: F): QueryBuilder<E, T & I>;
 
   public join<
     K extends keyof T,
@@ -128,18 +128,10 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
     IE extends Entity<Extract<InstanceType<T[K]>[F]>>,
     I extends { [key: string]: IE }
   >(
-    parentAliasOrTarget: K | I,
-    parentFieldOrSql: F | string,
-    optionalTarget?: I
+    target: I,
+    parentAliasOrSql: K | string,
+    optionalParentField?: F
   ): QueryBuilder<E, T & I> {
-    let target: I;
-    // First arg is target
-    if (parentAliasOrTarget instanceof Object) {
-      target = parentAliasOrTarget;
-    } else {
-      target = optionalTarget!;
-    }
-
     if (Object.keys(target!).length !== 1) {
       throw new Error(`You need to join in exactly one entity at a time`);
     }
@@ -153,15 +145,15 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
     const nextEntity = target[nextAlias]!;
 
     // Join either by sql or by relation based on args
-    if (parentAliasOrTarget instanceof Object) {
-      this.joinViaSql(nextAlias, nextEntity, parentFieldOrSql as string);
-    } else {
+    if (optionalParentField) {
       this.joinViaRelation(
-        parentAliasOrTarget,
-        parentFieldOrSql as F,
+        parentAliasOrSql as K,
+        optionalParentField as F,
         nextAlias,
         nextEntity
       );
+    } else {
+      this.joinViaSql(nextAlias, nextEntity, parentAliasOrSql as string);
     }
 
     return this as any;
