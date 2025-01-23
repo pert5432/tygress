@@ -408,8 +408,32 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
     return this;
   }
 
+  public removeLimit(): this {
+    this._limit = undefined;
+
+    return this;
+  }
+
   public offset(val: number): this {
     this._offset = val;
+
+    return this;
+  }
+
+  public removeOffset(): this {
+    this._offset = undefined;
+
+    return this;
+  }
+
+  public unselectAll(): this {
+    this.selects = [];
+
+    return this;
+  }
+
+  public removeOrderBys(): this {
+    this.orderBys = [];
 
     return this;
   }
