@@ -19,11 +19,7 @@ const main = async () => {
       "pet",
       "user"
     )
-    .join({ asdf: Pets }, `asdf.name ILIKE '%o%'`)
-    .select("pet", "name")
-    .select("piko", "fullName")
-    .orderBy("pet", "id", "ASC")
-    .orderBy("pet", "name", "DESC");
+    .join({ asdf: Pets }, `asdf.name ILIKE '%o%'`);
 
   const runner = new QueryRunner(client, builder.getQuery());
 

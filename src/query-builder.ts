@@ -44,6 +44,9 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
   private selects: SelectQueryTarget[] = [];
   private orderBys: SelectQueryOrder[] = [];
 
+  private _limit?: number;
+  private _offset?: number;
+
   constructor(a: T) {
     this.sourcesContext = a;
 
@@ -399,6 +402,18 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
     });
   }
 
+  public limit(val: number): this {
+    this._limit = val;
+
+    return this;
+  }
+
+  public offset(val: number): this {
+    this._offset = val;
+
+    return this;
+  }
+
   public getQuery(): Query<E> {
     const paramBuilder = new ParamBuilder();
 
@@ -408,6 +423,9 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
         wheres: this.wheres,
         selects: this.selects,
         orderBys: this.orderBys,
+
+        limit: this._limit,
+        offset: this._offset,
       },
       paramBuilder
     ).buildSelect();
