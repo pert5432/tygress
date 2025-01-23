@@ -7,7 +7,13 @@ import {
   ParamBuilder,
   SelectSqlBuilder,
 } from "./sql-builders";
-import { AnEntity, Entity, Parametrizable, WhereComparator } from "./types";
+import {
+  AnEntity,
+  Entity,
+  Parametrizable,
+  SelectQueryTarget,
+  WhereComparator,
+} from "./types";
 import { Query } from "./types/query";
 import { JoinArg } from "./types/query/join-arg";
 import { ParameterArgs } from "./types/where-args";
@@ -34,6 +40,7 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
 
   private joins: JoinArg<AnEntity>[] = [];
   private wheres: ComparisonSqlBuilder[] = [];
+  private selects: SelectQueryTarget[] = [];
 
   constructor(a: T) {
     this.sourcesContext = a;
@@ -122,6 +129,22 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
         conditionOrComparator
       )
     );
+
+    return this;
+  }
+
+  public select<K extends keyof T, F extends keyof InstanceType<T[K]>>(
+    alias: K,
+    field: F
+  ): this {
+    const klass = this.sourcesContext[alias];
+    if (!klass) {
+      throw new Error(`No entity found with alias ${alias.toString()}`);
+    }
+
+    const column = METADATA_STORE.getColumn(klass, field.toString());
+
+    this.selects.push({ alias: alias.toString(), column });
 
     return this;
   }
@@ -361,7 +384,12 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
     const paramBuilder = new ParamBuilder();
 
     return new SelectSqlBuilder<E>(
-      { joins: this.joins, wheres: this.wheres, selects: [], orderBys: [] },
+      {
+        joins: this.joins,
+        wheres: this.wheres,
+        selects: this.selects,
+        orderBys: [],
+      },
       paramBuilder
     ).buildSelect();
   }
