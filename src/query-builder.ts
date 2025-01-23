@@ -11,6 +11,7 @@ import {
   AnEntity,
   Entity,
   Parametrizable,
+  SelectQueryOrder,
   SelectQueryTarget,
   WhereComparator,
 } from "./types";
@@ -41,6 +42,7 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
   private joins: JoinArg<AnEntity>[] = [];
   private wheres: ComparisonSqlBuilder[] = [];
   private selects: SelectQueryTarget[] = [];
+  private orderBys: SelectQueryOrder[] = [];
 
   constructor(a: T) {
     this.sourcesContext = a;
@@ -145,6 +147,23 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
     const column = METADATA_STORE.getColumn(klass, field.toString());
 
     this.selects.push({ alias: alias.toString(), column });
+
+    return this;
+  }
+
+  public orderBy<K extends keyof T, F extends keyof InstanceType<T[K]>>(
+    alias: K,
+    field: F,
+    order: "ASC" | "DESC"
+  ): this {
+    const klass = this.sourcesContext[alias];
+    if (!klass) {
+      throw new Error(`No entity found with alias ${alias.toString()}`);
+    }
+
+    const column = METADATA_STORE.getColumn(klass, field.toString());
+
+    this.orderBys.push({ alias: alias.toString(), column, order });
 
     return this;
   }
@@ -388,7 +407,7 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
         joins: this.joins,
         wheres: this.wheres,
         selects: this.selects,
-        orderBys: [],
+        orderBys: this.orderBys,
       },
       paramBuilder
     ).buildSelect();
