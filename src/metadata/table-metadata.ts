@@ -24,4 +24,6 @@ export class TableMetadata {
   primaryKey: UniqueConstraintMetadata<AnEntity>;
 
   relations: Map<string, RelationMetadata> = new Map();
+
+  arrayFields: Set<string> = new Set();
 }

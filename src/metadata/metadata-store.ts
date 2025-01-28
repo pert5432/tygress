@@ -26,6 +26,9 @@ class MetadataStore {
     UniqueConstraintMetadata<AnEntity>
   >();
 
+  // All fields which are decorated by our decorators
+  public fields = new Map<AnEntity, string[]>();
+
   //
   // Getters
   //
@@ -99,7 +102,8 @@ class MetadataStore {
       this.relations.filter(
         (e) => e.primary === args.klass || e.foreign === args.klass
       ),
-      uniqueConstraint
+      uniqueConstraint,
+      this.fields.get(args.klass) ?? []
     );
 
     this.tables.set(metadata.klass, metadata);
@@ -112,6 +116,8 @@ class MetadataStore {
     newColumns.push(metadata);
 
     this.columns.set(args.klass, newColumns);
+
+    this.addField(args.klass, args.fieldName);
   }
 
   public addUniqueConstraint(args: UniqueConstraintMetadataArgs) {
@@ -127,6 +133,13 @@ class MetadataStore {
       args.klass,
       UniqueConstraintMetadataFactory.create(args)
     );
+  }
+
+  public addField(klass: AnEntity, fieldName: string) {
+    const newFields = this.fields.get(klass) ?? [];
+    newFields.push(fieldName);
+
+    this.fields.set(klass, newFields);
   }
 
   public addRelation(args: RelationMetadataArgs) {
@@ -190,6 +203,10 @@ class MetadataStore {
 
     // Finally insert new relation into the array
     this.relations.push(relation);
+
+    // Log both fiels from the relation
+    this.addField(args.foreign, args.foreignField);
+    this.addField(args.primary, args.primaryField);
   }
 }
 

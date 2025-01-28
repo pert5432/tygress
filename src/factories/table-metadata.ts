@@ -9,7 +9,8 @@ export abstract class TableMetadataFactory {
     { tablename, klass, schemaname }: TableMetadataArgs,
     columns: ColumnMetadata[],
     relations: RelationMetadata[],
-    uniqueConstraint: UniqueConstraintMetadata<AnEntity>
+    uniqueConstraint: UniqueConstraintMetadata<AnEntity>,
+    fields: string[]
   ): TableMetadata {
     const e = new TableMetadata();
 
@@ -40,6 +41,16 @@ export abstract class TableMetadataFactory {
     }
 
     e.primaryKey = uniqueConstraint;
+
+    // Figure out which fields are typed as arrays
+    const instance = new klass();
+    for (const field of fields) {
+      if (
+        Reflect.getMetadata("design:type", instance as any, field) === Array
+      ) {
+        e.arrayFields.add(field);
+      }
+    }
 
     return e;
   }

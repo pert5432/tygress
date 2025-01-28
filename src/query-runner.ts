@@ -123,15 +123,12 @@ export class QueryRunner<T extends Entity<unknown>> {
     node: TargetNode<C>
   ) => {
     for (const [key, entities] of node.entitiesByParentsIdPath.entries()) {
-      // TODO: Refactor this so inferrence happens only once per entity (not instance)
       const parentEntity: any = parentEntityMap.get(key)!;
 
       // Push values to parent as an array if parent field is array
-      parentEntity[node.parentField!] =
-        Reflect.getMetadata("design:type", parentEntity, node.parentField!) ===
-        Array
-          ? entities
-          : entities[0];
+      parentEntity[node.parentField!] = node.parentFieldIsArray
+        ? entities
+        : entities[0];
     }
   };
 }

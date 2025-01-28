@@ -24,6 +24,12 @@ export abstract class TargetNodeFactory {
 
     e.select = select === false ? false : true;
 
+    // Figure out if parent field is an array
+    const parentTableMeta = METADATA_STORE.getTable(parentNode.klass);
+    if (parentTableMeta.arrayFields.has(e.parentField)) {
+      e.parentFieldIsArray = true;
+    }
+
     return e;
   }
 

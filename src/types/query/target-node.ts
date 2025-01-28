@@ -18,6 +18,8 @@ export class TargetNode<T extends AnEntity> {
   // Which field on the parent leads to this join
   parentField?: string;
 
+  parentFieldIsArray?: boolean;
+
   selectedFields: Map<string, { fullName: string; column: ColumnMetadata }> =
     new Map();
 
