@@ -13,7 +13,7 @@ import {
 import { SelectSqlBuilder } from "./sql-builders/select-sql-builder";
 import { QueryRunner } from "./query-runner";
 import { JoinArg } from "./types/query/join-arg";
-import { METADATA_STORE } from "./metadata";
+import { METADATA_STORE, TableMetadata } from "./metadata";
 import { ComparisonFactory, JoinArgFactory } from "./factories";
 import { entityNameToAlias } from "./utils";
 import { ComparisonSqlBuilder, ParamBuilder } from "./sql-builders";
@@ -23,6 +23,14 @@ type ArgsTransformations = {
   wheres: ComparisonSqlBuilder[];
   selects: SelectQueryTarget[];
   orderBys: SelectQueryOrder[];
+};
+
+type JoinNode = {
+  alias: string;
+
+  relations: {
+    [key: string]: JoinNode;
+  };
 };
 
 export abstract class Repository {
@@ -79,6 +87,69 @@ export abstract class Repository {
     this.processLevel(data, data.joins[0]!, joins, wheres, selects, orders);
 
     return data;
+  }
+
+  private static nodesFromJoins<T extends AnEntity>(
+    joinArgs: Joins<InstanceType<T>>,
+    parentNode: JoinNode,
+    parentTableMeta: TableMetadata
+  ) {
+    for (const key in joinArgs) {
+      const join = joinArgs[key];
+
+      const nextEntity = this.getInverseTableOfRelation(parentTableMeta, key);
+      const nextJoinArgAlias = this.getNextNodeAlias(parentNode, nextEntity);
+
+      const nextJoinNode = { alias: nextJoinArgAlias, relations: {} };
+
+      // Add the new join node to parent node if there isn't a node in there already
+      if (!parentNode.relations[key]) {
+        parentNode.relations[key] = nextJoinNode;
+      }
+
+      if (join instanceof Object) {
+        // Keep processing deeper joins
+        this.nodesFromJoins(
+          join!,
+          nextJoinNode,
+          METADATA_STORE.getTable(nextEntity)
+        );
+      }
+    }
+  }
+
+  private static nodesFromWheres<T extends AnEntity>(
+    whereArgs: Wheres<InstanceType<T>>,
+    parentNode: JoinNode,
+    parentTableMeta: TableMetadata
+  ) {
+    for (const key in whereArgs) {
+      if (!parentTableMeta.relations.get(key)) {
+        continue;
+      }
+
+      const nextEntity = this.getInverseTableOfRelation(parentTableMeta, key);
+      const nextEntityMeta = METADATA_STORE.getTable(nextEntity);
+
+      // This relation is already added, keep processing WHEREs deeper
+      if (parentNode.relations[key]) {
+        this.nodesFromWheres(
+          whereArgs[key] as Wheres<InstanceType<AnEntity>>,
+          parentNode.relations[key],
+          nextEntityMeta
+        );
+      }
+
+      const nextJoinArgAlias = this.getNextNodeAlias(parentNode, nextEntity);
+
+      const nextNode = { alias: nextJoinArgAlias, relations: {} };
+
+      this.nodesFromWheres(
+        whereArgs[key] as Wheres<InstanceType<AnEntity>>,
+        nextNode,
+        nextEntityMeta
+      );
+    }
   }
 
   //
@@ -229,5 +300,29 @@ export abstract class Repository {
         orders ? orders[key] : undefined
       );
     }
+  }
+
+  //
+  // Utils
+  //
+  private static getInverseTableOfRelation(
+    parentTableMeta: TableMetadata,
+    fieldName: string
+  ): AnEntity {
+    const relation = parentTableMeta.relations.get(fieldName);
+    if (!relation) {
+      throw new Error(
+        `No relation found on table ${parentTableMeta}, field ${fieldName}`
+      );
+    }
+
+    return relation.getOtherTable(parentTableMeta.klass);
+  }
+
+  private static getNextNodeAlias(
+    parentNode: JoinNode,
+    nextKlass: AnEntity
+  ): string {
+    return `${parentNode.alias}_${entityNameToAlias(nextKlass.name)}`;
   }
 }
