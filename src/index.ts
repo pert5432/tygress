@@ -26,14 +26,15 @@ const main = async () => {
   // console.log(await runner.run());
 
   const users = await Repository.select(client, Users, {
-    joins: {
-      pets: true,
+    select: {
+      fullName: true,
+      pets: { name: true, user: { id: true } },
     },
     where: {
       pets: { name: In(["a", "pootis", "moofis"]) },
     },
     order: {
-      pets: { name: "DESC" },
+      pets: { name: "DESC", user: { id: "DESC" } },
       fullName: "ASC",
     },
   });

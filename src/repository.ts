@@ -76,6 +76,18 @@ export abstract class Repository {
       orderBys: [],
     };
 
+    const rootNode: JoinNode = {
+      alias: entityNameToAlias(entity.name),
+      relations: {},
+    };
+
+    const rootTableMeta = METADATA_STORE.getTable(entity);
+
+    this.nodesFromJoins(joins ?? {}, rootNode, rootTableMeta);
+    this.nodesFromWheres(wheres ?? {}, rootNode, rootTableMeta);
+    this.nodesFromSelects(selects ?? {}, rootNode, rootTableMeta);
+    this.nodesFromOrderBys(orders ?? {}, rootNode, rootTableMeta);
+
     if (!joins) {
       return data;
     }
@@ -93,28 +105,37 @@ export abstract class Repository {
     joinArgs: Joins<InstanceType<T>>,
     parentNode: JoinNode,
     parentTableMeta: TableMetadata
-  ) {
+  ): void {
+    if (!(joinArgs instanceof Object)) {
+      return;
+    }
+
     for (const key in joinArgs) {
       const join = joinArgs[key];
 
       const nextEntity = this.getInverseTableOfRelation(parentTableMeta, key);
-      const nextJoinArgAlias = this.getNextNodeAlias(parentNode, nextEntity);
-
-      const nextJoinNode = { alias: nextJoinArgAlias, relations: {} };
 
       // Add the new join node to parent node if there isn't a node in there already
-      if (!parentNode.relations[key]) {
-        parentNode.relations[key] = nextJoinNode;
-      }
-
-      if (join instanceof Object) {
+      if (parentNode.relations[key]) {
         // Keep processing deeper joins
-        this.nodesFromJoins(
+        return this.nodesFromJoins(
           join!,
-          nextJoinNode,
+          parentNode.relations[key],
           METADATA_STORE.getTable(nextEntity)
         );
       }
+
+      const nextJoinArgAlias = this.getNextNodeAlias(parentNode, nextEntity);
+      const nextJoinNode = { alias: nextJoinArgAlias, relations: {} };
+
+      parentNode.relations[key] = nextJoinNode;
+
+      // Keep processing deeper joins
+      return this.nodesFromJoins(
+        join!,
+        nextJoinNode,
+        METADATA_STORE.getTable(nextEntity)
+      );
     }
   }
 
@@ -122,7 +143,9 @@ export abstract class Repository {
     whereArgs: Wheres<InstanceType<T>>,
     parentNode: JoinNode,
     parentTableMeta: TableMetadata
-  ) {
+  ): void {
+    // TODO: safeguard against trying to process a ParametrizedCondition as a join?
+
     for (const key in whereArgs) {
       if (!parentTableMeta.relations.get(key)) {
         continue;
@@ -133,7 +156,7 @@ export abstract class Repository {
 
       // This relation is already added, keep processing WHEREs deeper
       if (parentNode.relations[key]) {
-        this.nodesFromWheres(
+        return this.nodesFromWheres(
           whereArgs[key] as Wheres<InstanceType<AnEntity>>,
           parentNode.relations[key],
           nextEntityMeta
@@ -141,11 +164,90 @@ export abstract class Repository {
       }
 
       const nextJoinArgAlias = this.getNextNodeAlias(parentNode, nextEntity);
-
       const nextNode = { alias: nextJoinArgAlias, relations: {} };
 
-      this.nodesFromWheres(
+      parentNode.relations[key] = nextNode;
+
+      return this.nodesFromWheres(
         whereArgs[key] as Wheres<InstanceType<AnEntity>>,
+        nextNode,
+        nextEntityMeta
+      );
+    }
+  }
+
+  private static nodesFromSelects<T extends AnEntity>(
+    selectArgs: SelectTargetArgs<InstanceType<T>>,
+    parentNode: JoinNode,
+    parentTableMeta: TableMetadata
+  ): void {
+    if (!(selectArgs instanceof Object)) {
+      return;
+    }
+
+    for (const key in selectArgs) {
+      if (!parentTableMeta.relations.get(key)) {
+        continue;
+      }
+
+      const nextEntity = this.getInverseTableOfRelation(parentTableMeta, key);
+      const nextEntityMeta = METADATA_STORE.getTable(nextEntity);
+
+      // This relation is already added, keep processing SELECTs deeper
+      if (parentNode.relations[key]) {
+        return this.nodesFromSelects(
+          selectArgs[key] as SelectTargetArgs<InstanceType<T>>,
+          parentNode.relations[key],
+          nextEntityMeta
+        );
+      }
+
+      const nextJoinArgAlias = this.getNextNodeAlias(parentNode, nextEntity);
+      const nextNode = { alias: nextJoinArgAlias, relations: {} };
+
+      parentNode.relations[key] = nextNode;
+
+      return this.nodesFromSelects(
+        selectArgs[key] as SelectTargetArgs<InstanceType<T>>,
+        nextNode,
+        nextEntityMeta
+      );
+    }
+  }
+
+  private static nodesFromOrderBys<T extends AnEntity>(
+    orderByArgs: OrderArgs<InstanceType<T>>,
+    parentNode: JoinNode,
+    parentTableMeta: TableMetadata
+  ): void {
+    if (!(orderByArgs instanceof Object)) {
+      return;
+    }
+
+    for (const key in orderByArgs) {
+      if (!parentTableMeta.relations.get(key)) {
+        continue;
+      }
+
+      const nextEntity = this.getInverseTableOfRelation(parentTableMeta, key);
+      const nextEntityMeta = METADATA_STORE.getTable(nextEntity);
+
+      // This relation is already added, keep processing SELECTs deeper
+      if (parentNode.relations[key]) {
+        return this.nodesFromOrderBys(
+          orderByArgs[key] as OrderArgs<InstanceType<AnEntity>>,
+          parentNode.relations[key],
+          nextEntityMeta
+        );
+      }
+
+      const nextJoinArgAlias = this.getNextNodeAlias(parentNode, nextEntity);
+      const nextNode = { alias: nextJoinArgAlias, relations: {} };
+
+      parentNode.relations[key] = nextNode;
+
+      return this.nodesFromOrderBys(
+        orderByArgs[key] as OrderArgs<InstanceType<AnEntity>>,
         nextNode,
         nextEntityMeta
       );
