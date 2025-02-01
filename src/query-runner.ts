@@ -109,9 +109,11 @@ export class QueryRunner<T extends Entity<unknown>> {
         this.propagateEntitiesToParent(parentNode.entityByIdPath, node);
       }
 
-      // Propagate entities to root node
-      const penultimateNode = path[path.length - 2]!;
-      this.propagateEntitiesToParent(rootEntities, penultimateNode);
+      if (path.length >= 2) {
+        // Propagate entities to root node
+        const penultimateNode = path[path.length - 2]!;
+        this.propagateEntitiesToParent(rootEntities, penultimateNode);
+      }
     }
 
     return Array.from(rootEntities.values()) as InstanceType<T>[];

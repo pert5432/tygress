@@ -26,6 +26,9 @@ const main = async () => {
   // console.log(await runner.run());
 
   const users = await Repository.select(client, Users, {
+    joins: {
+      pets: true,
+    },
     // select: {
     //   fullName: true,
     //   pets: { name: true, user: { id: true } },

@@ -127,7 +127,7 @@ export abstract class Repository {
       }
 
       const nextJoinNode = JoinNodeFactory.createFromJoin(
-        parentTableMeta,
+        nextEntityMeta,
         parentNode.alias
       );
 
@@ -162,10 +162,7 @@ export abstract class Repository {
         );
       }
 
-      const nextNode = JoinNodeFactory.create(
-        parentTableMeta,
-        parentNode.alias
-      );
+      const nextNode = JoinNodeFactory.create(nextEntityMeta, parentNode.alias);
 
       parentNode.relations[key] = nextNode;
 
@@ -203,10 +200,7 @@ export abstract class Repository {
         );
       }
 
-      const nextNode = JoinNodeFactory.create(
-        parentTableMeta,
-        parentNode.alias
-      );
+      const nextNode = JoinNodeFactory.create(nextEntityMeta, parentNode.alias);
 
       parentNode.relations[key] = nextNode;
 
@@ -244,10 +238,7 @@ export abstract class Repository {
         );
       }
 
-      const nextNode = JoinNodeFactory.create(
-        parentTableMeta,
-        parentNode.alias
-      );
+      const nextNode = JoinNodeFactory.create(nextEntityMeta, parentNode.alias);
 
       parentNode.relations[key] = nextNode;
 
