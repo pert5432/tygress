@@ -360,7 +360,7 @@ export abstract class Repository {
 
       // Select all columns
       selectsResult.push(
-        ...parentTableMeta.columns.map((column) => ({
+        ...parentTableMeta.columnsSelectableByDefault.map((column) => ({
           column,
           alias: parentNode.alias,
         }))
@@ -395,7 +395,7 @@ export abstract class Repository {
           selectsResult.push({ alias: parentNode.alias, column });
         } else {
           selectsResult.push(
-            ...parentTableMeta.columns.map((column) => ({
+            ...parentTableMeta.columnsSelectableByDefault.map((column) => ({
               column,
               alias: parentNode.alias,
             }))

@@ -19,6 +19,11 @@ export class TableMetadata {
   }
 
   columns: ColumnMetadata[] = [];
+
+  get columnsSelectableByDefault() {
+    return this.columns.filter((e) => e.select);
+  }
+
   columnsMap: Map<string, ColumnMetadata> = new Map();
 
   primaryKey: UniqueConstraintMetadata<AnEntity>;
