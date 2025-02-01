@@ -26,6 +26,7 @@ type ArgsTransformations = {
 };
 
 type JoinNode = {
+  entityMeta: TableMetadata;
   alias: string;
 
   relations: {
@@ -64,42 +65,47 @@ export abstract class Repository {
 
   private static transformArgs<T extends AnEntity>(
     entity: T,
-    joins?: Joins<InstanceType<T>>,
-    wheres?: Wheres<InstanceType<T>>,
-    selects?: SelectTargetArgs<InstanceType<T>>,
-    orders?: OrderArgs<InstanceType<T>>
+    joins: Joins<InstanceType<T>> = {},
+    wheres: Wheres<InstanceType<T>> = {},
+    selects: SelectTargetArgs<InstanceType<T>> = {},
+    orderBys: OrderArgs<InstanceType<T>> = {}
   ): ArgsTransformations {
-    const data: ArgsTransformations = {
-      joins: [],
-      wheres: [],
-      selects: [],
-      orderBys: [],
-    };
+    const rootEntityMeta = METADATA_STORE.getTable(entity);
 
     const rootNode: JoinNode = {
+      entityMeta: rootEntityMeta,
       alias: entityNameToAlias(entity.name),
       relations: {},
     };
 
-    const rootTableMeta = METADATA_STORE.getTable(entity);
+    this.nodesFromJoins(joins, rootNode, rootEntityMeta);
+    this.nodesFromWheres(wheres, rootNode, rootEntityMeta);
+    this.nodesFromSelects(selects, rootNode, rootEntityMeta);
+    this.nodesFromOrderBys(orderBys, rootNode, rootEntityMeta);
 
-    this.nodesFromJoins(joins ?? {}, rootNode, rootTableMeta);
-    this.nodesFromWheres(wheres ?? {}, rootNode, rootTableMeta);
-    this.nodesFromSelects(selects ?? {}, rootNode, rootTableMeta);
-    this.nodesFromOrderBys(orders ?? {}, rootNode, rootTableMeta);
+    const joinsResult: JoinArg<AnEntity>[] = [
+      JoinArgFactory.createRoot(entity, entityNameToAlias(entity.name)),
+    ];
+    const wheresResult: ComparisonSqlBuilder[] = [];
+    const selectsResult: SelectQueryTarget[] = [];
+    const orderBysResult: SelectQueryOrder[] = [];
 
-    if (!joins) {
-      return data;
-    }
+    this.processJoins(joinsResult, rootNode);
+    this.processWheres(wheresResult, wheres, rootNode);
+    this.processSelects(selectsResult, selects, rootNode);
+    this.processOrderBys(orderBysResult, orderBys, rootNode);
 
-    data.joins.push(
-      JoinArgFactory.createRoot(entity, entityNameToAlias(entity.name))
-    );
-
-    this.processLevel(data, data.joins[0]!, joins, wheres, selects, orders);
-
-    return data;
+    return {
+      joins: joinsResult,
+      wheres: wheresResult,
+      selects: selectsResult,
+      orderBys: orderBysResult,
+    };
   }
+
+  //
+  // Functions to build abstract join tree from SelectArgs
+  //
 
   private static nodesFromJoins<T extends AnEntity>(
     joinArgs: Joins<InstanceType<T>>,
@@ -114,6 +120,7 @@ export abstract class Repository {
       const join = joinArgs[key];
 
       const nextEntity = this.getInverseTableOfRelation(parentTableMeta, key);
+      const nextEntityMeta = METADATA_STORE.getTable(nextEntity);
 
       // Add the new join node to parent node if there isn't a node in there already
       if (parentNode.relations[key]) {
@@ -121,21 +128,21 @@ export abstract class Repository {
         return this.nodesFromJoins(
           join!,
           parentNode.relations[key],
-          METADATA_STORE.getTable(nextEntity)
+          nextEntityMeta
         );
       }
 
       const nextJoinArgAlias = this.getNextNodeAlias(parentNode, nextEntity);
-      const nextJoinNode = { alias: nextJoinArgAlias, relations: {} };
+      const nextJoinNode = {
+        entityMeta: nextEntityMeta,
+        alias: nextJoinArgAlias,
+        relations: {},
+      };
 
       parentNode.relations[key] = nextJoinNode;
 
       // Keep processing deeper joins
-      return this.nodesFromJoins(
-        join!,
-        nextJoinNode,
-        METADATA_STORE.getTable(nextEntity)
-      );
+      return this.nodesFromJoins(join!, nextJoinNode, nextEntityMeta);
     }
   }
 
@@ -164,7 +171,11 @@ export abstract class Repository {
       }
 
       const nextJoinArgAlias = this.getNextNodeAlias(parentNode, nextEntity);
-      const nextNode = { alias: nextJoinArgAlias, relations: {} };
+      const nextNode = {
+        entityMeta: nextEntityMeta,
+        alias: nextJoinArgAlias,
+        relations: {},
+      };
 
       parentNode.relations[key] = nextNode;
 
@@ -203,7 +214,11 @@ export abstract class Repository {
       }
 
       const nextJoinArgAlias = this.getNextNodeAlias(parentNode, nextEntity);
-      const nextNode = { alias: nextJoinArgAlias, relations: {} };
+      const nextNode = {
+        entityMeta: nextEntityMeta,
+        alias: nextJoinArgAlias,
+        relations: {},
+      };
 
       parentNode.relations[key] = nextNode;
 
@@ -242,7 +257,11 @@ export abstract class Repository {
       }
 
       const nextJoinArgAlias = this.getNextNodeAlias(parentNode, nextEntity);
-      const nextNode = { alias: nextJoinArgAlias, relations: {} };
+      const nextNode = {
+        entityMeta: nextEntityMeta,
+        alias: nextJoinArgAlias,
+        relations: {},
+      };
 
       parentNode.relations[key] = nextNode;
 
@@ -255,109 +274,16 @@ export abstract class Repository {
   }
 
   //
-  // Uses join arguments to recursively go thru all the nested arguments and transform them to arrays of arguments for sql builder
+  // Functions to convert abstract join tree to actual SQL builder args
   //
-  private static processLevel<E extends AnEntity>(
-    data: ArgsTransformations,
-    parentJoinArg: JoinArg<E>,
-    joins: Joins<InstanceType<E>>,
-    wheres?: Wheres<E>,
-    selects?: SelectTargetArgs<InstanceType<E>> | true,
-    orders?: OrderArgs<InstanceType<E>>
+
+  private static processJoins(
+    joinsResult: JoinArg<AnEntity>[],
+    parentNode: JoinNode
   ): void {
-    // Table we are joining to
-    const parentTableMeta = METADATA_STORE.getTable(parentJoinArg.klass);
+    const parentTableMeta = parentNode.entityMeta;
 
-    //
-    // Collect desired where conditions
-    //
-    for (const fieldName in wheres) {
-      const column = parentTableMeta.columnsMap.get(fieldName);
-
-      if (!column) {
-        const relation = parentTableMeta.relations.get(fieldName);
-
-        // If the field is a relation we go next
-        // The condition will get processed in the next level, based no joins
-        if (relation) {
-          continue;
-        }
-
-        // If no column or relation was found we throw because this condition is bogus
-        throw new Error(
-          `No column found in table ${parentTableMeta.klass.name}, with fieldName ${fieldName}`
-        );
-      }
-
-      data.wheres.push(
-        ComparisonFactory.createFromCondition(
-          parentJoinArg.alias,
-          column,
-          wheres[fieldName]!
-        )
-      );
-    }
-
-    //
-    // Collect desired selects
-    //
-
-    // The entire relation is supposed to be selected
-    if (selects === true) {
-      data.selects.push(
-        ...parentTableMeta.columns.map((column) => ({
-          alias: parentJoinArg.alias,
-          column,
-        }))
-      );
-    } else {
-      // Select individual desired fields
-      for (const fieldName in selects) {
-        if (selects[fieldName] === true) {
-          const column = parentTableMeta.columnsMap.get(fieldName);
-
-          // If there is no column, there will be a relation which will get processed in next level
-          if (!column) {
-            continue;
-          }
-
-          data.selects.push({ alias: parentJoinArg.alias, column });
-        }
-      }
-    }
-
-    //
-    // Collect desired ORDER BYs
-    //
-    for (const fieldName in orders) {
-      const order = orders[fieldName]!;
-
-      if (typeof order !== "string" || !["ASC", "DESC"].includes(order)) {
-        continue;
-      }
-
-      const column = parentTableMeta.columnsMap.get(fieldName);
-
-      if (!column) {
-        throw new Error(
-          `No column found for table ${parentTableMeta.klass.name}, field name ${fieldName}`
-        );
-      }
-
-      data.orderBys.push({
-        alias: parentJoinArg.alias,
-        column,
-        // What is type inferrence? ¯\_(ツ)_/¯
-        order: order as "ASC" | "DESC",
-      });
-    }
-
-    //
-    // Collect join and process rest of the tree
-    //
-    for (const key in joins) {
-      const join = joins[key];
-
+    for (const key in parentNode.relations) {
       // Get meta needed for join
       const relation = parentTableMeta.relations.get(key);
       if (!relation) {
@@ -369,38 +295,175 @@ export abstract class Repository {
       // Table we are joining in
       const inverseTable = relation.getOtherTable(parentTableMeta.klass);
 
-      const nextJoinArgAlias = `${parentJoinArg.alias}_${entityNameToAlias(
+      const nextJoinArgAlias = `${parentNode.alias}_${entityNameToAlias(
         inverseTable.name
       )}`;
 
       const comparison = ComparisonFactory.createJoin(
-        parentJoinArg.alias,
+        parentNode.alias,
         parentTableMeta.klass,
         nextJoinArgAlias,
         relation
       );
 
       const nextJoinArg = JoinArgFactory.create(
-        parentJoinArg.alias,
+        parentNode.alias,
         key,
         inverseTable,
         nextJoinArgAlias,
         comparison
       );
 
-      data.joins.push(nextJoinArg);
+      joinsResult.push(nextJoinArg);
 
-      // Keep processing deeper joins and wheres
-      // We need to go to the next level to process wheres even if there are no more joins in the next level
-      this.processLevel(
-        data,
-        nextJoinArg,
-        join as Joins<typeof inverseTable>,
-        wheres ? wheres[key] : undefined,
-        // If selects is true, pass true otherwise pass selects[key]
-        selects === true ? true : selects ? selects[key] : undefined,
-        orders ? orders[key] : undefined
+      // Keep processing deeper joins
+      this.processJoins(joinsResult, parentNode.relations[key]!);
+    }
+  }
+
+  private static processWheres(
+    wheresResult: ComparisonSqlBuilder[],
+    whereArgs: Wheres<AnEntity>,
+    parentNode: JoinNode
+  ): void {
+    const parentTableMeta = parentNode.entityMeta;
+
+    for (const key in whereArgs) {
+      const column = parentTableMeta.columnsMap.get(key);
+
+      if (!column) {
+        const relation = parentTableMeta.relations.get(key);
+
+        // If the field is a relation we go next
+        // The condition will get processed in the next level, based on joins
+        if (relation) {
+          const nextNode = parentNode.relations[key];
+
+          if (!nextNode) {
+            throw new Error(
+              `No relation for ${JSON.stringify(parentNode)}, key ${key}`
+            );
+          }
+
+          this.processWheres(wheresResult, whereArgs[key]!, nextNode);
+
+          continue;
+        }
+
+        // If no column or relation was found we throw because this condition is bogus
+        throw new Error(
+          `No column found in table ${parentTableMeta.klass.name}, with fieldName ${key}`
+        );
+      }
+
+      wheresResult.push(
+        ComparisonFactory.createFromCondition(
+          parentNode.alias,
+          column,
+          whereArgs[key]!
+        )
       );
+    }
+  }
+
+  private static processSelects(
+    selectsResult: SelectQueryTarget[],
+    selectArgs: SelectTargetArgs<AnEntity>,
+    parentNode: JoinNode
+  ): void {
+    const parentTableMeta = parentNode.entityMeta;
+
+    // Select individual desired fields
+    for (const key in selectArgs) {
+      const column = parentTableMeta.columnsMap.get(key);
+      const relation = parentTableMeta.relations.get(key);
+
+      if (!column && !relation) {
+        throw new Error(
+          `No column or relation found for entity ${parentTableMeta.klass}, field name ${key}`
+        );
+      }
+
+      if (selectArgs[key] === true) {
+        if (column) {
+          selectsResult.push({ alias: parentNode.alias, column });
+        } else {
+          selectsResult.push(
+            ...parentTableMeta.columns.map((column) => ({
+              column,
+              alias: parentNode.alias,
+            }))
+          );
+        }
+        // arg is an object
+      } else {
+        if (relation) {
+          const nextNode = parentNode.relations[key];
+
+          if (!nextNode) {
+            throw new Error(
+              `No join node for ${parentTableMeta.klass.name}, field name ${key}`
+            );
+          }
+
+          this.processSelects(selectsResult, selectArgs[key]!, nextNode);
+        } else {
+          throw new Error(
+            `Can't sub-select from a column, entity ${parentTableMeta.klass.name}, field name ${key}`
+          );
+        }
+      }
+    }
+  }
+
+  private static processOrderBys(
+    orderBysResult: SelectQueryOrder[],
+    orderByArgs: OrderArgs<AnEntity>,
+    parentNode: JoinNode
+  ): void {
+    const parentEntityMeta = parentNode.entityMeta;
+
+    for (const key in orderByArgs) {
+      const order = orderByArgs[key]!;
+
+      if (typeof order === "string") {
+        if (!["ASC", "DESC"].includes(order)) {
+          throw new Error(`Invalid order argument ${order}`);
+        }
+
+        const column = parentEntityMeta.columnsMap.get(key);
+        if (!column) {
+          throw new Error(
+            `No column found for entity ${parentEntityMeta.klass.name}, field name ${key}`
+          );
+        }
+
+        orderBysResult.push({
+          alias: parentNode.alias,
+          column,
+          // What is type inferrence? ¯\_(ツ)_/¯
+          order: order as "ASC" | "DESC",
+        });
+
+        continue;
+      } else {
+        const relation = parentEntityMeta.relations.get(key);
+
+        if (!relation) {
+          throw new Error(
+            `No relation found for table ${parentEntityMeta.klass.name}, field name ${key}`
+          );
+        }
+
+        const nextNode = parentNode.relations[key];
+        if (!nextNode) {
+          throw new Error(
+            `No join node for entity ${parentEntityMeta.klass.name}, field name ${key}`
+          );
+        }
+
+        this.processOrderBys(orderBysResult, order, nextNode);
+      }
     }
   }
 
