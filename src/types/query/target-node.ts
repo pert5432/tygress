@@ -49,10 +49,6 @@ export class TargetNode<T extends AnEntity> {
   public selectAllFields(): void {
     const table = METADATA_STORE.getTable(this.klass);
 
-    for (const column of table.columns) {
-      if (column.select) {
-        this.selectField(column);
-      }
-    }
+    table.columnsSelectableByDefault.forEach((c) => this.selectField(c));
   }
 }

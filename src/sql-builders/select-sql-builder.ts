@@ -154,13 +154,9 @@ export class SelectSqlBuilder<T extends AnEntity> {
   private selectFieldsFromJoinNode = <E extends Entity<unknown>>(
     node: TargetNode<E>
   ): void => {
-    for (const c of METADATA_STORE.getTable(node.klass).columns) {
-      if (!c.select) {
-        return;
-      }
-
-      node.selectField(c);
-    }
+    METADATA_STORE.getTable(node.klass).columnsSelectableByDefault.forEach(
+      (c) => node.selectField(c)
+    );
 
     for (const key in node.joins) {
       this.selectFieldsFromJoinNode(node.joins[key]!);
