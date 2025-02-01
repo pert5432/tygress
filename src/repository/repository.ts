@@ -81,7 +81,12 @@ export abstract class Repository {
 
     this.processJoins(joinsResult, rootNode);
     this.processWheres(wheresResult, wheres, rootNode);
-    this.processSelects(selectsResult, selects, rootNode);
+    this.processSelects(
+      selectsResult,
+      selects,
+      rootNode,
+      Object.keys(selects).length < 1
+    );
     this.processOrderBys(orderBysResult, orderBys, rootNode);
 
     return {
@@ -350,9 +355,38 @@ export abstract class Repository {
   private static processSelects(
     selectsResult: SelectQueryTarget[],
     selectArgs: SelectTargetArgs<AnEntity>,
-    parentNode: JoinNode
+    parentNode: JoinNode,
+    selectAll: boolean
   ): void {
     const parentTableMeta = parentNode.entityMeta;
+
+    // Select all explicitly joined tables
+    if (selectAll) {
+      // This node is not explicitly joined so no nodes under it can be either, bail out
+      if (!parentNode.explicitlyJoined) {
+        return;
+      }
+
+      // Select all columns
+      selectsResult.push(
+        ...parentTableMeta.columns.map((column) => ({
+          column,
+          alias: parentNode.alias,
+        }))
+      );
+
+      // Keep processing further by join nodes
+      for (const key in parentNode.relations) {
+        this.processSelects(
+          selectsResult,
+          selectArgs[key] ?? {},
+          parentNode.relations[key]!,
+          selectAll
+        );
+      }
+
+      return;
+    }
 
     // Select individual desired fields
     for (const key in selectArgs) {
@@ -387,7 +421,12 @@ export abstract class Repository {
             );
           }
 
-          this.processSelects(selectsResult, selectArgs[key]!, nextNode);
+          this.processSelects(
+            selectsResult,
+            selectArgs[key]!,
+            nextNode,
+            selectAll
+          );
         } else {
           throw new Error(
             `Can't sub-select from a column, entity ${parentTableMeta.klass.name}, field name ${key}`
