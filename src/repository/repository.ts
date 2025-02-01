@@ -9,29 +9,22 @@ import {
   SelectQueryTarget,
   SelectTargetArgs,
   Wheres,
-} from "./types";
-import { SelectSqlBuilder } from "./sql-builders/select-sql-builder";
-import { QueryRunner } from "./query-runner";
-import { JoinArg } from "./types/query/join-arg";
-import { METADATA_STORE, TableMetadata } from "./metadata";
-import { ComparisonFactory, JoinArgFactory } from "./factories";
-import { entityNameToAlias } from "./utils";
-import { ComparisonSqlBuilder, ParamBuilder } from "./sql-builders";
+} from "../types";
+import { SelectSqlBuilder } from "../sql-builders/select-sql-builder";
+import { QueryRunner } from "../query-runner";
+import { JoinArg } from "../types/query/join-arg";
+import { METADATA_STORE, TableMetadata } from "../metadata";
+import { ComparisonFactory, JoinArgFactory } from "../factories";
+import { entityNameToAlias } from "../utils";
+import { ComparisonSqlBuilder, ParamBuilder } from "../sql-builders";
+import { JoinNodeFactory } from "../factories/repository";
+import { JoinNode } from ".";
 
 type ArgsTransformations = {
   joins: JoinArg<AnEntity>[];
   wheres: ComparisonSqlBuilder[];
   selects: SelectQueryTarget[];
   orderBys: SelectQueryOrder[];
-};
-
-type JoinNode = {
-  entityMeta: TableMetadata;
-  alias: string;
-
-  relations: {
-    [key: string]: JoinNode;
-  };
 };
 
 export abstract class Repository {
@@ -72,11 +65,7 @@ export abstract class Repository {
   ): ArgsTransformations {
     const rootEntityMeta = METADATA_STORE.getTable(entity);
 
-    const rootNode: JoinNode = {
-      entityMeta: rootEntityMeta,
-      alias: entityNameToAlias(entity.name),
-      relations: {},
-    };
+    const rootNode = JoinNodeFactory.createRoot(rootEntityMeta);
 
     this.nodesFromJoins(joins, rootNode, rootEntityMeta);
     this.nodesFromWheres(wheres, rootNode, rootEntityMeta);
@@ -132,12 +121,10 @@ export abstract class Repository {
         );
       }
 
-      const nextJoinArgAlias = this.getNextNodeAlias(parentNode, nextEntity);
-      const nextJoinNode = {
-        entityMeta: nextEntityMeta,
-        alias: nextJoinArgAlias,
-        relations: {},
-      };
+      const nextJoinNode = JoinNodeFactory.createFromJoin(
+        parentTableMeta,
+        parentNode.alias
+      );
 
       parentNode.relations[key] = nextJoinNode;
 
@@ -170,12 +157,10 @@ export abstract class Repository {
         );
       }
 
-      const nextJoinArgAlias = this.getNextNodeAlias(parentNode, nextEntity);
-      const nextNode = {
-        entityMeta: nextEntityMeta,
-        alias: nextJoinArgAlias,
-        relations: {},
-      };
+      const nextNode = JoinNodeFactory.create(
+        parentTableMeta,
+        parentNode.alias
+      );
 
       parentNode.relations[key] = nextNode;
 
@@ -213,12 +198,10 @@ export abstract class Repository {
         );
       }
 
-      const nextJoinArgAlias = this.getNextNodeAlias(parentNode, nextEntity);
-      const nextNode = {
-        entityMeta: nextEntityMeta,
-        alias: nextJoinArgAlias,
-        relations: {},
-      };
+      const nextNode = JoinNodeFactory.create(
+        parentTableMeta,
+        parentNode.alias
+      );
 
       parentNode.relations[key] = nextNode;
 
@@ -256,12 +239,10 @@ export abstract class Repository {
         );
       }
 
-      const nextJoinArgAlias = this.getNextNodeAlias(parentNode, nextEntity);
-      const nextNode = {
-        entityMeta: nextEntityMeta,
-        alias: nextJoinArgAlias,
-        relations: {},
-      };
+      const nextNode = JoinNodeFactory.create(
+        parentTableMeta,
+        parentNode.alias
+      );
 
       parentNode.relations[key] = nextNode;
 
@@ -482,12 +463,5 @@ export abstract class Repository {
     }
 
     return relation.getOtherTable(parentTableMeta.klass);
-  }
-
-  private static getNextNodeAlias(
-    parentNode: JoinNode,
-    nextKlass: AnEntity
-  ): string {
-    return `${parentNode.alias}_${entityNameToAlias(nextKlass.name)}`;
   }
 }
