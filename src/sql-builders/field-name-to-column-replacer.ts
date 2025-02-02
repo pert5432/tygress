@@ -1,6 +1,7 @@
 import { METADATA_STORE } from "../metadata";
 import { AnEntity } from "../types";
 import { dQ } from "../utils";
+import { ParamBuilder } from "./param-builder";
 
 type Replacement = {
   originalStart: number;
@@ -12,29 +13,60 @@ export abstract class FieldNameToColumnReplacer {
   // Takes in SQL snippet which uses actual aliases from a query and fieldNames from an entity class
   // Returns the snippet with proper quotation and fieldNames replaced by column_names
   // Ignores fieldNames which are in parentheses
-  public static replaceCondition(
-    inputSql: string,
+  public static replaceIdentifiers(
+    input: string,
     sourcesContext: { [key: string]: AnEntity }
   ): string {
     const replacements: Replacement[] = [];
 
-    for (const word of this.wordsWithIndex(inputSql)) {
-      const identifierReplacement = this.columnIdentifierReplacement(
+    for (const word of this.wordsWithIndex(input)) {
+      const replacement = this.columnIdentifierReplacement(
         word,
         sourcesContext
       );
 
-      if (identifierReplacement) {
-        replacements.push(identifierReplacement);
+      if (replacement) {
+        replacements.push(replacement);
 
         continue;
       }
     }
 
+    return this.applyReplacements(input, replacements);
+  }
+
+  public static replaceParams(
+    input: string,
+    paramValues: { [key: string]: any },
+    paramBuilder: ParamBuilder
+  ): string {
+    const replacements: Replacement[] = [];
+
+    for (const word of this.wordsWithIndex(input)) {
+      const replacement = this.paramReplacement(
+        word,
+        paramValues,
+        paramBuilder
+      );
+
+      if (replacement) {
+        replacements.push(replacement);
+
+        continue;
+      }
+    }
+
+    return this.applyReplacements(input, replacements);
+  }
+
+  private static applyReplacements(
+    input: string,
+    replacements: Replacement[]
+  ): string {
     const chunks: string[] = [];
     let lastEnd = 0;
     for (const { originalStart, originalEnd, replacement } of replacements) {
-      chunks.push(inputSql.slice(lastEnd, originalStart));
+      chunks.push(input.slice(lastEnd, originalStart));
       chunks.push(replacement);
 
       lastEnd = originalEnd;
@@ -42,10 +74,10 @@ export abstract class FieldNameToColumnReplacer {
 
     if (replacements.length) {
       chunks.push(
-        inputSql.slice(replacements[replacements.length - 1]!.originalEnd)
+        input.slice(replacements[replacements.length - 1]!.originalEnd)
       );
     } else {
-      chunks.push(inputSql);
+      chunks.push(input);
     }
 
     return chunks.join("");
@@ -80,6 +112,34 @@ export abstract class FieldNameToColumnReplacer {
       originalStart: index,
       originalEnd: index + word.length,
       replacement: target,
+    };
+  }
+
+  private static paramReplacement(
+    { word, index }: { word: string; index: number },
+    paramValues: { [key: string]: any },
+    paramBuilder: ParamBuilder
+  ): Replacement | undefined {
+    if (word[0] !== ":") {
+      return;
+    }
+
+    const key = word.slice(1);
+
+    const value = paramValues[key];
+
+    if (!value) {
+      return;
+    }
+
+    const paramNumbers: number[] = Array.isArray(value)
+      ? value.map((v) => paramBuilder.addParam(v))
+      : [paramBuilder.addParam(value)];
+
+    return {
+      originalStart: index,
+      originalEnd: index + word.length,
+      replacement: paramNumbers.map((e) => `$${e}`).join(", "),
     };
   }
 

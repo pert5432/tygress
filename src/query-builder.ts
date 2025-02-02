@@ -65,7 +65,7 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
   }
 
   public sqlWhere(inputSql: string): QueryBuilder<E, T> {
-    const targetSql = FieldNameToColumnReplacer.replaceCondition(
+    const targetSql = FieldNameToColumnReplacer.replaceIdentifiers(
       inputSql,
       this.sourcesContext
     );
@@ -342,7 +342,7 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
     }
 
     // Add the join we are currently creating to the contexts so it can be referenced in the sql
-    const targetSql = FieldNameToColumnReplacer.replaceCondition(sql, {
+    const targetSql = FieldNameToColumnReplacer.replaceIdentifiers(sql, {
       ...this.sourcesContext,
       [nextAlias]: nextEntity,
     });
