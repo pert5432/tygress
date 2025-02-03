@@ -10,7 +10,7 @@ type Replacement = {
   replacement: string;
 };
 
-export abstract class FieldNameToColumnReplacer {
+export abstract class PseudoSQLReplacer {
   // Takes in SQL snippet which uses actual aliases from a query and fieldNames from an entity class
   // Returns the snippet with proper quotation and fieldNames replaced by column_names
   // Ignores fieldNames which are in parentheses

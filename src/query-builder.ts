@@ -3,7 +3,7 @@ import { ComparisonFactory } from "./factories";
 import { METADATA_STORE } from "./metadata";
 import {
   ComparisonSqlBuilder,
-  FieldNameToColumnReplacer,
+  PseudoSQLReplacer,
   ParamBuilder,
   SelectSqlBuilder,
 } from "./sql-builders";
@@ -70,7 +70,7 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
     inputSql: string,
     namedParams?: NamedParams
   ): QueryBuilder<E, T> {
-    const targetSql = FieldNameToColumnReplacer.replaceIdentifiers(
+    const targetSql = PseudoSQLReplacer.replaceIdentifiers(
       inputSql,
       this.sourcesContext
     );
@@ -355,7 +355,7 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
     }
 
     // Add the join we are currently creating to the contexts so it can be referenced in the sql
-    const targetSql = FieldNameToColumnReplacer.replaceIdentifiers(sql, {
+    const targetSql = PseudoSQLReplacer.replaceIdentifiers(sql, {
       ...this.sourcesContext,
       [nextAlias]: nextEntity,
     });
