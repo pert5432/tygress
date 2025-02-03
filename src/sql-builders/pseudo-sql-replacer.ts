@@ -144,8 +144,8 @@ export abstract class PseudoSQLReplacer {
     };
   }
 
-  // Split a string by spaces, returning each "word" and its start index
-  // Ignores multiple consequent spaces ("a   b" returns ["a", "b"])
+  // Fish out possible identifiers from an input, return each of them with its start index
+  // Ignores multiple consequent characters that can't appear in identifiers ("a   b" returns ["a", "b"])
   // Doesn't return words that are within single quotes
   private static *wordsWithIndex(
     sql: string
