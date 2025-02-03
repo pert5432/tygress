@@ -19,7 +19,10 @@ const main = async () => {
       "pet",
       "user"
     )
-    .join({ asdf: Users }, `asdf.fullName ILIKE '%p%'`);
+    .sqlWhere("pet.name IN(:names) AND pet.id > :num::INT", {
+      names: ["pootis", "moofis"],
+      num: 1,
+    });
 
   const runner = new QueryRunner(client, builder.getQuery());
 

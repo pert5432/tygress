@@ -1,5 +1,6 @@
 import { METADATA_STORE } from "../metadata";
 import { AnEntity } from "../types";
+import { NamedParams } from "../types/named-params";
 import { dQ } from "../utils";
 import { ParamBuilder } from "./param-builder";
 
@@ -37,7 +38,7 @@ export abstract class FieldNameToColumnReplacer {
 
   public static replaceParams(
     input: string,
-    paramValues: { [key: string]: any },
+    paramValues: NamedParams,
     paramBuilder: ParamBuilder
   ): string {
     const replacements: Replacement[] = [];
@@ -117,7 +118,7 @@ export abstract class FieldNameToColumnReplacer {
 
   private static paramReplacement(
     { word, index }: { word: string; index: number },
-    paramValues: { [key: string]: any },
+    paramValues: NamedParams,
     paramBuilder: ParamBuilder
   ): Replacement | undefined {
     if (word[0] !== ":") {
@@ -128,7 +129,7 @@ export abstract class FieldNameToColumnReplacer {
 
     const value = paramValues[key];
 
-    if (!value) {
+    if (value === undefined) {
       return;
     }
 
@@ -149,13 +150,20 @@ export abstract class FieldNameToColumnReplacer {
   private static *wordsWithIndex(
     sql: string
   ): Generator<{ index: number; word: string }> {
+    // All characters that we allow param identifiers or column identifiers to be made from
+    const desiredOutputRegex = /([A-Za-z_.:])/;
+
     let currentWord = "";
     let currentWordStart = 0;
 
     let isWithinQuotes = false;
 
     for (let i = 0; i < sql.length; i += 1) {
-      const currentChar = sql[i];
+      const currentChar = sql[i]!;
+
+      if (currentWord === "") {
+        currentWordStart = i;
+      }
 
       if (currentChar === `'`) {
         if (!isWithinQuotes) {
@@ -177,7 +185,7 @@ export abstract class FieldNameToColumnReplacer {
         continue;
       }
 
-      if (currentChar === " ") {
+      if (!currentChar.match(desiredOutputRegex)?.length) {
         if (currentWord.length === 0) continue;
 
         if (!isWithinQuotes) {
@@ -188,11 +196,19 @@ export abstract class FieldNameToColumnReplacer {
         continue;
       }
 
-      if (currentWord === "") {
-        currentWordStart = i;
-      }
-
       currentWord += currentChar;
+
+      // If the current word ends with ::
+      // Yield the word excluding ::
+      // This is done so that casts are stripped from identifiers
+      if (currentWord.slice(-2) === "::" && !isWithinQuotes) {
+        yield { word: currentWord.slice(0, -2), index: currentWordStart };
+        currentWord = "";
+      }
+    }
+
+    if (currentWord.length && !isWithinQuotes) {
+      yield { word: currentWord, index: currentWordStart };
     }
 
     return;

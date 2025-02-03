@@ -14,6 +14,7 @@ import {
   ColColComparisonArgs,
   ColParamComparisonArgs,
 } from "../types/create-args/comparison";
+import { NamedParams } from "../types/named-params";
 import {
   NotConditionWrapper,
   ParameterArgs,
@@ -32,10 +33,14 @@ export abstract class ComparisonFactory {
     return new ColParamComparison(args);
   }
 
-  public static createSql(sql: string): SqlComparison {
+  public static createSql(
+    sql: string,
+    namedParams: NamedParams
+  ): SqlComparison {
     const e = new SqlComparison();
 
     e._sql = sql;
+    e.namedParams = namedParams;
 
     return e;
   }

@@ -1,4 +1,4 @@
-import { JoinStrategy, JoinType, Relation } from "./enums";
+import { JoinStrategy, JoinType } from "./enums";
 import { ComparisonFactory } from "./factories";
 import { METADATA_STORE } from "./metadata";
 import {
@@ -15,6 +15,7 @@ import {
   SelectQueryTarget,
   WhereComparator,
 } from "./types";
+import { NamedParams } from "./types/named-params";
 import { Query } from "./types/query";
 import { JoinArg } from "./types/query/join-arg";
 import { ParameterArgs } from "./types/where-args";
@@ -34,6 +35,7 @@ type JoinImplArgs<I> = {
   parentField?: string;
 
   sql?: string;
+  namedParams?: NamedParams;
 };
 
 export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
@@ -64,13 +66,16 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
     console.log(this.wheres);
   }
 
-  public sqlWhere(inputSql: string): QueryBuilder<E, T> {
+  public sqlWhere(
+    inputSql: string,
+    namedParams?: NamedParams
+  ): QueryBuilder<E, T> {
     const targetSql = FieldNameToColumnReplacer.replaceIdentifiers(
       inputSql,
       this.sourcesContext
     );
 
-    this.wheres.push(ComparisonFactory.createSql(targetSql));
+    this.wheres.push(ComparisonFactory.createSql(targetSql, namedParams ?? {}));
 
     return this;
   }
@@ -180,7 +185,8 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
     target: I,
     parentAlias: K,
     parentField: F,
-    sql: string
+    sql: string,
+    namedParams?: NamedParams
   ): QueryBuilder<E, T & I>;
 
   public joinAndSelect<
@@ -199,7 +205,8 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
     target: I,
     parentAlias: K,
     parentField: F,
-    sql?: string
+    sql?: string,
+    namedParams?: NamedParams
   ): QueryBuilder<E, T & I> {
     // Join either by sql or by relation based on args
     if (sql?.length) {
@@ -213,6 +220,7 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
         parentField: parentField as string,
 
         sql,
+        namedParams,
 
         select: true,
       });
@@ -234,7 +242,8 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
 
   public join<IE extends AnEntity, I extends { [key: string]: IE }>(
     target: I,
-    sql: string
+    sql: string,
+    namedParams?: NamedParams
   ): QueryBuilder<E, T & I>;
 
   public join<
@@ -252,17 +261,17 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
   >(
     target: I,
     parentAliasOrSql: K | string,
-    optionalParentField?: F
+    optionalParentFieldOrNamedParams?: F | NamedParams
   ): QueryBuilder<E, T & I> {
     // Join either by sql or by relation based on args
-    if (optionalParentField) {
+    if (typeof optionalParentFieldOrNamedParams === "string") {
       this.joinImpl({
         strategy: JoinStrategy.RELATION,
         type: JoinType.INNER,
 
         target,
         parentAlias: parentAliasOrSql as string,
-        parentField: optionalParentField as string,
+        parentField: optionalParentFieldOrNamedParams,
         select: false,
       });
     } else {
@@ -273,6 +282,7 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
         target,
 
         sql: parentAliasOrSql as string,
+        namedParams: optionalParentFieldOrNamedParams as NamedParams,
 
         select: false,
       });
@@ -289,6 +299,7 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
     parentAlias,
     parentField,
     sql,
+    namedParams,
   }: JoinImplArgs<I>): this {
     if (Object.keys(target!).length !== 1) {
       throw new Error(`You need to join in exactly one entity at a time`);
@@ -320,7 +331,8 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
           sql!,
           select,
           parentAlias,
-          parentField
+          parentField,
+          namedParams
         );
     }
 
@@ -333,7 +345,8 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
     sql: string,
     select: boolean,
     parentAlias?: string,
-    parentField?: string
+    parentField?: string,
+    namedParams?: NamedParams
   ) {
     if (select && !(parentAlias?.length && parentField?.length)) {
       throw new Error(
@@ -347,7 +360,10 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
       [nextAlias]: nextEntity,
     });
 
-    const comparison = ComparisonFactory.createSql(targetSql);
+    const comparison = ComparisonFactory.createSql(
+      targetSql,
+      namedParams ?? {}
+    );
 
     this.joins.push({
       alias: nextAlias,
