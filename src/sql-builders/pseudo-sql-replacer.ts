@@ -13,7 +13,7 @@ type Replacement = {
 export abstract class PseudoSQLReplacer {
   // Takes in SQL snippet which uses actual aliases from a query and fieldNames from an entity class
   // Returns the snippet with proper quotation and fieldNames replaced by column_names
-  // Ignores fieldNames which are in parentheses
+  // Ignores any input in parentheses
   public static replaceIdentifiers(
     input: string,
     sourcesContext: { [key: string]: AnEntity }
@@ -36,6 +36,9 @@ export abstract class PseudoSQLReplacer {
     return this.applyReplacements(input, replacements);
   }
 
+  // Takes in SQL snippet which uses :param notation for named params + object with values for these params
+  // Returns the snippet with :params replaced with numeric params
+  // Ignores any input in parentheses
   public static replaceParams(
     input: string,
     paramValues: NamedParams,
