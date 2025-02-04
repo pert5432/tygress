@@ -25,9 +25,7 @@ const main = async () => {
     })
     .where("piko", "id", "lte", "pet", "id");
 
-  const runner = new QueryRunner(client, builder.getQuery());
-
-  console.log(await runner.run());
+  console.log(await builder.getEntities(client));
 
   // const users = await Repository.select(client, Users, {
   //   joins: {

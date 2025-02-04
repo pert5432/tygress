@@ -1,6 +1,8 @@
+import { Client } from "pg";
 import { JoinStrategy, JoinType } from "./enums";
 import { ComparisonFactory } from "./factories";
 import { METADATA_STORE } from "./metadata";
+import { QueryRunner } from "./query-runner";
 import {
   ComparisonSqlBuilder,
   PseudoSQLReplacer,
@@ -474,5 +476,9 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
       },
       paramBuilder
     ).buildSelect();
+  }
+
+  public async getEntities(client: Client): Promise<InstanceType<E>[]> {
+    return new QueryRunner(client, this.getQuery()).run();
   }
 }
