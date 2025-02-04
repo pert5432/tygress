@@ -5,7 +5,7 @@ import { Repository } from "./repository";
 import { Pets } from "./experiments/pets";
 import { And, Eq, Gt, In, Lt, Not, Or } from "./api";
 import { QueryBuilder } from "./query-builder";
-import { QueryRunner } from "./query-runner";
+import { EntitiesQueryRunner } from "./entities-query-runner";
 
 const main = async () => {
   const client = new Client("postgres://petr@localhost:5437/tygress");
@@ -25,7 +25,7 @@ const main = async () => {
     })
     .where("piko", "id", "lte", "pet", "id");
 
-  console.log(await builder.getEntities(client));
+  console.log(await builder.getRaw(client));
 
   // const users = await Repository.select(client, Users, {
   //   joins: {

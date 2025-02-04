@@ -1,8 +1,8 @@
-import { Entity } from "..";
+import { AnEntity } from "..";
 import { TargetNode } from ".";
 
-export type Query<E extends Entity<unknown>> = {
+export type Query = {
   sql: string;
   params: any[];
-  joinNodes: TargetNode<E>;
+  joinNodes: TargetNode<AnEntity>;
 };

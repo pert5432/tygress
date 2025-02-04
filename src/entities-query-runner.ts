@@ -2,12 +2,12 @@ import { Client } from "pg";
 import { AnEntity, Entity } from "./types";
 import { TargetNode, Query } from "./types/query";
 
-export class QueryRunner<T extends Entity<unknown>> {
+export class EntitiesQueryRunner<T extends Entity<unknown>> {
   private sql: string;
   private params: any[];
-  private joinNodes: TargetNode<T>;
+  private joinNodes: TargetNode<AnEntity>;
 
-  constructor(private client: Client, query: Query<T>) {
+  constructor(private client: Client, query: Query) {
     this.sql = query.sql;
     this.params = query.params;
     this.joinNodes = query.joinNodes;

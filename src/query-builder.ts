@@ -2,7 +2,7 @@ import { Client } from "pg";
 import { JoinStrategy, JoinType } from "./enums";
 import { ComparisonFactory } from "./factories";
 import { METADATA_STORE } from "./metadata";
-import { QueryRunner } from "./query-runner";
+import { EntitiesQueryRunner } from "./entities-query-runner";
 import {
   ComparisonSqlBuilder,
   PseudoSQLReplacer,
@@ -21,6 +21,7 @@ import { NamedParams } from "./types/named-params";
 import { Query } from "./types/query";
 import { JoinArg } from "./types/query/join-arg";
 import { ParameterArgs } from "./types/where-args";
+import { RawQueryRunner } from "./raw-query-runner";
 
 type Extract<T> = T extends Array<infer I> | Promise<infer I> ? I : T;
 
@@ -461,7 +462,7 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
     return this;
   }
 
-  public getQuery(): Query<E> {
+  public getQuery(): Query {
     const paramBuilder = new ParamBuilder();
 
     return new SelectSqlBuilder<E>(
@@ -479,6 +480,10 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
   }
 
   public async getEntities(client: Client): Promise<InstanceType<E>[]> {
-    return new QueryRunner(client, this.getQuery()).run();
+    return new EntitiesQueryRunner<E>(client, this.getQuery()).run();
+  }
+
+  public async getRaw(client: Client): Promise<any[]> {
+    return RawQueryRunner.run<E>(client, this.getQuery());
   }
 }

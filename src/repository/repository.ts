@@ -11,7 +11,7 @@ import {
   Wheres,
 } from "../types";
 import { SelectSqlBuilder } from "../sql-builders/select-sql-builder";
-import { QueryRunner } from "../query-runner";
+import { EntitiesQueryRunner } from "../entities-query-runner";
 import { JoinArg } from "../types/query/join-arg";
 import { METADATA_STORE, TableMetadata } from "../metadata";
 import { ComparisonFactory, JoinArgFactory } from "../factories";
@@ -53,7 +53,7 @@ export abstract class Repository {
       paramBuilder
     ).buildSelect();
 
-    return await new QueryRunner(client, query).run();
+    return await new EntitiesQueryRunner<T>(client, query).run();
   }
 
   private static transformArgs<T extends AnEntity>(

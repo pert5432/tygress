@@ -33,7 +33,7 @@ export class SelectSqlBuilder<T extends AnEntity> {
   private targetNodes: TargetNode<T>;
   private targetNodesByAlias = new Map<string, TargetNode<AnEntity>>();
 
-  public buildSelect(): Query<T> {
+  public buildSelect(): Query {
     this.buildJoins();
     this.buildWhereConditions();
     this.buildOrder();
