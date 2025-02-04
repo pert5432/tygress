@@ -66,20 +66,6 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
     console.log(this.wheres);
   }
 
-  public sqlWhere(
-    inputSql: string,
-    namedParams?: NamedParams
-  ): QueryBuilder<E, T> {
-    const targetSql = PseudoSQLReplacer.replaceIdentifiers(
-      inputSql,
-      this.sourcesContext
-    );
-
-    this.wheres.push(ComparisonFactory.createSql(targetSql, namedParams ?? {}));
-
-    return this;
-  }
-
   public where<K extends keyof T, F extends keyof InstanceType<T[K]>>(
     leftAlias: K,
     leftField: F,
@@ -94,18 +80,37 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
     condition: ParameterArgs<Parametrizable>
   ): QueryBuilder<E, T>;
 
+  public where(sql: string, namedParams?: NamedParams): QueryBuilder<E, T>;
+
   public where<K extends keyof T, F extends keyof InstanceType<T[K]>>(
-    leftAlias: K,
-    leftField: F,
-    conditionOrComparator: ParameterArgs<Parametrizable> | WhereComparator,
+    leftAliasOrSql: K | string,
+    leftFieldOrParams: F | NamedParams | undefined,
+    conditionOrComparator?: ParameterArgs<Parametrizable> | WhereComparator,
     rightAlias?: K,
     rightField?: F
   ): QueryBuilder<E, T> {
+    // Adding a pseudo-sql condition
+    if (["object", "undefined"].includes(typeof leftFieldOrParams)) {
+      const targetSql = PseudoSQLReplacer.replaceIdentifiers(
+        leftAliasOrSql as string,
+        this.sourcesContext
+      );
+
+      this.wheres.push(
+        ComparisonFactory.createSql(
+          targetSql,
+          (leftFieldOrParams ?? {}) as NamedParams
+        )
+      );
+
+      return this;
+    }
+
     // Adding a column cmp column condition
     if (typeof conditionOrComparator === "string") {
       const leftColumn = METADATA_STORE.getColumn(
-        this.sourcesContext[leftAlias.toString()]!,
-        leftField.toString()
+        this.sourcesContext[leftAliasOrSql.toString()]!,
+        leftFieldOrParams!.toString()
       );
 
       const rightColumn = METADATA_STORE.getColumn(
@@ -115,7 +120,7 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
 
       this.wheres.push(
         ComparisonFactory.createColCol({
-          leftAlias: leftAlias.toString(),
+          leftAlias: leftAliasOrSql.toString(),
           leftColumn: leftColumn.name,
           comparator: conditionOrComparator,
           rightAlias: rightAlias!.toString(),
@@ -128,15 +133,15 @@ export class QueryBuilder<E extends AnEntity, T extends { [key: string]: E }> {
 
     // Adding a column cmp params condition
     const column = METADATA_STORE.getColumn(
-      this.sourcesContext[leftAlias.toString()]!,
-      leftField.toString()
+      this.sourcesContext[leftAliasOrSql.toString()]!,
+      leftAliasOrSql.toString()
     );
 
     this.wheres.push(
       ComparisonFactory.createFromCondition(
-        leftAlias.toString(),
+        leftAliasOrSql.toString(),
         column,
-        conditionOrComparator
+        conditionOrComparator!
       )
     );
 

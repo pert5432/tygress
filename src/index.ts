@@ -19,10 +19,11 @@ const main = async () => {
       "pet",
       "user"
     )
-    .sqlWhere("pet.name IN(:names) AND pet.id > :num::INT", {
+    .where("pet.name IN(:names) AND pet.id > :num::INT", {
       names: ["pootis", "moofis"],
       num: 1,
-    });
+    })
+    .where("piko", "id", "lte", "pet", "id");
 
   const runner = new QueryRunner(client, builder.getQuery());
 
