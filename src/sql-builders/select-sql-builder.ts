@@ -151,6 +151,8 @@ export class SelectSqlBuilder<T extends AnEntity> {
   //
   // HELPER FUNCTIONS
   //
+
+  // Select all fields that are selectable by default on all join nodes
   private selectFieldsFromJoinNode = <E extends Entity<unknown>>(
     node: TargetNode<E>
   ): void => {
@@ -163,6 +165,7 @@ export class SelectSqlBuilder<T extends AnEntity> {
     }
   };
 
+  // Select all fields that are specified to be selected
   private selectFieldsFromSelectTargets(targets: SelectQueryTarget[]): void {
     for (const target of targets) {
       const node = this.targetNodesByAlias.get(target.alias);
@@ -171,23 +174,24 @@ export class SelectSqlBuilder<T extends AnEntity> {
         throw new Error(`No target with alias ${target.alias}`);
       }
 
-      node.selectField(target.column);
+      node.selectField(target.column, target.as);
     }
   }
 
+  // Map all fields from all nodes that are meant to be selected to SQL targets
   private selectedFieldsToSqlTargets(node: TargetNode<AnEntity>): void {
-    for (const target of node.selectedFields.values()) {
-      this.selectTarget(node.alias, target.column);
+    for (const { column, as } of node.selectedFields) {
+      const targetAlias = as?.length
+        ? dQ(as)
+        : dQ(`${node.alias}.${column.fieldName}`);
+
+      this.selectTargets.push(
+        `${dQ(node.alias)}.${dQ(column.name)} AS ${targetAlias}`
+      );
     }
 
     for (const key in node.joins) {
       this.selectedFieldsToSqlTargets(node.joins[key]!);
     }
-  }
-
-  private selectTarget(alias: string, c: ColumnMetadata): void {
-    this.selectTargets.push(
-      `${dQ(alias)}.${dQ(c.name)} AS ${dQ(`${alias}.${c.fieldName}`)}`
-    );
   }
 }

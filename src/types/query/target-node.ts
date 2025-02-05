@@ -20,8 +20,12 @@ export class TargetNode<T extends AnEntity> {
 
   parentFieldIsArray?: boolean;
 
-  selectedFields: Map<string, { fullName: string; column: ColumnMetadata }> =
-    new Map();
+  selectedFields: {
+    fieldName: string;
+    fullName: string;
+    column: ColumnMetadata;
+    as?: string;
+  }[] = [];
 
   // Keys of ids of all parent nodes, aliased
   idKeys: string[] = [];
@@ -35,14 +39,23 @@ export class TargetNode<T extends AnEntity> {
     [key: string]: TargetNode<Entity<unknown>>;
   } = {};
 
-  public selectField(column: ColumnMetadata): void {
-    if (this.selectedFields.has(column.fieldName)) {
+  public selectField(column: ColumnMetadata, as?: string): void {
+    // Don't add the exactly same field twice
+    if (
+      this.selectedFields.find(
+        (e) => e.fieldName === column.fieldName && e.as === as
+      )
+    ) {
       return;
     }
 
-    this.selectedFields.set(column.fieldName, {
-      fullName: `${this.alias}.${column.fieldName}`,
+    const fullName = as?.length ? as : `${this.alias}.${column.fieldName}`;
+
+    this.selectedFields.push({
+      fieldName: column.fieldName,
+      fullName: fullName,
       column,
+      as,
     });
   }
 

@@ -68,8 +68,8 @@ export class EntitiesQueryRunner<T extends Entity<unknown>> {
 
           // Construct entity
           const e = new node.klass() as Entity<any>;
-          for (const [field, { fullName }] of node.selectedFields) {
-            e[field] = row[fullName];
+          for (const { fieldName, fullName } of node.selectedFields) {
+            e[fieldName] = row[fullName];
           }
 
           // Is root entity

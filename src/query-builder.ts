@@ -182,7 +182,7 @@ export class QueryBuilder<
   public select<
     K extends keyof JoinedEntities,
     F extends keyof InstanceType<JoinedEntities[K]>
-  >(alias: K, field: F): this {
+  >(alias: K, field: F, as?: string): this {
     const klass = this.sourcesContext[alias];
     if (!klass) {
       throw new Error(`No entity found with alias ${alias.toString()}`);
@@ -190,7 +190,7 @@ export class QueryBuilder<
 
     const column = METADATA_STORE.getColumn(klass, field.toString());
 
-    this.selects.push({ alias: alias.toString(), column });
+    this.selects.push({ alias: alias.toString(), column, as });
 
     return this;
   }

@@ -57,11 +57,8 @@ const main = async () => {
       names: ["pootis", "moofis"],
       num: 1,
     })
-    .where("piko", "id", "lte", "pet", "id");
-
-  const a = (await builder.getRaw(client))[0]!;
-
-  console.log(a["pet.id"]);
+    .where("piko", "id", "lte", "pet", "id")
+    .select("pet", "id", "prdel_prdel");
 
   console.log(await builder.getRaw(client));
 
