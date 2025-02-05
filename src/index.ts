@@ -6,13 +6,47 @@ import { Pets } from "./experiments/pets";
 import { And, Eq, Gt, In, Lt, Not, Or } from "./api";
 import { QueryBuilder } from "./query-builder";
 import { EntitiesQueryRunner } from "./entities-query-runner";
+import { AnEntity } from "./types";
+
+type MergeAll<T extends object[]> = T extends [infer First, ...infer Rest]
+  ? First extends object
+    ? Rest extends object[]
+      ? First & MergeAll<Rest>
+      : First
+    : never
+  : {};
+
+type UnnestedEntityFields<
+  T extends { [key: string]: InstanceType<AnEntity> },
+  K extends keyof T
+> = K extends string
+  ? {
+      [F in keyof T[K] as F extends string ? `${K}.${F}` : never]: T[K][F];
+    }
+  : never;
+
+type RawEntities<T extends { [key: string]: InstanceType<AnEntity> }> = [
+  { [K in keyof T]: T[K] }
+];
+
+type Split<T> = keyof T extends infer K
+  ? K extends keyof T
+    ? [{ [P in K]: T[P] }] | [...Split<Omit<T, K>>]
+    : never
+  : never;
+
+type Entities = { a: Users; b: Pets; c: Users };
+
+type EntitiesArray = [{ a: Users }, { b: Pets }, { c: Users }];
+
+type A = MergeAll<EntitiesArray>;
 
 const main = async () => {
   const client = new Client("postgres://petr@localhost:5437/tygress");
   await client.connect();
 
   const builder = new QueryBuilder({ pet: Pets })
-    .join(
+    .joinAndSelect(
       {
         piko: Users,
       },
@@ -24,6 +58,10 @@ const main = async () => {
       num: 1,
     })
     .where("piko", "id", "lte", "pet", "id");
+
+  const a = (await builder.getRaw(client))[0]!;
+
+  console.log(a["pet.id"]);
 
   console.log(await builder.getRaw(client));
 
