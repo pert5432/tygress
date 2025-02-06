@@ -56,7 +56,8 @@ type FlattenEntities<
 export class QueryBuilder<
   E extends AnEntity,
   JoinedEntities extends { [key: string]: E },
-  SelectedEntities extends { [key: string]: E } = JoinedEntities
+  SelectedEntities extends { [key: string]: E } = JoinedEntities,
+  ExplicitSelects extends Record<string, any> = {}
 > {
   private sourcesContext: JoinedEntities;
 
@@ -94,7 +95,7 @@ export class QueryBuilder<
     comparator: WhereComparator,
     rightAlias: K,
     rightField: F
-  ): QueryBuilder<E, JoinedEntities, SelectedEntities>;
+  ): QueryBuilder<E, JoinedEntities, SelectedEntities, ExplicitSelects>;
 
   public where<
     K extends keyof JoinedEntities,
@@ -103,12 +104,12 @@ export class QueryBuilder<
     alias: K,
     field: F,
     condition: ParameterArgs<Parametrizable>
-  ): QueryBuilder<E, JoinedEntities, SelectedEntities>;
+  ): QueryBuilder<E, JoinedEntities, SelectedEntities, ExplicitSelects>;
 
   public where(
     sql: string,
     namedParams?: NamedParams
-  ): QueryBuilder<E, JoinedEntities, SelectedEntities>;
+  ): QueryBuilder<E, JoinedEntities, SelectedEntities, ExplicitSelects>;
 
   public where<
     K extends keyof JoinedEntities,
@@ -119,7 +120,7 @@ export class QueryBuilder<
     conditionOrComparator?: ParameterArgs<Parametrizable> | WhereComparator,
     rightAlias?: K,
     rightField?: F
-  ): QueryBuilder<E, JoinedEntities, SelectedEntities> {
+  ): QueryBuilder<E, JoinedEntities, SelectedEntities, ExplicitSelects> {
     // Adding a pseudo-sql condition
     if (["object", "undefined"].includes(typeof leftFieldOrParams)) {
       const targetSql = PseudoSQLReplacer.replaceIdentifiers(
@@ -181,8 +182,53 @@ export class QueryBuilder<
 
   public select<
     K extends keyof JoinedEntities,
-    F extends keyof InstanceType<JoinedEntities[K]>
-  >(alias: K, field: F, as?: string): this {
+    F extends keyof InstanceType<JoinedEntities[K]>,
+    A extends undefined
+  >(
+    alias: K,
+    field: F,
+    as?: A
+  ): QueryBuilder<
+    E,
+    JoinedEntities,
+    SelectedEntities,
+    ExplicitSelects &
+      (K extends string
+        ? F extends string
+          ? Record<`${K}.${F}`, InstanceType<JoinedEntities[K]>[F]>
+          : {}
+        : {})
+  >;
+
+  public select<
+    K extends keyof JoinedEntities,
+    F extends keyof InstanceType<JoinedEntities[K]>,
+    A extends string
+  >(
+    alias: K,
+    field: F,
+    as: A
+  ): QueryBuilder<
+    E,
+    JoinedEntities,
+    SelectedEntities,
+    ExplicitSelects & Record<A, InstanceType<JoinedEntities[K]>[F]>
+  >;
+
+  public select<
+    K extends keyof JoinedEntities,
+    F extends keyof InstanceType<JoinedEntities[K]>,
+    A extends string | undefined
+  >(
+    alias: K,
+    field: F,
+    as: A
+  ): QueryBuilder<
+    E,
+    JoinedEntities,
+    SelectedEntities,
+    ExplicitSelects & Record<string, InstanceType<JoinedEntities[K]>[F]>
+  > {
     const klass = this.sourcesContext[alias];
     if (!klass) {
       throw new Error(`No entity found with alias ${alias.toString()}`);
@@ -192,7 +238,7 @@ export class QueryBuilder<
 
     this.selects.push({ alias: alias.toString(), column, as });
 
-    return this;
+    return this as any;
   }
 
   public orderBy<
@@ -520,7 +566,11 @@ export class QueryBuilder<
 
   public async getRaw(
     client: Client
-  ): Promise<UnionToIntersection<FlattenEntities<SelectedEntities>>[]> {
+  ): Promise<
+    keyof ExplicitSelects extends never
+      ? UnionToIntersection<FlattenEntities<SelectedEntities>>[]
+      : ExplicitSelects[]
+  > {
     return RawQueryRunner.run(client, this.getQuery()) as any;
   }
 }
