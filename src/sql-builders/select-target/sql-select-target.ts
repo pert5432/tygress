@@ -1,4 +1,5 @@
 import { NamedParams } from "../../types/named-params";
+import { dQ } from "../../utils";
 import { ParamBuilder } from "../param-builder";
 import { PseudoSQLReplacer } from "../pseudo-sql-replacer";
 import { SelectTargetSqlBuilder } from "./select-target";
@@ -13,6 +14,6 @@ export class SqlSelectTargetSqlBuilder extends SelectTargetSqlBuilder {
       ? PseudoSQLReplacer.replaceParams(this._sql, this.params, paramBuilder)
       : this._sql;
 
-    return `${processedSql} AS ${this.as}`;
+    return `${processedSql} AS ${dQ(this.as)}`;
   }
 }

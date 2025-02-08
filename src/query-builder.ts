@@ -184,7 +184,8 @@ export class QueryBuilder<
   public selectRaw<T extends any, Alias extends string>(
     sql: string,
     as: Alias,
-    f: () => T
+    f: () => T,
+    params?: NamedParams
   ): QueryBuilder<
     E,
     JoinedEntities,
@@ -198,7 +199,8 @@ export class QueryBuilder<
 
   public selectRaw<T extends any, Alias extends string>(
     sql: string,
-    as: Alias
+    as: Alias,
+    params?: NamedParams
   ): QueryBuilder<
     E,
     JoinedEntities,
@@ -209,13 +211,24 @@ export class QueryBuilder<
   public selectRaw<T extends any, Alias extends string>(
     sql: string,
     as: Alias,
-    f?: () => T
+    fOrParams?: () => T | NamedParams,
+    _f?: () => T
   ): QueryBuilder<
     E,
     JoinedEntities,
     SelectedEntities,
     ExplicitSelects & Record<Alias, T>
   > {
+    const params = fOrParams && Object.keys(fOrParams).length ? fOrParams : {};
+
+    this.selects.push(
+      SelectTargetSqlBuilderFactory.createSql(
+        PseudoSQLReplacer.replaceIdentifiers(sql, this.sourcesContext),
+        as,
+        params
+      )
+    );
+
     return this as any;
   }
 

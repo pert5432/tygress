@@ -181,7 +181,7 @@ export class SelectSqlBuilder<T extends AnEntity> {
       this.selectTargetSqlBuilders.push(builder);
 
       if (!(builder instanceof ColumnSelectTargetSqlBuilder)) {
-        return;
+        continue;
       }
 
       const node = this.targetNodesByAlias.get(builder.alias);

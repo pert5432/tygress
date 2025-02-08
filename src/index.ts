@@ -20,17 +20,16 @@ const main = async () => {
       "pet",
       "user"
     )
-    .where("pet.name IN(:names) AND pet.id > :num::INT", {
+    .where("pet.name IN(:names) AND pet.id >= :num::INT", {
       names: ["pootis", "moofis"],
       num: 1,
     })
     .where("piko", "id", "lte", "pet", "id")
-    .select("pet", "id")
-    .select("pet", "id", "hovno")
-    .select("pet", "name", "petname")
-    .selectRaw<number, "aas">("COUNT(1)", "aas")
-    .selectRaw("SUM(pet.id)", "asdasd", Number)
-    .selectRaw("pet.id IS NULL", "is_null", Boolean);
+    .selectRaw<number, "aAs">("COUNT(1) FILTER (WHERE pet.id = :id)", "aAs", {
+      id: 1,
+    })
+    .selectRaw("SUM(pet.id)", "asdasd", Number);
+  // .selectRaw("pet.id IS NULL", "is_null", Boolean);
 
   const a = await builder.getRaw(client);
 
