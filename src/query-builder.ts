@@ -180,6 +180,44 @@ export class QueryBuilder<
     return this;
   }
 
+  public selectRaw<T extends any, Alias extends string>(
+    sql: string,
+    as: Alias,
+    f: () => T
+  ): QueryBuilder<
+    E,
+    JoinedEntities,
+    SelectedEntities,
+    ExplicitSelects &
+      Record<
+        Alias,
+        T extends abstract new (...args: any) => any ? InstanceType<T> : T
+      >
+  >;
+
+  public selectRaw<T extends any, Alias extends string>(
+    sql: string,
+    as: Alias
+  ): QueryBuilder<
+    E,
+    JoinedEntities,
+    SelectedEntities,
+    ExplicitSelects & Record<Alias, T>
+  >;
+
+  public selectRaw<T extends any, Alias extends string>(
+    sql: string,
+    as: Alias,
+    f?: () => T
+  ): QueryBuilder<
+    E,
+    JoinedEntities,
+    SelectedEntities,
+    ExplicitSelects & Record<Alias, T>
+  > {
+    return this as any;
+  }
+
   public select<
     K extends keyof JoinedEntities,
     F extends keyof InstanceType<JoinedEntities[K]>,
