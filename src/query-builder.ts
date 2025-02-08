@@ -389,7 +389,7 @@ export class QueryBuilder<
     parentField,
     sql,
     namedParams,
-  }: JoinImplArgs<I>): this {
+  }: JoinImplArgs<I>): void {
     if (Object.keys(target!).length !== 1) {
       throw new Error(`You need to join in exactly one entity at a time`);
     }
@@ -424,8 +424,6 @@ export class QueryBuilder<
           namedParams
         );
     }
-
-    return this;
   }
 
   private joinViaSql(
@@ -436,7 +434,7 @@ export class QueryBuilder<
     parentAlias?: string,
     parentField?: string,
     namedParams?: NamedParams
-  ) {
+  ): void {
     if (select && !(parentAlias?.length && parentField?.length)) {
       throw new Error(
         `SQL join needs parent alias and parent field with select set to true`
@@ -471,7 +469,7 @@ export class QueryBuilder<
     nextAlias: string,
     nextEntity: AnEntity,
     select: boolean
-  ) {
+  ): void {
     const parentEntity = this.sourcesContext[parentAlias];
 
     if (!parentEntity) {
@@ -531,7 +529,7 @@ export class QueryBuilder<
     return this;
   }
 
-  public unselectAll(): this {
+  public unselectAll(): QueryBuilder<E, JoinedEntities, SelectedEntities, {}> {
     this.selects = [];
 
     return this;
