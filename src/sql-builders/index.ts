@@ -6,5 +6,10 @@ export {
   ComparisonWrapper,
   NotComparisonWrapper,
 } from "./comparison";
+export {
+  ColumnSelectTargetSqlBuilder,
+  SelectTargetSqlBuilder,
+  SqlSelectTargetSqlBuilder,
+} from "./select-target";
 export { ParamBuilder } from "./param-builder";
 export { PseudoSQLReplacer } from "./pseudo-sql-replacer";

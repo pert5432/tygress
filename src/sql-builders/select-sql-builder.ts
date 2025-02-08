@@ -1,10 +1,14 @@
 import { TargetNodeFactory } from "../factories";
-import { ColumnMetadata, METADATA_STORE, TableMetadata } from "../metadata";
-import { Entity, SelectQueryArgs, AnEntity, SelectQueryTarget } from "../types";
+import { METADATA_STORE, TableMetadata } from "../metadata";
+import { Entity, SelectQueryArgs, AnEntity } from "../types";
 import { TargetNode, Query } from "../types/query";
 import { dQ } from "../utils";
 import { JoinArg } from "../types/query/join-arg";
 import { ParamBuilder } from "./param-builder";
+import {
+  ColumnSelectTargetSqlBuilder,
+  SelectTargetSqlBuilder,
+} from "./select-target";
 
 export class SelectSqlBuilder<T extends AnEntity> {
   constructor(
@@ -25,10 +29,11 @@ export class SelectSqlBuilder<T extends AnEntity> {
   }
 
   private table: TableMetadata;
-  private selectTargets: string[] = [];
   private whereConditions: string[] = [];
   private sqlJoins: string[] = [];
   private orderBys: string[] = [];
+
+  private selectTargetSqlBuilders: SelectTargetSqlBuilder[] = [];
 
   private targetNodes: TargetNode<T>;
   private targetNodesByAlias = new Map<string, TargetNode<AnEntity>>();
@@ -40,17 +45,20 @@ export class SelectSqlBuilder<T extends AnEntity> {
 
     // Set which fields should be selected
     if (this.args.selects.length) {
-      this.selectFieldsFromSelectTargets(this.args.selects);
+      this.registerSelectedFieldsToNodes(this.args.selects);
     } else {
       this.selectFieldsFromJoinNode(this.targetNodes);
     }
 
-    // Turn selected fields into SQL statements
-    this.selectedFieldsToSqlTargets(this.targetNodes);
+    //
+    // Build the actual SQL
+    //
 
-    let sql = `SELECT ${this.selectTargets.join(", ")} FROM ${dQ(
-      this.table.tablename
-    )} ${dQ(this.targetNodes.alias)}`;
+    let sql = `SELECT ${this.selectTargetSqlBuilders
+      .map((e) => e.sql(this.paramBuilder))
+      .join(", ")} FROM ${dQ(this.table.tablename)} ${dQ(
+      this.targetNodes.alias
+    )}`;
 
     if (this.sqlJoins.length) {
       sql += ` ${this.sqlJoins.join(" ")}`;
@@ -74,7 +82,7 @@ export class SelectSqlBuilder<T extends AnEntity> {
 
     if (this.args.offset) {
       if (this.args.offset < 0) {
-        throw new Error(`Bogus limit ${this.args.offset}`);
+        throw new Error(`Bogus offset ${this.args.offset}`);
       }
 
       sql += ` OFFSET ${this.args.offset}`;
@@ -166,32 +174,23 @@ export class SelectSqlBuilder<T extends AnEntity> {
   };
 
   // Select all fields that are specified to be selected
-  private selectFieldsFromSelectTargets(targets: SelectQueryTarget[]): void {
-    for (const target of targets) {
-      const node = this.targetNodesByAlias.get(target.alias);
+  private registerSelectedFieldsToNodes(
+    targets: SelectTargetSqlBuilder[]
+  ): void {
+    for (const builder of targets) {
+      this.selectTargetSqlBuilders.push(builder);
 
-      if (!node) {
-        throw new Error(`No target with alias ${target.alias}`);
+      if (!(builder instanceof ColumnSelectTargetSqlBuilder)) {
+        return;
       }
 
-      node.selectField(target.column, target.as);
-    }
-  }
+      const node = this.targetNodesByAlias.get(builder.alias);
 
-  // Map all fields from all nodes that are meant to be selected to SQL targets
-  private selectedFieldsToSqlTargets(node: TargetNode<AnEntity>): void {
-    for (const { column, as } of node.selectedFields) {
-      const targetAlias = as?.length
-        ? dQ(as)
-        : dQ(`${node.alias}.${column.fieldName}`);
+      if (!node) {
+        throw new Error(`No target with alias ${builder.alias}`);
+      }
 
-      this.selectTargets.push(
-        `${dQ(node.alias)}.${dQ(column.name)} AS ${targetAlias}`
-      );
-    }
-
-    for (const key in node.joins) {
-      this.selectedFieldsToSqlTargets(node.joins[key]!);
+      node.selectField(builder.column, builder.as);
     }
   }
 }

@@ -1,6 +1,6 @@
 import { Client } from "pg";
 import { JoinStrategy, JoinType } from "./enums";
-import { ComparisonFactory } from "./factories";
+import { ComparisonFactory, SelectTargetSqlBuilderFactory } from "./factories";
 import { METADATA_STORE } from "./metadata";
 import { EntitiesQueryRunner } from "./entities-query-runner";
 import {
@@ -8,6 +8,7 @@ import {
   PseudoSQLReplacer,
   ParamBuilder,
   SelectSqlBuilder,
+  SelectTargetSqlBuilder,
 } from "./sql-builders";
 import {
   AnEntity,
@@ -63,7 +64,7 @@ export class QueryBuilder<
 
   private joins: JoinArg<AnEntity>[] = [];
   private wheres: ComparisonSqlBuilder[] = [];
-  private selects: SelectQueryTarget[] = [];
+  private selects: SelectTargetSqlBuilder[] = [];
   private orderBys: SelectQueryOrder[] = [];
 
   private _limit?: number;
@@ -274,7 +275,9 @@ export class QueryBuilder<
 
     const column = METADATA_STORE.getColumn(klass, field.toString());
 
-    this.selects.push({ alias: alias.toString(), column, as });
+    this.selects.push(
+      SelectTargetSqlBuilderFactory.createColumn(alias.toString(), column, as)
+    );
 
     return this as any;
   }

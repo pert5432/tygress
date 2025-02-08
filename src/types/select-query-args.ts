@@ -1,12 +1,10 @@
-import { ComparisonSqlBuilder } from "../sql-builders";
+import { ComparisonSqlBuilder, SelectTargetSqlBuilder } from "../sql-builders";
 import { AnEntity } from "./entity";
-import { OrderArgs } from "./order-args";
 import { JoinArg } from "./query/join-arg";
 import { SelectQueryOrder } from "./select-query-order";
-import { SelectQueryTarget } from "./select-query-target";
 
 export type SelectQueryArgs = {
-  selects: SelectQueryTarget[];
+  selects: SelectTargetSqlBuilder[];
 
   joins: JoinArg<AnEntity>[];
 

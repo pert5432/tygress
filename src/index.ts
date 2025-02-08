@@ -6,6 +6,8 @@ import { Pets } from "./experiments/pets";
 import { And, Eq, Gt, In, Lt, Not, Or } from "./api";
 import { QueryBuilder } from "./query-builder";
 
+type Cringe = { name: string; height: number };
+
 const main = async () => {
   const client = new Client("postgres://petr@localhost:5437/tygress");
   await client.connect();
@@ -24,11 +26,15 @@ const main = async () => {
     })
     .where("piko", "id", "lte", "pet", "id")
     .select("pet", "id")
-    .select("pet", "id", "hovno");
+    .select("pet", "id", "hovno")
+    .select("pet", "name", "petname")
+    .selectRaw<number, "aas">("COUNT(1)", "aas")
+    .selectRaw("SUM(pet.id)", "asdasd", Number)
+    .selectRaw("pet.id IS NULL", "is_null", Boolean);
 
   const a = await builder.getRaw(client);
 
-  console.log(a[0]?.["pet.id"]);
+  console.log(a[0]);
 
   // const users = await Repository.select(client, Users, {
   //   joins: {

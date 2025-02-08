@@ -7,3 +7,4 @@ export { ParametrizedConditionFactory } from "./parametrized-condition";
 export { ConditionWrapperFactory } from "./parametrized-condition-wrapper";
 export { UniqueConstraintMetadataFactory } from "./unique-constraint-metadata";
 export { JoinArgFactory } from "./join-arg";
+export { SelectTargetSqlBuilderFactory } from "./select-target-sql-builder";

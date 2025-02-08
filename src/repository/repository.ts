@@ -14,16 +14,25 @@ import { SelectSqlBuilder } from "../sql-builders/select-sql-builder";
 import { EntitiesQueryRunner } from "../entities-query-runner";
 import { JoinArg } from "../types/query/join-arg";
 import { METADATA_STORE, TableMetadata } from "../metadata";
-import { ComparisonFactory, JoinArgFactory } from "../factories";
+import {
+  ComparisonFactory,
+  JoinArgFactory,
+  SelectTargetSqlBuilderFactory,
+} from "../factories";
 import { entityNameToAlias } from "../utils";
-import { ComparisonSqlBuilder, ParamBuilder } from "../sql-builders";
+import {
+  ComparisonSqlBuilder,
+  ParamBuilder,
+  SelectTargetSqlBuilder,
+} from "../sql-builders";
 import { JoinNodeFactory } from "../factories/repository";
 import { JoinNode } from ".";
 
+// TODO: Replace with usage of SelectQueryArgs type
 type ArgsTransformations = {
   joins: JoinArg<AnEntity>[];
   wheres: ComparisonSqlBuilder[];
-  selects: SelectQueryTarget[];
+  selects: SelectTargetSqlBuilder[];
   orderBys: SelectQueryOrder[];
 };
 
@@ -76,7 +85,7 @@ export abstract class Repository {
       JoinArgFactory.createRoot(entity, entityNameToAlias(entity.name)),
     ];
     const wheresResult: ComparisonSqlBuilder[] = [];
-    const selectsResult: SelectQueryTarget[] = [];
+    const selectsResult: SelectTargetSqlBuilder[] = [];
     const orderBysResult: SelectQueryOrder[] = [];
 
     this.processJoins(joinsResult, rootNode);
@@ -344,7 +353,7 @@ export abstract class Repository {
   }
 
   private static processSelects(
-    selectsResult: SelectQueryTarget[],
+    selectsResult: SelectTargetSqlBuilder[],
     selectArgs: SelectTargetArgs<AnEntity>,
     parentNode: JoinNode,
     selectAll: boolean
@@ -360,10 +369,9 @@ export abstract class Repository {
 
       // Select all columns
       selectsResult.push(
-        ...parentTableMeta.columnsSelectableByDefault.map((column) => ({
-          column,
-          alias: parentNode.alias,
-        }))
+        ...parentTableMeta.columnsSelectableByDefault.map((column) =>
+          SelectTargetSqlBuilderFactory.createColumn(parentNode.alias, column)
+        )
       );
 
       // Keep processing further by join nodes
@@ -392,13 +400,17 @@ export abstract class Repository {
 
       if (selectArgs[key] === true) {
         if (column) {
-          selectsResult.push({ alias: parentNode.alias, column });
+          selectsResult.push(
+            SelectTargetSqlBuilderFactory.createColumn(parentNode.alias, column)
+          );
         } else {
           selectsResult.push(
-            ...parentTableMeta.columnsSelectableByDefault.map((column) => ({
-              column,
-              alias: parentNode.alias,
-            }))
+            ...parentTableMeta.columnsSelectableByDefault.map((column) =>
+              SelectTargetSqlBuilderFactory.createColumn(
+                parentNode.alias,
+                column
+              )
+            )
           );
         }
         // arg is an object
