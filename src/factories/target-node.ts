@@ -20,7 +20,7 @@ export abstract class TargetNodeFactory {
     e.idKeys = [...parentNode.idKeys, `${alias}.${primaryKey.fieldName}`];
 
     // Always select primary key
-    e.selectField(METADATA_STORE.getColumn(klass, primaryKey.fieldName));
+    e.primaryKeyColumn = METADATA_STORE.getColumn(klass, primaryKey.fieldName);
 
     e.select = select === false ? false : true;
 
@@ -44,22 +44,10 @@ export abstract class TargetNodeFactory {
 
     e.idKeys = [`${alias}.${primaryKey.fieldName}`];
 
-    // Always select primary key
-    e.selectField(METADATA_STORE.getColumn(klass, primaryKey.fieldName));
+    e.primaryKeyColumn = METADATA_STORE.getColumn(klass, primaryKey.fieldName);
 
     e.select = select === false ? false : true;
 
     return e;
-  }
-
-  private static getRelationToParent(relation: Relation): Relation {
-    switch (relation) {
-      case Relation.ONE_TO_MANY:
-        return Relation.MANY_TO_ONE;
-      case Relation.MANY_TO_ONE:
-        return Relation.ONE_TO_MANY;
-      default:
-        return Relation.ONE_TO_ONE;
-    }
   }
 }

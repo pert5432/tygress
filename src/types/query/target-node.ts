@@ -20,6 +20,8 @@ export class TargetNode<T extends AnEntity> {
 
   parentFieldIsArray?: boolean;
 
+  primaryKeyColumn: ColumnMetadata;
+
   selectedFields: {
     fieldName: string;
     fullName: string;

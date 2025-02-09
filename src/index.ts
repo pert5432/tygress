@@ -25,13 +25,9 @@ const main = async () => {
       num: 1,
     })
     .where("piko", "id", "lte", "pet", "id")
-    .selectRaw<number, "aAs">("COUNT(1) FILTER (WHERE pet.id = :id)", "aAs", {
-      id: 1,
-    })
-    .selectRaw("SUM(pet.id)", "asdasd", Number);
-  // .selectRaw("pet.id IS NULL", "is_null", Boolean);
+    .select("pet", "name");
 
-  const a = await builder.getRaw(client);
+  const a = await builder.getEntities(client);
 
   console.log(a[0]);
 
