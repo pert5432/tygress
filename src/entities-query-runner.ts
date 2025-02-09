@@ -2,7 +2,7 @@ import { Client } from "pg";
 import { AnEntity, Entity } from "./types";
 import { TargetNode, Query } from "./types/query";
 
-export class EntitiesQueryRunner<T extends Entity<unknown>> {
+export class EntitiesQueryRunner<T extends AnEntity> {
   private sql: string;
   private params: any[];
   private joinNodes: TargetNode<AnEntity>;

@@ -12,10 +12,8 @@ import {
 } from "./sql-builders";
 import {
   AnEntity,
-  Entity,
   Parametrizable,
   SelectQueryOrder,
-  SelectQueryTarget,
   WhereComparator,
 } from "./types";
 import { NamedParams } from "./types/named-params";
@@ -25,12 +23,11 @@ import { ParameterArgs } from "./types/where-args";
 import { RawQueryRunner } from "./raw-query-runner";
 import { UnionToIntersection } from "./types/helpers";
 
-type Extract<T> = T extends Array<infer I> | Promise<infer I> ? I : T;
-
 type JoinImplArgs<I> = {
   strategy: JoinStrategy;
 
-  target: I;
+  targetAlias: string;
+  targetEntity: AnEntity;
 
   select: boolean;
 
@@ -55,9 +52,9 @@ type FlattenEntities<
   : never;
 
 export class QueryBuilder<
-  E extends AnEntity,
-  JoinedEntities extends { [key: string]: E },
-  SelectedEntities extends { [key: string]: E } = JoinedEntities,
+  RootEntity extends AnEntity,
+  JoinedEntities extends Record<string, AnEntity>,
+  SelectedEntities extends Record<string, AnEntity> = JoinedEntities,
   ExplicitSelects extends Record<string, any> = {}
 > {
   private sourcesContext: JoinedEntities;
@@ -70,16 +67,11 @@ export class QueryBuilder<
   private _limit?: number;
   private _offset?: number;
 
-  constructor(a: JoinedEntities) {
-    this.sourcesContext = a;
-
-    if (Object.keys(a).length !== 1) {
-      throw new Error("Source entity object has to have exactly one key");
-    }
+  constructor(alias: string, entity: AnEntity) {
+    this.sourcesContext = { [alias]: entity } as any;
 
     // Set the first join to be the root entity
-    const alias = Object.keys(a)[0]!;
-    this.joins = [{ alias, klass: a[alias]! }];
+    this.joins = [{ alias, klass: entity }];
   }
 
   public log() {
@@ -96,7 +88,12 @@ export class QueryBuilder<
     comparator: WhereComparator,
     rightAlias: K,
     rightField: F
-  ): QueryBuilder<E, JoinedEntities, SelectedEntities, ExplicitSelects>;
+  ): QueryBuilder<
+    RootEntity,
+    JoinedEntities,
+    SelectedEntities,
+    ExplicitSelects
+  >;
 
   public where<
     K extends keyof JoinedEntities,
@@ -105,12 +102,22 @@ export class QueryBuilder<
     alias: K,
     field: F,
     condition: ParameterArgs<Parametrizable>
-  ): QueryBuilder<E, JoinedEntities, SelectedEntities, ExplicitSelects>;
+  ): QueryBuilder<
+    RootEntity,
+    JoinedEntities,
+    SelectedEntities,
+    ExplicitSelects
+  >;
 
   public where(
     sql: string,
     namedParams?: NamedParams
-  ): QueryBuilder<E, JoinedEntities, SelectedEntities, ExplicitSelects>;
+  ): QueryBuilder<
+    RootEntity,
+    JoinedEntities,
+    SelectedEntities,
+    ExplicitSelects
+  >;
 
   public where<
     K extends keyof JoinedEntities,
@@ -121,7 +128,12 @@ export class QueryBuilder<
     conditionOrComparator?: ParameterArgs<Parametrizable> | WhereComparator,
     rightAlias?: K,
     rightField?: F
-  ): QueryBuilder<E, JoinedEntities, SelectedEntities, ExplicitSelects> {
+  ): QueryBuilder<
+    RootEntity,
+    JoinedEntities,
+    SelectedEntities,
+    ExplicitSelects
+  > {
     // Adding a pseudo-sql condition
     if (["object", "undefined"].includes(typeof leftFieldOrParams)) {
       const targetSql = PseudoSQLReplacer.replaceIdentifiers(
@@ -187,7 +199,7 @@ export class QueryBuilder<
     f: () => T,
     params?: NamedParams
   ): QueryBuilder<
-    E,
+    RootEntity,
     JoinedEntities,
     SelectedEntities,
     ExplicitSelects &
@@ -202,7 +214,7 @@ export class QueryBuilder<
     as: Alias,
     params?: NamedParams
   ): QueryBuilder<
-    E,
+    RootEntity,
     JoinedEntities,
     SelectedEntities,
     ExplicitSelects & Record<Alias, T>
@@ -214,7 +226,7 @@ export class QueryBuilder<
     fOrParams?: () => T | NamedParams,
     _f?: () => T
   ): QueryBuilder<
-    E,
+    RootEntity,
     JoinedEntities,
     SelectedEntities,
     ExplicitSelects & Record<Alias, T>
@@ -241,7 +253,7 @@ export class QueryBuilder<
     field: F,
     as?: A
   ): QueryBuilder<
-    E,
+    RootEntity,
     JoinedEntities,
     SelectedEntities,
     ExplicitSelects &
@@ -261,7 +273,7 @@ export class QueryBuilder<
     field: F,
     as: A
   ): QueryBuilder<
-    E,
+    RootEntity,
     JoinedEntities,
     SelectedEntities,
     ExplicitSelects & Record<A, InstanceType<JoinedEntities[K]>[F]>
@@ -276,7 +288,7 @@ export class QueryBuilder<
     field: F,
     as: A
   ): QueryBuilder<
-    E,
+    RootEntity,
     JoinedEntities,
     SelectedEntities,
     ExplicitSelects & Record<string, InstanceType<JoinedEntities[K]>[F]>
@@ -312,48 +324,64 @@ export class QueryBuilder<
   }
 
   public joinAndSelect<
+    A extends string,
+    E extends AnEntity,
     K extends keyof JoinedEntities,
-    F extends keyof InstanceType<JoinedEntities[K]>,
-    IE extends AnEntity,
-    I extends { [key: string]: IE }
+    F extends keyof InstanceType<JoinedEntities[K]>
   >(
-    target: I,
+    targetAlias: A,
+    targetEntity: E,
     parentAlias: K,
     parentField: F,
     sql: string,
     namedParams?: NamedParams
-  ): QueryBuilder<E, JoinedEntities & I, SelectedEntities & I>;
+  ): QueryBuilder<
+    RootEntity,
+    JoinedEntities & Record<A, E>,
+    SelectedEntities & Record<A, E>
+  >;
 
   public joinAndSelect<
+    A extends string,
+    E extends AnEntity,
     K extends keyof JoinedEntities,
-    F extends keyof InstanceType<JoinedEntities[K]>,
-    IE extends Entity<Extract<InstanceType<JoinedEntities[K]>[F]>>,
-    I extends { [key: string]: IE }
+    F extends keyof InstanceType<JoinedEntities[K]>
   >(
-    target: I,
+    targetAlias: A,
+    targetEntity: E,
     parentAlias: K,
     parentField: F
-  ): QueryBuilder<E, JoinedEntities & I, SelectedEntities & I>;
+  ): QueryBuilder<
+    RootEntity,
+    JoinedEntities & Record<A, E>,
+    SelectedEntities & Record<A, E>
+  >;
 
   public joinAndSelect<
+    A extends string,
+    E extends AnEntity,
     K extends keyof JoinedEntities,
-    F extends keyof InstanceType<JoinedEntities[K]>,
-    IE extends AnEntity,
-    I extends { [key: string]: IE }
+    F extends keyof InstanceType<JoinedEntities[K]>
   >(
-    target: I,
+    targetAlias: A,
+    targetEntity: E,
     parentAlias: K,
     parentField: F,
     sql?: string,
     namedParams?: NamedParams
-  ): QueryBuilder<E, JoinedEntities & I, SelectedEntities & I> {
+  ): QueryBuilder<
+    RootEntity,
+    JoinedEntities & Record<A, E>,
+    SelectedEntities & Record<A, E>
+  > {
     // Join either by sql or by relation based on args
     if (sql?.length) {
       this.joinImpl({
         strategy: JoinStrategy.SQL,
         type: JoinType.INNER,
 
-        target,
+        targetAlias,
+        targetEntity,
 
         parentAlias: parentAlias as string,
         parentField: parentField as string,
@@ -368,7 +396,8 @@ export class QueryBuilder<
         strategy: JoinStrategy.RELATION,
         type: JoinType.INNER,
 
-        target,
+        targetAlias,
+        targetEntity,
         parentAlias: parentAlias as string,
         parentField: parentField as string,
 
@@ -379,40 +408,44 @@ export class QueryBuilder<
     return this as any;
   }
 
-  public join<IE extends AnEntity, I extends { [key: string]: IE }>(
-    target: I,
-    sql: string,
-    namedParams?: NamedParams
-  ): QueryBuilder<E, JoinedEntities & I, SelectedEntities>;
-
   public join<
+    A extends string,
+    E extends AnEntity,
     K extends keyof JoinedEntities,
-    F extends keyof InstanceType<JoinedEntities[K]>,
-    IE extends Entity<Extract<InstanceType<JoinedEntities[K]>[F]>>,
-    I extends { [key: string]: IE }
+    F extends keyof InstanceType<JoinedEntities[K]>
   >(
-    target: I,
+    targetAlias: A,
+    targetEntity: E,
     parentAlias: K,
     parentField: F
-  ): QueryBuilder<E, JoinedEntities & I, SelectedEntities>;
+  ): QueryBuilder<RootEntity, JoinedEntities & Record<A, E>, SelectedEntities>;
+
+  public join<A extends string, E extends AnEntity>(
+    targetAlias: A,
+    targetEntity: E,
+    sql: string,
+    namedParams?: NamedParams
+  ): QueryBuilder<RootEntity, JoinedEntities & Record<A, E>, SelectedEntities>;
 
   public join<
+    A extends string,
+    E extends AnEntity,
     K extends keyof JoinedEntities,
-    F extends keyof InstanceType<JoinedEntities[K]>,
-    IE extends Entity<Extract<InstanceType<JoinedEntities[K]>[F]>>,
-    I extends { [key: string]: IE }
+    F extends keyof InstanceType<JoinedEntities[K]>
   >(
-    target: I,
+    targetAlias: A,
+    targetEntity: E,
     parentAliasOrSql: K | string,
     optionalParentFieldOrNamedParams?: F | NamedParams
-  ): QueryBuilder<E, JoinedEntities & I, SelectedEntities> {
+  ): QueryBuilder<RootEntity, JoinedEntities & Record<A, E>, SelectedEntities> {
     // Join either by sql or by relation based on args
     if (typeof optionalParentFieldOrNamedParams === "string") {
       this.joinImpl({
         strategy: JoinStrategy.RELATION,
         type: JoinType.INNER,
 
-        target,
+        targetAlias,
+        targetEntity,
         parentAlias: parentAliasOrSql as string,
         parentField: optionalParentFieldOrNamedParams,
         select: false,
@@ -422,7 +455,8 @@ export class QueryBuilder<
         strategy: JoinStrategy.SQL,
         type: JoinType.INNER,
 
-        target,
+        targetAlias,
+        targetEntity,
 
         sql: parentAliasOrSql as string,
         namedParams: optionalParentFieldOrNamedParams as NamedParams,
@@ -438,39 +472,32 @@ export class QueryBuilder<
     type,
     select,
     strategy,
-    target,
+    targetAlias,
+    targetEntity,
     parentAlias,
     parentField,
     sql,
     namedParams,
   }: JoinImplArgs<I>): void {
-    if (Object.keys(target!).length !== 1) {
-      throw new Error(`You need to join in exactly one entity at a time`);
+    if (this.sourcesContext[targetAlias]) {
+      throw new Error(`Entity with alias ${targetAlias} is already joined in`);
     }
-
-    const nextAlias = Object.keys(target!)[0]!;
-
-    if (this.sourcesContext[nextAlias]) {
-      throw new Error(`Entity with alias ${nextAlias} is already joined in`);
-    }
-
-    const nextEntity = target[nextAlias]!;
 
     switch (strategy) {
       case JoinStrategy.RELATION:
         this.joinViaRelation(
           parentAlias!,
           parentField!,
-          nextAlias,
-          nextEntity,
+          targetAlias,
+          targetEntity,
           select
         );
         break;
 
       case JoinStrategy.SQL:
         this.joinViaSql(
-          nextAlias,
-          nextEntity,
+          targetAlias,
+          targetEntity,
           sql!,
           select,
           parentAlias,
@@ -583,7 +610,12 @@ export class QueryBuilder<
     return this;
   }
 
-  public unselectAll(): QueryBuilder<E, JoinedEntities, SelectedEntities, {}> {
+  public unselectAll(): QueryBuilder<
+    RootEntity,
+    JoinedEntities,
+    SelectedEntities,
+    {}
+  > {
     this.selects = [];
 
     return this;
@@ -598,7 +630,7 @@ export class QueryBuilder<
   public getQuery(): Query {
     const paramBuilder = new ParamBuilder();
 
-    return new SelectSqlBuilder<E>(
+    return new SelectSqlBuilder<RootEntity>(
       {
         joins: this.joins,
         wheres: this.wheres,
@@ -612,8 +644,10 @@ export class QueryBuilder<
     ).buildSelect();
   }
 
-  public async getEntities(client: Client): Promise<InstanceType<E>[]> {
-    return new EntitiesQueryRunner<E>(client, this.getQuery()).run();
+  public async getEntities(
+    client: Client
+  ): Promise<InstanceType<RootEntity>[]> {
+    return new EntitiesQueryRunner<RootEntity>(client, this.getQuery()).run();
   }
 
   public async getRaw(
