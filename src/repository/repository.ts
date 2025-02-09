@@ -111,7 +111,7 @@ export abstract class Repository {
   //
 
   private static nodesFromJoins<T extends AnEntity>(
-    joinArgs: Joins<InstanceType<T>>,
+    joinArgs: Joins<InstanceType<T>> | boolean,
     parentNode: JoinNode,
     parentTableMeta: TableMetadata
   ): void {
