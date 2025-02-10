@@ -41,6 +41,10 @@ class MetadataStore {
     return res;
   }
 
+  public getTable_(entity: AnEntity): TableMetadata | undefined {
+    return this.tables.get(entity);
+  }
+
   public getTablePrimaryKey<T extends AnEntity>(table: T): ColumnMetadata {
     const tableMeta = this.getTable(table);
 

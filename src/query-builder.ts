@@ -1,6 +1,10 @@
 import { Client } from "pg";
 import { JoinStrategy, JoinType } from "./enums";
-import { ComparisonFactory, SelectTargetSqlBuilderFactory } from "./factories";
+import {
+  ColumnIdentifierSqlBuilderFactory,
+  ComparisonFactory,
+  SelectTargetSqlBuilderFactory,
+} from "./factories";
 import { METADATA_STORE } from "./metadata";
 import { EntitiesQueryRunner } from "./entities-query-runner";
 import {
@@ -9,6 +13,7 @@ import {
   ParamBuilder,
   SelectSqlBuilder,
   SelectTargetSqlBuilder,
+  ColumnIdentifierSqlBuilder,
 } from "./sql-builders";
 import {
   AnEntity,
@@ -23,7 +28,7 @@ import { ParameterArgs } from "./types/where-args";
 import { RawQueryRunner } from "./raw-query-runner";
 import { UnionToIntersection } from "./types/helpers";
 
-type JoinImplArgs<I> = {
+type JoinImplArgs = {
   strategy: JoinStrategy;
 
   targetAlias: string;
@@ -63,6 +68,7 @@ export class QueryBuilder<
   private wheres: ComparisonSqlBuilder[] = [];
   private selects: SelectTargetSqlBuilder[] = [];
   private orderBys: SelectQueryOrder[] = [];
+  private groupBys: ColumnIdentifierSqlBuilder[] = [];
 
   private _limit?: number;
   private _offset?: number;
@@ -490,7 +496,38 @@ export class QueryBuilder<
     return this as any;
   }
 
-  private joinImpl<I extends { [key: string]: AnEntity }>({
+  public groupBy<
+    K extends keyof JoinedEntities,
+    F extends keyof InstanceType<JoinedEntities[K]>
+  >(alias: K, field: F): this {
+    const entity = this.sourcesContext[alias];
+    if (!entity) {
+      throw new Error(`No entity found with alias ${alias.toString()}`);
+    }
+
+    const table = METADATA_STORE.getTable_(entity);
+    const column = table?.columnsMap.get(field.toString());
+
+    if (column) {
+      this.groupBys.push(
+        ColumnIdentifierSqlBuilderFactory.createColumnMeta(
+          alias.toString(),
+          column
+        )
+      );
+    } else {
+      this.groupBys.push(
+        ColumnIdentifierSqlBuilderFactory.createColumnName(
+          alias.toString(),
+          field.toString()
+        )
+      );
+    }
+
+    return this;
+  }
+
+  private joinImpl({
     type,
     select,
     strategy,
@@ -500,7 +537,7 @@ export class QueryBuilder<
     parentField,
     sql,
     namedParams,
-  }: JoinImplArgs<I>): void {
+  }: JoinImplArgs): void {
     if (this.sourcesContext[targetAlias]) {
       throw new Error(`Entity with alias ${targetAlias} is already joined in`);
     }
@@ -658,6 +695,7 @@ export class QueryBuilder<
         wheres: this.wheres,
         selects: this.selects,
         orderBys: this.orderBys,
+        groupBys: this.groupBys,
 
         limit: this._limit,
         offset: this._offset,

@@ -8,3 +8,4 @@ export { ConditionWrapperFactory } from "./parametrized-condition-wrapper";
 export { UniqueConstraintMetadataFactory } from "./unique-constraint-metadata";
 export { JoinArgFactory } from "./join-arg";
 export { SelectTargetSqlBuilderFactory } from "./select-target-sql-builder";
+export { ColumnIdentifierSqlBuilderFactory } from "./column-identifier";

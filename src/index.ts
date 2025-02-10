@@ -18,16 +18,16 @@ const main = async () => {
 
   const builder = createQueryBuilder("pet", Pets)
     .joinAndSelect("piko", Users, "pet", "user")
-    .where("pet.name IN(:names) AND pet.id >= :num::INT", {
+    .where("pet.name IN(:names)", {
       names: ["pootis", "moofis"],
-      num: 1,
     })
-    .where("piko", "id", "lte", "pet", "id")
-    .select("pet", "name");
+    .select("piko", "id")
+    .selectRaw("STRING_AGG(pet.name, ', ')", "cc")
+    .groupBy("piko", "id");
 
-  const a = await builder.getEntities(client);
+  const a = await builder.getRaw(client);
 
-  console.log(a[0]);
+  console.log(a);
 
   // const users = await Repository.select(client, Users, {
   //   joins: {

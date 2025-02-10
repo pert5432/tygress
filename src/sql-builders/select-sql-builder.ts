@@ -75,6 +75,10 @@ export class SelectSqlBuilder<T extends AnEntity> {
       sql += ` ORDER BY ${this.orderBys.join(", ")}`;
     }
 
+    if (this.args.groupBys?.length) {
+      sql += ` GROUP BY ${this.args.groupBys.map((e) => e.sql()).join(", ")}`;
+    }
+
     if (this.args.limit) {
       if (this.args.limit < 1) {
         throw new Error(`Bogus limit ${this.args.limit}`);
@@ -205,6 +209,11 @@ export class SelectSqlBuilder<T extends AnEntity> {
   }
 
   private ensurePrimaryKeySelection(node: TargetNode<AnEntity>): void {
+    // Can't enforce selecting all primary keys when GROUP BY is used
+    if (this.args.groupBys?.length) {
+      return;
+    }
+
     // Add a select target for the primary key of the node if its not selected already
     if (
       !node.selectedFields.find(

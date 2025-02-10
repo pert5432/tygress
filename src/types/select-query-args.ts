@@ -1,4 +1,8 @@
-import { ComparisonSqlBuilder, SelectTargetSqlBuilder } from "../sql-builders";
+import {
+  ColumnIdentifierSqlBuilder,
+  ComparisonSqlBuilder,
+  SelectTargetSqlBuilder,
+} from "../sql-builders";
 import { AnEntity } from "./entity";
 import { JoinArg } from "./query/join-arg";
 import { SelectQueryOrder } from "./select-query-order";
@@ -11,6 +15,8 @@ export type SelectQueryArgs = {
   wheres?: ComparisonSqlBuilder[];
 
   orderBys?: SelectQueryOrder[];
+
+  groupBys?: ColumnIdentifierSqlBuilder[];
 
   limit?: number;
 
