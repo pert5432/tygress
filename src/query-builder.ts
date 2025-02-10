@@ -266,6 +266,22 @@ export class QueryBuilder<
 
   public select<
     K extends keyof JoinedEntities,
+    F extends "*",
+    A extends undefined
+  >(
+    alias: K,
+    field: F,
+    as?: A
+  ): QueryBuilder<
+    RootEntity,
+    JoinedEntities,
+    SelectedEntities,
+    ExplicitSelects &
+      (K extends string ? FlattenEntities<Record<K, JoinedEntities[K]>> : {})
+  >;
+
+  public select<
+    K extends keyof JoinedEntities,
     F extends keyof InstanceType<JoinedEntities[K]>,
     A extends string
   >(
@@ -281,7 +297,7 @@ export class QueryBuilder<
 
   public select<
     K extends keyof JoinedEntities,
-    F extends keyof InstanceType<JoinedEntities[K]>,
+    F extends keyof InstanceType<JoinedEntities[K]> | "*",
     A extends string | undefined
   >(
     alias: K,
@@ -298,11 +314,17 @@ export class QueryBuilder<
       throw new Error(`No entity found with alias ${alias.toString()}`);
     }
 
-    const column = METADATA_STORE.getColumn(klass, field.toString());
+    // Select one or all columns from the entity based on field arg
+    const columns =
+      field === "*"
+        ? METADATA_STORE.getTable(klass).columns
+        : [METADATA_STORE.getColumn(klass, field.toString())];
 
-    this.selects.push(
-      SelectTargetSqlBuilderFactory.createColumn(alias.toString(), column, as)
-    );
+    for (const column of columns) {
+      this.selects.push(
+        SelectTargetSqlBuilderFactory.createColumn(alias.toString(), column, as)
+      );
+    }
 
     return this as any;
   }
