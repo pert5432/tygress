@@ -44,7 +44,7 @@ export class SelectSqlBuilder<T extends AnEntity> {
     this.buildOrder();
 
     // Set which fields should be selected
-    if (this.args.selects.length) {
+    if (this.args.selects?.length) {
       this.registerSelectedFieldsToNodes(this.args.selects);
     } else {
       this.selectFieldsFromJoinNode(this.targetNodes);
@@ -150,7 +150,7 @@ export class SelectSqlBuilder<T extends AnEntity> {
   }
 
   private buildOrder(): void {
-    if (!this.args.orderBys.length) {
+    if (!this.args.orderBys?.length) {
       return;
     }
 

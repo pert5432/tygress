@@ -4,13 +4,13 @@ import { JoinArg } from "./query/join-arg";
 import { SelectQueryOrder } from "./select-query-order";
 
 export type SelectQueryArgs = {
-  selects: SelectTargetSqlBuilder[];
-
   joins: JoinArg<AnEntity>[];
 
-  wheres: ComparisonSqlBuilder[];
+  selects?: SelectTargetSqlBuilder[];
 
-  orderBys: SelectQueryOrder[];
+  wheres?: ComparisonSqlBuilder[];
+
+  orderBys?: SelectQueryOrder[];
 
   limit?: number;
 
