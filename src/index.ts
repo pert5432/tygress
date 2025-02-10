@@ -21,9 +21,7 @@ const main = async () => {
     .where("pet.name IN(:names)", {
       names: ["pootis", "moofis"],
     })
-    .select("piko", "id")
-    .selectRaw("STRING_AGG(pet.name, ', ')", "cc")
-    .groupBy("piko", "id");
+    .selectRaw("STRING_AGG(pet.name, ', ')", "cc");
 
   const a = await builder.getRaw(client);
 

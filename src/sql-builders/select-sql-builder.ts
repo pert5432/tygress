@@ -9,6 +9,7 @@ import {
   ColumnSelectTargetSqlBuilder,
   SelectTargetSqlBuilder,
 } from "./select-target";
+import { QueryResultType } from "../enums";
 
 export class SelectSqlBuilder<T extends AnEntity> {
   constructor(
@@ -209,8 +210,12 @@ export class SelectSqlBuilder<T extends AnEntity> {
   }
 
   private ensurePrimaryKeySelection(node: TargetNode<AnEntity>): void {
+    // No desire to enforce selecing primary keys for raw results
     // Can't enforce selecting all primary keys when GROUP BY is used
-    if (this.args.groupBys?.length) {
+    if (
+      this.args.resultType === QueryResultType.RAW ||
+      this.args.groupBys?.length
+    ) {
       return;
     }
 

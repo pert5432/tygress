@@ -1,3 +1,4 @@
+import { QueryResultType } from "../enums";
 import {
   ColumnIdentifierSqlBuilder,
   ComparisonSqlBuilder,
@@ -8,6 +9,8 @@ import { JoinArg } from "./query/join-arg";
 import { SelectQueryOrder } from "./select-query-order";
 
 export type SelectQueryArgs = {
+  resultType: QueryResultType;
+
   joins: JoinArg<AnEntity>[];
 
   selects?: SelectTargetSqlBuilder[];

@@ -1,5 +1,5 @@
-import { Client } from "pg";
-import { JoinStrategy, JoinType } from "./enums";
+import { Client, QueryResult } from "pg";
+import { JoinStrategy, JoinType, QueryResultType } from "./enums";
 import {
   ColumnIdentifierSqlBuilderFactory,
   ComparisonFactory,
@@ -686,11 +686,12 @@ export class QueryBuilder<
     return this;
   }
 
-  public getQuery(): Query {
+  public getQuery(resultType: QueryResultType): Query {
     const paramBuilder = new ParamBuilder();
 
     return new SelectSqlBuilder<RootEntity>(
       {
+        resultType,
         joins: this.joins,
         wheres: this.wheres,
         selects: this.selects,
@@ -707,7 +708,10 @@ export class QueryBuilder<
   public async getEntities(
     client: Client
   ): Promise<InstanceType<RootEntity>[]> {
-    return new EntitiesQueryRunner<RootEntity>(client, this.getQuery()).run();
+    return new EntitiesQueryRunner<RootEntity>(
+      client,
+      this.getQuery(QueryResultType.ENTITIES)
+    ).run();
   }
 
   public async getRaw(
@@ -717,6 +721,9 @@ export class QueryBuilder<
       ? UnionToIntersection<FlattenEntities<SelectedEntities>>[]
       : ExplicitSelects[]
   > {
-    return RawQueryRunner.run(client, this.getQuery()) as any;
+    return RawQueryRunner.run(
+      client,
+      this.getQuery(QueryResultType.RAW)
+    ) as any;
   }
 }

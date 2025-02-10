@@ -27,6 +27,7 @@ import {
 } from "../sql-builders";
 import { JoinNodeFactory } from "../factories/repository";
 import { JoinNode } from ".";
+import { QueryResultType } from "../enums";
 
 // TODO: Replace with usage of SelectQueryArgs type
 type ArgsTransformations = {
@@ -55,6 +56,7 @@ export abstract class Repository {
     const queryArgs: SelectQueryArgs = {
       ...args,
       ...transformedArgs,
+      resultType: QueryResultType.ENTITIES,
     };
 
     const query = new SelectSqlBuilder<T>(
