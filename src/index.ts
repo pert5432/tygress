@@ -10,7 +10,13 @@ import { AnEntity } from "./types";
 const createQueryBuilder = <A extends string, E extends AnEntity>(
   alias: A,
   entity: E
-) => new QueryBuilder<E, Record<A, E>>(alias, entity);
+) =>
+  new QueryBuilder<{
+    RootEntity: E;
+    JoinedEntities: Record<A, E>;
+    SelectedEntities: Record<A, E>;
+    ExplicitSelects: {};
+  }>(alias, entity);
 
 const main = async () => {
   const client = new Client("postgres://petr@localhost:5437/tygress");

@@ -6,7 +6,7 @@ import { TableIdentifierSqlBuilder } from "./builder";
 
 export class SubQueryTableIdentifierSqlBuilder extends TableIdentifierSqlBuilder {
   alias: string; // This is the name of the subquery
-  qb: QueryBuilder<any, any, any, any>;
+  qb: QueryBuilder<any>;
 
   columnList?: string[];
 

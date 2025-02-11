@@ -1,4 +1,4 @@
-import { Client, QueryResult } from "pg";
+import { Client } from "pg";
 import { JoinStrategy, JoinType, QueryResultType } from "./enums";
 import {
   ColumnIdentifierSqlBuilderFactory,
@@ -29,6 +29,7 @@ import { ParameterArgs } from "./types/where-args";
 import { RawQueryRunner } from "./raw-query-runner";
 import { UnionToIntersection } from "./types/helpers";
 import { CteTableIdentifierSqlBuilder } from "./sql-builders/table-identifier";
+import { QueryBuilderGenerics, Update } from "./types/query-builder";
 
 type JoinImplArgs = {
   strategy: JoinStrategy;
@@ -58,13 +59,8 @@ type FlattenEntities<
     }
   : never;
 
-export class QueryBuilder<
-  RootEntity extends AnEntity,
-  JoinedEntities extends Record<string, AnEntity>,
-  SelectedEntities extends Record<string, AnEntity> = JoinedEntities,
-  ExplicitSelects extends Record<string, any> = {}
-> {
-  private sourcesContext: JoinedEntities;
+export class QueryBuilder<G extends QueryBuilderGenerics> {
+  private sourcesContext: G["JoinedEntities"];
 
   private joins: JoinArg<AnEntity>[] = [];
   private wheres: ComparisonSqlBuilder[] = [];
@@ -90,12 +86,14 @@ export class QueryBuilder<
 
   public with<A extends string, T extends Record<string, any>>(
     alias: A,
-    qb: QueryBuilder<any, any, any, T>
+    qb: QueryBuilder<{
+      RootEntity: any;
+      JoinedEntities: any;
+      SelectedEntities: any;
+      ExplicitSelects: T;
+    }>
   ): QueryBuilder<
-    RootEntity,
-    JoinedEntities & Record<A, T>,
-    SelectedEntities,
-    ExplicitSelects
+    Update<G, "JoinedEntities", G["JoinedEntities"] & Record<A, T>>
   > {
     if (this.sourcesContext[alias]) {
       throw new Error(`Entity with alias ${alias} already exists`);
@@ -107,62 +105,39 @@ export class QueryBuilder<
   }
 
   public where<
-    K extends keyof JoinedEntities,
-    F extends keyof InstanceType<JoinedEntities[K]>,
-    K2 extends keyof JoinedEntities,
-    F2 extends keyof InstanceType<JoinedEntities[K]>
+    K extends keyof G["JoinedEntities"],
+    F extends keyof InstanceType<G["JoinedEntities"][K]>,
+    K2 extends keyof G["JoinedEntities"],
+    F2 extends keyof InstanceType<G["JoinedEntities"][K]>
   >(
     leftAlias: K,
     leftField: F,
     comparator: WhereComparator,
     rightAlias: K2,
     rightField: F2
-  ): QueryBuilder<
-    RootEntity,
-    JoinedEntities,
-    SelectedEntities,
-    ExplicitSelects
-  >;
+  ): QueryBuilder<G>;
 
   public where<
-    K extends keyof JoinedEntities,
-    F extends keyof InstanceType<JoinedEntities[K]>
+    K extends keyof G["JoinedEntities"],
+    F extends keyof InstanceType<G["JoinedEntities"][K]>
   >(
     alias: K,
     field: F,
     condition: ParameterArgs<Parametrizable>
-  ): QueryBuilder<
-    RootEntity,
-    JoinedEntities,
-    SelectedEntities,
-    ExplicitSelects
-  >;
+  ): QueryBuilder<G>;
 
-  public where(
-    sql: string,
-    namedParams?: NamedParams
-  ): QueryBuilder<
-    RootEntity,
-    JoinedEntities,
-    SelectedEntities,
-    ExplicitSelects
-  >;
+  public where(sql: string, namedParams?: NamedParams): QueryBuilder<G>;
 
   public where<
-    K extends keyof JoinedEntities,
-    F extends keyof InstanceType<JoinedEntities[K]>
+    K extends keyof G["JoinedEntities"],
+    F extends keyof InstanceType<G["JoinedEntities"][K]>
   >(
     leftAliasOrSql: K | string,
     leftFieldOrParams: F | NamedParams | undefined,
     conditionOrComparator?: ParameterArgs<Parametrizable> | WhereComparator,
     rightAlias?: K,
     rightField?: F
-  ): QueryBuilder<
-    RootEntity,
-    JoinedEntities,
-    SelectedEntities,
-    ExplicitSelects
-  > {
+  ): QueryBuilder<G> {
     // Adding a pseudo-sql condition
     if (["object", "undefined"].includes(typeof leftFieldOrParams)) {
       const targetSql = PseudoSQLReplacer.replaceIdentifiers(
@@ -228,38 +203,29 @@ export class QueryBuilder<
     f: () => T,
     params?: NamedParams
   ): QueryBuilder<
-    RootEntity,
-    JoinedEntities,
-    SelectedEntities,
-    ExplicitSelects &
-      Record<
-        Alias,
-        T extends abstract new (...args: any) => any ? InstanceType<T> : T
-      >
+    Update<
+      G,
+      "ExplicitSelects",
+      G["ExplicitSelects"] &
+        Record<
+          Alias,
+          T extends abstract new (...args: any) => any ? InstanceType<T> : T
+        >
+    >
   >;
 
   public selectRaw<T extends any, Alias extends string>(
     sql: string,
     as: Alias,
     params?: NamedParams
-  ): QueryBuilder<
-    RootEntity,
-    JoinedEntities,
-    SelectedEntities,
-    ExplicitSelects & Record<Alias, T>
-  >;
+  ): QueryBuilder<Update<G, "ExplicitSelects", Record<Alias, T>>>;
 
   public selectRaw<T extends any, Alias extends string>(
     sql: string,
     as: Alias,
     fOrParams?: () => T | NamedParams,
     _f?: () => T
-  ): QueryBuilder<
-    RootEntity,
-    JoinedEntities,
-    SelectedEntities,
-    ExplicitSelects & Record<Alias, T>
-  > {
+  ): QueryBuilder<Update<G, "ExplicitSelects", Record<Alias, T>>> {
     const params = fOrParams && Object.keys(fOrParams).length ? fOrParams : {};
 
     this.selects.push(
@@ -274,27 +240,28 @@ export class QueryBuilder<
   }
 
   public select<
-    K extends keyof JoinedEntities,
-    F extends keyof InstanceType<JoinedEntities[K]>,
+    K extends keyof G["JoinedEntities"],
+    F extends keyof InstanceType<G["JoinedEntities"][K]>,
     A extends undefined
   >(
     alias: K,
     field: F,
     as?: A
   ): QueryBuilder<
-    RootEntity,
-    JoinedEntities,
-    SelectedEntities,
-    ExplicitSelects &
-      (K extends string
-        ? F extends string
-          ? Record<`${K}.${F}`, InstanceType<JoinedEntities[K]>[F]>
-          : {}
-        : {})
+    Update<
+      G,
+      "ExplicitSelects",
+      G["ExplicitSelects"] &
+        (K extends string
+          ? F extends string
+            ? Record<`${K}.${F}`, InstanceType<G["JoinedEntities"][K]>[F]>
+            : {}
+          : {})
+    >
   >;
 
   public select<
-    K extends keyof JoinedEntities,
+    K extends keyof G["JoinedEntities"],
     F extends "*",
     A extends undefined
   >(
@@ -302,41 +269,46 @@ export class QueryBuilder<
     field: F,
     as?: A
   ): QueryBuilder<
-    RootEntity,
-    JoinedEntities,
-    SelectedEntities,
-    ExplicitSelects &
-      (K extends string ? FlattenEntities<Record<K, JoinedEntities[K]>> : {})
+    Update<
+      G,
+      "ExplicitSelects",
+      G["ExplicitSelects"] &
+        (K extends string
+          ? FlattenEntities<Record<K, G["JoinedEntities"][K]>>
+          : {})
+    >
   >;
 
   public select<
-    K extends keyof JoinedEntities,
-    F extends keyof InstanceType<JoinedEntities[K]>,
+    K extends keyof G["JoinedEntities"],
+    F extends keyof InstanceType<G["JoinedEntities"][K]>,
     A extends string
   >(
     alias: K,
     field: F,
     as: A
   ): QueryBuilder<
-    RootEntity,
-    JoinedEntities,
-    SelectedEntities,
-    ExplicitSelects & Record<A, InstanceType<JoinedEntities[K]>[F]>
+    Update<
+      G,
+      "ExplicitSelects",
+      G["ExplicitSelects"] & Record<A, InstanceType<G["JoinedEntities"][K]>[F]>
+    >
   >;
 
   public select<
-    K extends keyof JoinedEntities,
-    F extends keyof InstanceType<JoinedEntities[K]> | "*",
+    K extends keyof G["JoinedEntities"],
+    F extends keyof InstanceType<G["JoinedEntities"][K]> | "*",
     A extends string | undefined
   >(
     alias: K,
     field: F,
     as: A
   ): QueryBuilder<
-    RootEntity,
-    JoinedEntities,
-    SelectedEntities,
-    ExplicitSelects & Record<string, InstanceType<JoinedEntities[K]>[F]>
+    Update<
+      G,
+      "ExplicitSelects",
+      Record<string, InstanceType<G["JoinedEntities"][K]>[F]>
+    >
   > {
     const klass = this.sourcesContext[alias];
     if (!klass) {
@@ -359,8 +331,8 @@ export class QueryBuilder<
   }
 
   public orderBy<
-    K extends keyof JoinedEntities,
-    F extends keyof InstanceType<JoinedEntities[K]>
+    K extends keyof G["JoinedEntities"],
+    F extends keyof InstanceType<G["JoinedEntities"][K]>
   >(alias: K, field: F, order: "ASC" | "DESC"): this {
     const klass = this.sourcesContext[alias];
     if (!klass) {
@@ -377,8 +349,8 @@ export class QueryBuilder<
   public joinAndSelect<
     A extends string,
     E extends AnEntity,
-    K extends keyof JoinedEntities,
-    F extends keyof InstanceType<JoinedEntities[K]>
+    K extends keyof G["JoinedEntities"],
+    F extends keyof InstanceType<G["JoinedEntities"][K]>
   >(
     targetAlias: A,
     targetEntity: E,
@@ -386,33 +358,35 @@ export class QueryBuilder<
     parentField: F,
     sql: string,
     namedParams?: NamedParams
-  ): QueryBuilder<
-    RootEntity,
-    JoinedEntities & Record<A, E>,
-    SelectedEntities & Record<A, E>
-  >;
+  ): QueryBuilder<{
+    RootEntity: G["RootEntity"];
+    JoinedEntities: G["JoinedEntities"] & Record<"a", any>;
+    SelectedEntities: G["SelectedEntities"] & Record<"b", any>;
+    ExplicitSelects: G["ExplicitSelects"];
+  }>;
 
   public joinAndSelect<
     A extends string,
     E extends AnEntity,
-    K extends keyof JoinedEntities,
-    F extends keyof InstanceType<JoinedEntities[K]>
+    K extends keyof G["JoinedEntities"],
+    F extends keyof InstanceType<G["JoinedEntities"][K]>
   >(
     targetAlias: A,
     targetEntity: E,
     parentAlias: K,
     parentField: F
-  ): QueryBuilder<
-    RootEntity,
-    JoinedEntities & Record<A, E>,
-    SelectedEntities & Record<A, E>
-  >;
+  ): QueryBuilder<{
+    RootEntity: G["RootEntity"];
+    JoinedEntities: G["JoinedEntities"] & Record<"a", any>;
+    SelectedEntities: G["SelectedEntities"] & Record<"b", any>;
+    ExplicitSelects: G["ExplicitSelects"];
+  }>;
 
   public joinAndSelect<
     A extends string,
     E extends AnEntity,
-    K extends keyof JoinedEntities,
-    F extends keyof InstanceType<JoinedEntities[K]>
+    K extends keyof G["JoinedEntities"],
+    F extends keyof InstanceType<G["JoinedEntities"][K]>
   >(
     targetAlias: A,
     targetEntity: E,
@@ -420,11 +394,12 @@ export class QueryBuilder<
     parentField: F,
     sql?: string,
     namedParams?: NamedParams
-  ): QueryBuilder<
-    RootEntity,
-    JoinedEntities & Record<A, E>,
-    SelectedEntities & Record<A, E>
-  > {
+  ): QueryBuilder<{
+    RootEntity: G["RootEntity"];
+    JoinedEntities: G["JoinedEntities"] & Record<"a", any>;
+    SelectedEntities: G["SelectedEntities"] & Record<"b", any>;
+    ExplicitSelects: G["ExplicitSelects"];
+  }> {
     // Join either by sql or by relation based on args
     if (sql?.length) {
       this.joinImpl({
@@ -462,33 +437,39 @@ export class QueryBuilder<
   public join<
     A extends string,
     E extends AnEntity,
-    K extends keyof JoinedEntities,
-    F extends keyof InstanceType<JoinedEntities[K]>
+    K extends keyof G["JoinedEntities"],
+    F extends keyof InstanceType<G["JoinedEntities"][K]>
   >(
     targetAlias: A,
     targetEntity: E,
     parentAlias: K,
     parentField: F
-  ): QueryBuilder<RootEntity, JoinedEntities & Record<A, E>, SelectedEntities>;
+  ): QueryBuilder<
+    Update<G, "JoinedEntities", G["JoinedEntities"] & Record<A, E>>
+  >;
 
   public join<A extends string, E extends AnEntity>(
     targetAlias: A,
     targetEntity: E,
     sql: string,
     namedParams?: NamedParams
-  ): QueryBuilder<RootEntity, JoinedEntities & Record<A, E>, SelectedEntities>;
+  ): QueryBuilder<
+    Update<G, "JoinedEntities", G["JoinedEntities"] & Record<A, E>>
+  >;
 
   public join<
     A extends string,
     E extends AnEntity,
-    K extends keyof JoinedEntities,
-    F extends keyof InstanceType<JoinedEntities[K]>
+    K extends keyof G["JoinedEntities"],
+    F extends keyof InstanceType<G["JoinedEntities"][K]>
   >(
     targetAlias: A,
     targetEntity: E,
     parentAliasOrSql: K | string,
     optionalParentFieldOrNamedParams?: F | NamedParams
-  ): QueryBuilder<RootEntity, JoinedEntities & Record<A, E>, SelectedEntities> {
+  ): QueryBuilder<
+    Update<G, "JoinedEntities", G["JoinedEntities"] & Record<A, E>>
+  > {
     // Join either by sql or by relation based on args
     if (typeof optionalParentFieldOrNamedParams === "string") {
       this.joinImpl({
@@ -520,8 +501,8 @@ export class QueryBuilder<
   }
 
   public groupBy<
-    K extends keyof JoinedEntities,
-    F extends keyof InstanceType<JoinedEntities[K]>
+    K extends keyof G["JoinedEntities"],
+    F extends keyof InstanceType<G["JoinedEntities"][K]>
   >(alias: K, field: F): this {
     const entity = this.sourcesContext[alias];
     if (!entity) {
@@ -692,12 +673,7 @@ export class QueryBuilder<
     return this;
   }
 
-  public unselectAll(): QueryBuilder<
-    RootEntity,
-    JoinedEntities,
-    SelectedEntities,
-    {}
-  > {
+  public unselectAll(): QueryBuilder<Update<G, "ExplicitSelects", {}>> {
     this.selects = [];
 
     return this;
@@ -715,7 +691,7 @@ export class QueryBuilder<
   ): Query {
     const paramBuilder = _paramBuilder ?? new ParamBuilder();
 
-    return new SelectSqlBuilder<RootEntity>(
+    return new SelectSqlBuilder<G["RootEntity"]>(
       {
         resultType,
         joins: this.joins,
@@ -735,8 +711,8 @@ export class QueryBuilder<
 
   public async getEntities(
     client: Client
-  ): Promise<InstanceType<RootEntity>[]> {
-    return new EntitiesQueryRunner<RootEntity>(
+  ): Promise<InstanceType<G["RootEntity"]>[]> {
+    return new EntitiesQueryRunner<G["RootEntity"]>(
       client,
       this.getQuery(QueryResultType.ENTITIES)
     ).run();
@@ -745,9 +721,9 @@ export class QueryBuilder<
   public async getRaw(
     client: Client
   ): Promise<
-    keyof ExplicitSelects extends never
-      ? UnionToIntersection<FlattenEntities<SelectedEntities>>[]
-      : ExplicitSelects[]
+    keyof G["ExplicitSelects"] extends never
+      ? UnionToIntersection<FlattenEntities<G["SelectedEntities"]>>[]
+      : G["ExplicitSelects"][]
   > {
     return RawQueryRunner.run(
       client,

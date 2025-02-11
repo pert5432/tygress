@@ -8,7 +8,7 @@ import {
 export abstract class TableIdentifierSqlBuilderFactory {
   static createCTE(
     alias: string,
-    qb: QueryBuilder<any, any, any, any>,
+    qb: QueryBuilder<any>,
     columnList?: string[]
   ): CteTableIdentifierSqlBuilder {
     const e = new CteTableIdentifierSqlBuilder();
@@ -22,7 +22,7 @@ export abstract class TableIdentifierSqlBuilderFactory {
 
   static createSubQuery(
     alias: string,
-    qb: QueryBuilder<any, any, any, any>,
+    qb: QueryBuilder<any>,
     columnList?: string[]
   ): SubQueryTableIdentifierSqlBuilder {
     const e = new SubQueryTableIdentifierSqlBuilder();
