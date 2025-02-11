@@ -4,6 +4,7 @@ import {
   ComparisonSqlBuilder,
   SelectTargetSqlBuilder,
 } from "../sql-builders";
+import { CteTableIdentifierSqlBuilder } from "../sql-builders/table-identifier";
 import { AnEntity } from "./entity";
 import { JoinArg } from "./query/join-arg";
 import { SelectQueryOrder } from "./select-query-order";
@@ -20,6 +21,8 @@ export type SelectQueryArgs = {
   orderBys?: SelectQueryOrder[];
 
   groupBys?: ColumnIdentifierSqlBuilder[];
+
+  with?: CteTableIdentifierSqlBuilder[];
 
   limit?: number;
 

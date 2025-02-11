@@ -9,6 +9,9 @@ export class Pets {
   @Column("name")
   name: string;
 
+  @Column("user_id")
+  userId: number;
+
   @ManyToOne(Users, "pets")
   user: Users;
 }

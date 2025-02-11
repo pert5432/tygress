@@ -16,5 +16,11 @@ export {
   ColumnMetadataColumnIdentifierSqlBuilder,
   ColumnNameColumnIdentifierSqlBuilder,
 } from "./column-identifier";
+export {
+  TableIdentifierSqlBuilder,
+  CteTableIdentifierSqlBuilder,
+  SubQueryTableIdentifierSqlBuilder,
+  TablenameTableIdentifierSqlBuilder,
+} from "./table-identifier";
 export { ParamBuilder } from "./param-builder";
 export { PseudoSQLReplacer } from "./pseudo-sql-replacer";

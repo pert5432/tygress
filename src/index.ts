@@ -17,11 +17,9 @@ const main = async () => {
   await client.connect();
 
   const builder = createQueryBuilder("pet", Pets)
-    .joinAndSelect("piko", Users, "pet", "user")
-    .where("pet.name IN(:names)", {
-      names: ["pootis", "moofis"],
-    })
-    .selectRaw("STRING_AGG(pet.name, ', ')", "cc");
+    .with("usr", createQueryBuilder("u", Users).select("u", "id", "id"))
+    .where("pet.userId IN(SELECT id FROM usr)")
+    .select("pet", "*");
 
   const a = await builder.getRaw(client);
 

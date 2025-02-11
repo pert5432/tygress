@@ -4,6 +4,7 @@ import {
   ColumnIdentifierSqlBuilderFactory,
   ComparisonFactory,
   SelectTargetSqlBuilderFactory,
+  TableIdentifierSqlBuilderFactory,
 } from "./factories";
 import { METADATA_STORE } from "./metadata";
 import { EntitiesQueryRunner } from "./entities-query-runner";
@@ -27,6 +28,7 @@ import { JoinArg } from "./types/query/join-arg";
 import { ParameterArgs } from "./types/where-args";
 import { RawQueryRunner } from "./raw-query-runner";
 import { UnionToIntersection } from "./types/helpers";
+import { CteTableIdentifierSqlBuilder } from "./sql-builders/table-identifier";
 
 type JoinImplArgs = {
   strategy: JoinStrategy;
@@ -69,6 +71,7 @@ export class QueryBuilder<
   private selects: SelectTargetSqlBuilder[] = [];
   private orderBys: SelectQueryOrder[] = [];
   private groupBys: ColumnIdentifierSqlBuilder[] = [];
+  private CTEs: CteTableIdentifierSqlBuilder[] = [];
 
   private _limit?: number;
   private _offset?: number;
@@ -85,15 +88,35 @@ export class QueryBuilder<
     console.log(this.wheres);
   }
 
+  public with<A extends string, T extends Record<string, any>>(
+    alias: A,
+    qb: QueryBuilder<any, any, any, T>
+  ): QueryBuilder<
+    RootEntity,
+    JoinedEntities & Record<A, T>,
+    SelectedEntities,
+    ExplicitSelects
+  > {
+    if (this.sourcesContext[alias]) {
+      throw new Error(`Entity with alias ${alias} already exists`);
+    }
+
+    this.CTEs.push(TableIdentifierSqlBuilderFactory.createCTE(alias, qb));
+
+    return this as any;
+  }
+
   public where<
     K extends keyof JoinedEntities,
-    F extends keyof InstanceType<JoinedEntities[K]>
+    F extends keyof InstanceType<JoinedEntities[K]>,
+    K2 extends keyof JoinedEntities,
+    F2 extends keyof InstanceType<JoinedEntities[K]>
   >(
     leftAlias: K,
     leftField: F,
     comparator: WhereComparator,
-    rightAlias: K,
-    rightField: F
+    rightAlias: K2,
+    rightField: F2
   ): QueryBuilder<
     RootEntity,
     JoinedEntities,
@@ -686,8 +709,11 @@ export class QueryBuilder<
     return this;
   }
 
-  public getQuery(resultType: QueryResultType): Query {
-    const paramBuilder = new ParamBuilder();
+  public getQuery(
+    resultType: QueryResultType,
+    _paramBuilder?: ParamBuilder
+  ): Query {
+    const paramBuilder = _paramBuilder ?? new ParamBuilder();
 
     return new SelectSqlBuilder<RootEntity>(
       {
@@ -697,6 +723,8 @@ export class QueryBuilder<
         selects: this.selects,
         orderBys: this.orderBys,
         groupBys: this.groupBys,
+
+        with: this.CTEs,
 
         limit: this._limit,
         offset: this._offset,

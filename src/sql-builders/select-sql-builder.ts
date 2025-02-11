@@ -49,7 +49,15 @@ export class SelectSqlBuilder<T extends AnEntity> {
     // Build the actual SQL
     //
 
-    let sql = `SELECT ${this.selectTargetSqlBuilders
+    let sql = ``;
+
+    if (this.args.with?.length) {
+      sql += `WITH ${this.args.with
+        .map((e) => e.sql(this.paramBuilder))
+        .join(", ")} `;
+    }
+
+    sql += `SELECT ${this.selectTargetSqlBuilders
       .map((e) => e.sql(this.paramBuilder))
       .join(", ")} FROM ${dQ(this.table.tablename)} ${dQ(
       this.targetNodes.alias
