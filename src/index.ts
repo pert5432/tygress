@@ -23,9 +23,11 @@ const main = async () => {
   await client.connect();
 
   const builder = createQueryBuilder("pet", Pets)
-    .with("usr", createQueryBuilder("u", Users).select("u", "id", "id"))
+    .with("usr", createQueryBuilder("u", Users).select("u", "id"))
     .where("pet.userId IN(SELECT id FROM usr)")
-    .select("pet", "*");
+    .select("pet", "id")
+    .select("pet", "name")
+    .select("pet", "id");
 
   const a = await builder.getRaw(client);
 

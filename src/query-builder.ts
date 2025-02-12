@@ -29,7 +29,13 @@ import { ParameterArgs } from "./types/where-args";
 import { RawQueryRunner } from "./raw-query-runner";
 import { UnionToIntersection } from "./types/helpers";
 import { CteTableIdentifierSqlBuilder } from "./sql-builders/table-identifier";
-import { QueryBuilderGenerics, Update } from "./types/query-builder";
+import {
+  QueryBuilderGenerics,
+  SelectSource,
+  SelectSourceField,
+  SelectSourceKeys,
+  Update,
+} from "./types/query-builder";
 
 type JoinImplArgs = {
   strategy: JoinStrategy;
@@ -48,14 +54,14 @@ type JoinImplArgs = {
   namedParams?: NamedParams;
 };
 
-type FlattenEntities<
-  T extends { [key: string]: AnEntity },
+type FlattenSelectSources<
+  T extends { [key: string]: SelectSource },
   K = keyof T
 > = K extends string
   ? {
-      [F in keyof InstanceType<T[K]> as F extends string
+      [F in SelectSourceKeys<T[K]> as F extends string
         ? `${K}.${F}`
-        : never]: InstanceType<T[K]>[F];
+        : never]: SelectSourceField<T[K], F>;
     }
   : never;
 
@@ -106,9 +112,9 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
 
   public where<
     K extends keyof G["JoinedEntities"],
-    F extends keyof InstanceType<G["JoinedEntities"][K]>,
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>,
     K2 extends keyof G["JoinedEntities"],
-    F2 extends keyof InstanceType<G["JoinedEntities"][K]>
+    F2 extends SelectSourceKeys<G["JoinedEntities"][K]>
   >(
     leftAlias: K,
     leftField: F,
@@ -119,7 +125,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
 
   public where<
     K extends keyof G["JoinedEntities"],
-    F extends keyof InstanceType<G["JoinedEntities"][K]>
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>
   >(
     alias: K,
     field: F,
@@ -130,7 +136,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
 
   public where<
     K extends keyof G["JoinedEntities"],
-    F extends keyof InstanceType<G["JoinedEntities"][K]>
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>
   >(
     leftAliasOrSql: K | string,
     leftFieldOrParams: F | NamedParams | undefined,
@@ -158,12 +164,12 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     // Adding a column cmp column condition
     if (typeof conditionOrComparator === "string") {
       const leftColumn = METADATA_STORE.getColumn(
-        this.sourcesContext[leftAliasOrSql.toString()]!,
+        this.sourcesContext[leftAliasOrSql.toString()]! as AnEntity,
         leftFieldOrParams!.toString()
       );
 
       const rightColumn = METADATA_STORE.getColumn(
-        this.sourcesContext[rightAlias!.toString()]!,
+        this.sourcesContext[rightAlias!.toString()]! as AnEntity,
         rightField!.toString()
       );
 
@@ -182,7 +188,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
 
     // Adding a column cmp params condition
     const column = METADATA_STORE.getColumn(
-      this.sourcesContext[leftAliasOrSql.toString()]!,
+      this.sourcesContext[leftAliasOrSql.toString()]! as AnEntity,
       leftAliasOrSql.toString()
     );
 
@@ -241,7 +247,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
 
   public select<
     K extends keyof G["JoinedEntities"],
-    F extends keyof InstanceType<G["JoinedEntities"][K]>,
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>,
     A extends undefined
   >(
     alias: K,
@@ -254,7 +260,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
       G["ExplicitSelects"] &
         (K extends string
           ? F extends string
-            ? Record<`${K}.${F}`, InstanceType<G["JoinedEntities"][K]>[F]>
+            ? Record<`${K}.${F}`, SelectSourceField<G["JoinedEntities"][K], F>>
             : {}
           : {})
     >
@@ -274,14 +280,14 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
       "ExplicitSelects",
       G["ExplicitSelects"] &
         (K extends string
-          ? FlattenEntities<Record<K, G["JoinedEntities"][K]>>
+          ? FlattenSelectSources<Record<K, G["JoinedEntities"][K]>>
           : {})
     >
   >;
 
   public select<
     K extends keyof G["JoinedEntities"],
-    F extends keyof InstanceType<G["JoinedEntities"][K]>,
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>,
     A extends string
   >(
     alias: K,
@@ -291,13 +297,14 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     Update<
       G,
       "ExplicitSelects",
-      G["ExplicitSelects"] & Record<A, InstanceType<G["JoinedEntities"][K]>[F]>
+      G["ExplicitSelects"] &
+        Record<A, SelectSourceField<G["JoinedEntities"][K], F>>
     >
   >;
 
   public select<
     K extends keyof G["JoinedEntities"],
-    F extends keyof InstanceType<G["JoinedEntities"][K]> | "*",
+    F extends SelectSourceKeys<G["JoinedEntities"][K]> | "*",
     A extends string | undefined
   >(
     alias: K,
@@ -307,7 +314,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     Update<
       G,
       "ExplicitSelects",
-      Record<string, InstanceType<G["JoinedEntities"][K]>[F]>
+      Record<string, SelectSourceField<G["JoinedEntities"][K], F>>
     >
   > {
     const klass = this.sourcesContext[alias];
@@ -318,8 +325,8 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     // Select one or all columns from the entity based on field arg
     const columns =
       field === "*"
-        ? METADATA_STORE.getTable(klass).columns
-        : [METADATA_STORE.getColumn(klass, field.toString())];
+        ? METADATA_STORE.getTable(klass as AnEntity).columns
+        : [METADATA_STORE.getColumn(klass as AnEntity, field.toString())];
 
     for (const column of columns) {
       this.selects.push(
@@ -332,14 +339,17 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
 
   public orderBy<
     K extends keyof G["JoinedEntities"],
-    F extends keyof InstanceType<G["JoinedEntities"][K]>
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>
   >(alias: K, field: F, order: "ASC" | "DESC"): this {
     const klass = this.sourcesContext[alias];
     if (!klass) {
       throw new Error(`No entity found with alias ${alias.toString()}`);
     }
 
-    const column = METADATA_STORE.getColumn(klass, field.toString());
+    const column = METADATA_STORE.getColumn(
+      klass as AnEntity,
+      field.toString()
+    );
 
     this.orderBys.push({ alias: alias.toString(), column, order });
 
@@ -350,7 +360,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     A extends string,
     E extends AnEntity,
     K extends keyof G["JoinedEntities"],
-    F extends keyof InstanceType<G["JoinedEntities"][K]>
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>
   >(
     targetAlias: A,
     targetEntity: E,
@@ -369,7 +379,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     A extends string,
     E extends AnEntity,
     K extends keyof G["JoinedEntities"],
-    F extends keyof InstanceType<G["JoinedEntities"][K]>
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>
   >(
     targetAlias: A,
     targetEntity: E,
@@ -386,7 +396,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     A extends string,
     E extends AnEntity,
     K extends keyof G["JoinedEntities"],
-    F extends keyof InstanceType<G["JoinedEntities"][K]>
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>
   >(
     targetAlias: A,
     targetEntity: E,
@@ -438,7 +448,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     A extends string,
     E extends AnEntity,
     K extends keyof G["JoinedEntities"],
-    F extends keyof InstanceType<G["JoinedEntities"][K]>
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>
   >(
     targetAlias: A,
     targetEntity: E,
@@ -461,7 +471,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     A extends string,
     E extends AnEntity,
     K extends keyof G["JoinedEntities"],
-    F extends keyof InstanceType<G["JoinedEntities"][K]>
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>
   >(
     targetAlias: A,
     targetEntity: E,
@@ -502,14 +512,14 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
 
   public groupBy<
     K extends keyof G["JoinedEntities"],
-    F extends keyof InstanceType<G["JoinedEntities"][K]>
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>
   >(alias: K, field: F): this {
     const entity = this.sourcesContext[alias];
     if (!entity) {
       throw new Error(`No entity found with alias ${alias.toString()}`);
     }
 
-    const table = METADATA_STORE.getTable_(entity);
+    const table = METADATA_STORE.getTable_(entity as AnEntity);
     const column = table?.columnsMap.get(field.toString());
 
     if (column) {
@@ -628,13 +638,13 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     };
 
     const relation = METADATA_STORE.getRelation(
-      parentEntity,
+      parentEntity as AnEntity,
       parentField.toString()
     );
 
     const comparison = ComparisonFactory.createJoin(
       parentAlias.toString(),
-      parentEntity,
+      parentEntity as AnEntity,
       nextAlias,
       relation
     );
@@ -722,7 +732,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     client: Client
   ): Promise<
     keyof G["ExplicitSelects"] extends never
-      ? UnionToIntersection<FlattenEntities<G["SelectedEntities"]>>[]
+      ? UnionToIntersection<FlattenSelectSources<G["SelectedEntities"]>>[]
       : G["ExplicitSelects"][]
   > {
     return RawQueryRunner.run(

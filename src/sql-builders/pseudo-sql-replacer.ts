@@ -1,6 +1,7 @@
 import { METADATA_STORE } from "../metadata";
 import { AnEntity } from "../types";
 import { NamedParams } from "../types/named-params";
+import { QueryBuilderGenerics } from "../types/query-builder";
 import { dQ } from "../utils";
 import { ParamBuilder } from "./param-builder";
 
@@ -16,7 +17,7 @@ export abstract class PseudoSQLReplacer {
   // Ignores any input in parentheses
   public static replaceIdentifiers(
     input: string,
-    sourcesContext: { [key: string]: AnEntity }
+    sourcesContext: QueryBuilderGenerics["JoinedEntities"]
   ): string {
     const replacements: Replacement[] = [];
 
@@ -89,7 +90,7 @@ export abstract class PseudoSQLReplacer {
 
   private static columnIdentifierReplacement(
     { word, index }: { word: string; index: number },
-    sourcesContext: { [key: string]: AnEntity }
+    sourcesContext: QueryBuilderGenerics["JoinedEntities"]
   ): Replacement | undefined {
     const wordParts = word.split(".");
 
@@ -106,7 +107,7 @@ export abstract class PseudoSQLReplacer {
     const entity = sourcesContext[alias];
 
     // No entity found with this alias, skipping
-    if (!entity) return;
+    if (!entity || typeof entity === "object") return;
 
     const column = METADATA_STORE.getColumn(entity, fieldName);
 
