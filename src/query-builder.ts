@@ -34,6 +34,7 @@ import {
   SelectSource,
   SelectSourceField,
   SelectSourceKeys,
+  Stringify,
   Update,
 } from "./types/query-builder";
 
@@ -61,7 +62,7 @@ type FlattenSelectSources<
   ? {
       [F in SelectSourceKeys<T[K]> as F extends string
         ? `${K}.${F}`
-        : never]: SelectSourceField<T[K], F>;
+        : never]: SelectSourceField<T[K], Stringify<F>>;
     }
   : never;
 
@@ -268,6 +269,23 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
 
   public select<
     K extends keyof G["JoinedEntities"],
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>,
+    A extends string
+  >(
+    alias: K,
+    field: F,
+    as: A
+  ): QueryBuilder<
+    Update<
+      G,
+      "ExplicitSelects",
+      G["ExplicitSelects"] &
+        Record<A, SelectSourceField<G["JoinedEntities"][K], Stringify<F>>>
+    >
+  >;
+
+  public select<
+    K extends keyof G["JoinedEntities"],
     F extends "*",
     A extends undefined
   >(
@@ -287,23 +305,6 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
 
   public select<
     K extends keyof G["JoinedEntities"],
-    F extends SelectSourceKeys<G["JoinedEntities"][K]>,
-    A extends string
-  >(
-    alias: K,
-    field: F,
-    as: A
-  ): QueryBuilder<
-    Update<
-      G,
-      "ExplicitSelects",
-      G["ExplicitSelects"] &
-        Record<A, SelectSourceField<G["JoinedEntities"][K], F>>
-    >
-  >;
-
-  public select<
-    K extends keyof G["JoinedEntities"],
     F extends SelectSourceKeys<G["JoinedEntities"][K]> | "*",
     A extends string | undefined
   >(
@@ -314,7 +315,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     Update<
       G,
       "ExplicitSelects",
-      Record<string, SelectSourceField<G["JoinedEntities"][K], F>>
+      Record<string, SelectSourceField<G["JoinedEntities"][K], Stringify<F>>>
     >
   > {
     const klass = this.sourcesContext[alias];
@@ -370,8 +371,8 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     namedParams?: NamedParams
   ): QueryBuilder<{
     RootEntity: G["RootEntity"];
-    JoinedEntities: G["JoinedEntities"] & Record<"a", any>;
-    SelectedEntities: G["SelectedEntities"] & Record<"b", any>;
+    JoinedEntities: G["JoinedEntities"] & Record<A, E>;
+    SelectedEntities: G["SelectedEntities"] & Record<A, E>;
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
@@ -387,8 +388,8 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     parentField: F
   ): QueryBuilder<{
     RootEntity: G["RootEntity"];
-    JoinedEntities: G["JoinedEntities"] & Record<"a", any>;
-    SelectedEntities: G["SelectedEntities"] & Record<"b", any>;
+    JoinedEntities: G["JoinedEntities"] & Record<A, E>;
+    SelectedEntities: G["SelectedEntities"] & Record<A, E>;
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
@@ -406,8 +407,8 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     namedParams?: NamedParams
   ): QueryBuilder<{
     RootEntity: G["RootEntity"];
-    JoinedEntities: G["JoinedEntities"] & Record<"a", any>;
-    SelectedEntities: G["SelectedEntities"] & Record<"b", any>;
+    JoinedEntities: G["JoinedEntities"] & Record<A, E>;
+    SelectedEntities: G["SelectedEntities"] & Record<A, E>;
     ExplicitSelects: G["ExplicitSelects"];
   }> {
     // Join either by sql or by relation based on args

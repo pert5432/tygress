@@ -21,7 +21,7 @@ export type SelectSourceField<
 > = E extends AnEntity ? InstanceType<E>[K] : E[K];
 
 export type SelectSourceKeys<S extends SelectSource> = S extends AnEntity
-  ? Stringify<keyof InstanceType<S>>
-  : Stringify<keyof S>;
+  ? keyof InstanceType<S>
+  : keyof S;
 
-type Stringify<T> = T extends string ? T : never;
+export type Stringify<T> = T extends string ? T : never;
