@@ -3,6 +3,7 @@ import { AnEntity } from "./entity";
 export type QueryBuilderGenerics = {
   RootEntity: AnEntity;
   JoinedEntities: Record<string, SelectSource>;
+  CTEs: Record<string, SelectSource>;
   SelectedEntities: Record<string, SelectSource>;
   ExplicitSelects: Record<string, any>;
 };
@@ -13,7 +14,7 @@ export type Update<
   UpdateValue extends Input[UpdateKey]
 > = Omit<Input, UpdateKey> & Record<UpdateKey, UpdateValue>;
 
-export type SelectSource = AnEntity | { [key: string]: any };
+export type SelectSource = AnEntity | Record<string, any>;
 
 export type SelectSourceField<
   E extends SelectSource,

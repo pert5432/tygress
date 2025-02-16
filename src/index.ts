@@ -14,6 +14,7 @@ const createQueryBuilder = <A extends string, E extends AnEntity>(
   new QueryBuilder<{
     RootEntity: E;
     JoinedEntities: Record<A, E>;
+    CTEs: {};
     SelectedEntities: Record<A, E>;
     ExplicitSelects: {};
   }>(alias, entity);
@@ -23,12 +24,11 @@ const main = async () => {
   await client.connect();
 
   const builder = createQueryBuilder("pet", Pets)
-    .joinAndSelect("usr", Users, "pet", "user")
-    // .with("usr", createQueryBuilder("u", Users).select("u", "id"))
-    .join("asdf", Users, "usr", "id")
+    // .joinAndSelect("usr", Users, "pet", "user")
+    .with("usr", createQueryBuilder("u", Users).select("u", "id", "id"))
+
     .where("pet.userId IN(SELECT id FROM usr)")
-    .select("pet", "name")
-    .join("ssss", Pets, "usr", "pets");
+    .select("pet", "name");
 
   const a = await builder.getRaw(client);
 

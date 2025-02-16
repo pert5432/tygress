@@ -96,12 +96,11 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     qb: QueryBuilder<{
       RootEntity: any;
       JoinedEntities: any;
+      CTEs: any;
       SelectedEntities: any;
       ExplicitSelects: T;
     }>
-  ): QueryBuilder<
-    Update<G, "JoinedEntities", G["JoinedEntities"] & Record<A, T>>
-  > {
+  ): QueryBuilder<Update<G, "CTEs", G["CTEs"] & Record<A, T>>> {
     if (this.sourcesContext[alias]) {
       throw new Error(`Entity with alias ${alias} already exists`);
     }
@@ -372,6 +371,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   ): QueryBuilder<{
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"] & Record<A, E>;
+    CTEs: G["CTEs"];
     SelectedEntities: G["SelectedEntities"] & Record<A, E>;
     ExplicitSelects: G["ExplicitSelects"];
   }>;
@@ -389,6 +389,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   ): QueryBuilder<{
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"] & Record<A, E>;
+    CTEs: G["CTEs"];
     SelectedEntities: G["SelectedEntities"] & Record<A, E>;
     ExplicitSelects: G["ExplicitSelects"];
   }>;
@@ -408,6 +409,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   ): QueryBuilder<{
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"] & Record<A, E>;
+    CTEs: G["CTEs"];
     SelectedEntities: G["SelectedEntities"] & Record<A, E>;
     ExplicitSelects: G["ExplicitSelects"];
   }> {
