@@ -188,6 +188,7 @@ export class SelectSqlBuilder<T extends AnEntity> {
   }
 
   // Select all fields that are selectable by default on all join nodes
+  // TODO: decide whether this should even be the responsibility of this class
   private selectFieldsFromJoinNode = <E extends AnEntity>(
     node: TargetNode<E>
   ): void => {
@@ -196,7 +197,11 @@ export class SelectSqlBuilder<T extends AnEntity> {
         .columnsSelectableByDefault) {
         // Select the colum
         this.selectTargetSqlBuilders.push(
-          SelectTargetSqlBuilderFactory.createColumn(node.alias, column)
+          SelectTargetSqlBuilderFactory.createColumn(
+            node.alias,
+            column,
+            `${node.alias}.${column.fieldName}`
+          )
         );
 
         // Register the column as selected on the node
@@ -220,10 +225,10 @@ export class SelectSqlBuilder<T extends AnEntity> {
         continue;
       }
 
-      const node = this.targetNodesByAlias.get(builder.alias);
+      const node = this.targetNodesByAlias.get(builder.nodeAlias);
 
       if (!node) {
-        throw new Error(`No target with alias ${builder.alias}`);
+        throw new Error(`No target with alias ${builder.nodeAlias}`);
       }
 
       node.selectField(builder.column, builder.as);
@@ -252,7 +257,8 @@ export class SelectSqlBuilder<T extends AnEntity> {
         this.selectTargetSqlBuilders.push(
           SelectTargetSqlBuilderFactory.createColumn(
             node.alias,
-            node.primaryKeyColumn
+            node.primaryKeyColumn,
+            `${node.alias}.${node.primaryKeyColumn.fieldName}`
           )
         );
       }

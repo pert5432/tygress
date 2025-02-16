@@ -4,18 +4,24 @@ import {
   SqlSelectTargetSqlBuilder,
 } from "../sql-builders";
 import { NamedParams } from "../types/named-params";
+import { ColumnIdentifierSqlBuilderFactory } from "./column-identifier";
 
 export abstract class SelectTargetSqlBuilderFactory {
   static createColumn(
     alias: string,
     column: ColumnMetadata,
-    as?: string
+    as: string
   ): ColumnSelectTargetSqlBuilder {
     const e = new ColumnSelectTargetSqlBuilder();
 
-    e.alias = alias;
-    e.column = column;
+    e.columnIdentifier = ColumnIdentifierSqlBuilderFactory.createColumnMeta(
+      alias,
+      column
+    );
     e.as = as;
+
+    e.nodeAlias = alias;
+    e.column = column;
 
     return e;
   }

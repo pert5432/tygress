@@ -330,7 +330,11 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
 
     for (const column of columns) {
       this.selects.push(
-        SelectTargetSqlBuilderFactory.createColumn(alias.toString(), column, as)
+        SelectTargetSqlBuilderFactory.createColumn(
+          alias.toString(),
+          column,
+          as ?? `${alias.toString()}.${column.fieldName}`
+        )
       );
     }
 

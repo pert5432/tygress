@@ -372,7 +372,11 @@ export abstract class Repository {
       // Select all columns
       selectsResult.push(
         ...parentTableMeta.columnsSelectableByDefault.map((column) =>
-          SelectTargetSqlBuilderFactory.createColumn(parentNode.alias, column)
+          SelectTargetSqlBuilderFactory.createColumn(
+            parentNode.alias,
+            column,
+            `${parentNode.alias}.${column.fieldName}`
+          )
         )
       );
 
@@ -403,14 +407,19 @@ export abstract class Repository {
       if (selectArgs[key] === true) {
         if (column) {
           selectsResult.push(
-            SelectTargetSqlBuilderFactory.createColumn(parentNode.alias, column)
+            SelectTargetSqlBuilderFactory.createColumn(
+              parentNode.alias,
+              column,
+              `${parentNode.alias}.${column.fieldName}`
+            )
           );
         } else {
           selectsResult.push(
             ...parentTableMeta.columnsSelectableByDefault.map((column) =>
               SelectTargetSqlBuilderFactory.createColumn(
                 parentNode.alias,
-                column
+                column,
+                `${parentNode.alias}.${column.fieldName}`
               )
             )
           );
