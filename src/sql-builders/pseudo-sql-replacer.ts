@@ -1,7 +1,7 @@
 import { METADATA_STORE } from "../metadata";
 import { AnEntity } from "../types";
 import { NamedParams } from "../types/named-params";
-import { QueryBuilderGenerics } from "../types/query-builder";
+import { QueryBuilderGenerics, SourcesContext } from "../types/query-builder";
 import { dQ } from "../utils";
 import { ParamBuilder } from "./param-builder";
 
@@ -15,9 +15,9 @@ export abstract class PseudoSQLReplacer {
   // Takes in SQL snippet which uses actual aliases from a query and fieldNames from an entity class
   // Returns the snippet with proper quotation and fieldNames replaced by column_names
   // Ignores any input in parentheses
-  public static replaceIdentifiers(
+  public static replaceIdentifiers<G extends QueryBuilderGenerics>(
     input: string,
-    sourcesContext: QueryBuilderGenerics["JoinedEntities"]
+    sourcesContext: SourcesContext<G>
   ): string {
     const replacements: Replacement[] = [];
 
@@ -88,9 +88,9 @@ export abstract class PseudoSQLReplacer {
     return chunks.join("");
   }
 
-  private static columnIdentifierReplacement(
+  private static columnIdentifierReplacement<G extends QueryBuilderGenerics>(
     { word, index }: { word: string; index: number },
-    sourcesContext: QueryBuilderGenerics["JoinedEntities"]
+    sourcesContext: SourcesContext<G>
   ): Replacement | undefined {
     const wordParts = word.split(".");
 
@@ -104,12 +104,15 @@ export abstract class PseudoSQLReplacer {
 
     const [alias, fieldName] = wordParts as [string, string];
 
-    const entity = sourcesContext[alias];
+    const source = sourcesContext[alias];
 
     // No entity found with this alias, skipping
-    if (!entity || typeof entity === "object") return;
+    if (!source || source.type === "cte") return;
 
-    const column = METADATA_STORE.getColumn(entity, fieldName);
+    const column = METADATA_STORE.getColumn(
+      source.source as AnEntity,
+      fieldName
+    );
 
     const target = `${dQ(alias)}.${dQ(column.name)}`;
 

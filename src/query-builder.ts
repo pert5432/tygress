@@ -34,6 +34,7 @@ import {
   SelectSource,
   SelectSourceField,
   SelectSourceKeys,
+  SourcesContext,
   Stringify,
   Update,
 } from "./types/query-builder";
@@ -67,7 +68,7 @@ type FlattenSelectSources<
   : never;
 
 export class QueryBuilder<G extends QueryBuilderGenerics> {
-  private sourcesContext: G["JoinedEntities"];
+  private sourcesContext: SourcesContext<G>;
 
   private joins: JoinArg<AnEntity>[] = [];
   private wheres: ComparisonSqlBuilder[] = [];
@@ -80,10 +81,23 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   private _offset?: number;
 
   constructor(alias: string, entity: AnEntity) {
-    this.sourcesContext = { [alias]: entity } as any;
+    this.sourcesContext = {
+      [alias]: { type: "entity", source: entity },
+    } as SourcesContext<G>;
 
     // Set the first join to be the root entity
     this.joins = [{ alias, klass: entity }];
+  }
+
+  private addSource(
+    alias: string,
+    source: SelectSource,
+    type: "entity" | "cte"
+  ): void {
+    this.sourcesContext = {
+      ...this.sourcesContext,
+      ...{ [alias]: { source, type } },
+    };
   }
 
   public log() {
@@ -164,12 +178,12 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     // Adding a column cmp column condition
     if (typeof conditionOrComparator === "string") {
       const leftColumn = METADATA_STORE.getColumn(
-        this.sourcesContext[leftAliasOrSql.toString()]! as AnEntity,
+        this.sourcesContext[leftAliasOrSql.toString()]!.source as AnEntity,
         leftFieldOrParams!.toString()
       );
 
       const rightColumn = METADATA_STORE.getColumn(
-        this.sourcesContext[rightAlias!.toString()]! as AnEntity,
+        this.sourcesContext[rightAlias!.toString()]!.source as AnEntity,
         rightField!.toString()
       );
 
@@ -188,7 +202,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
 
     // Adding a column cmp params condition
     const column = METADATA_STORE.getColumn(
-      this.sourcesContext[leftAliasOrSql.toString()]! as AnEntity,
+      this.sourcesContext[leftAliasOrSql.toString()]!.source as AnEntity,
       leftAliasOrSql.toString()
     );
 
@@ -317,7 +331,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
       Record<string, SelectSourceField<G["JoinedEntities"][K], Stringify<F>>>
     >
   > {
-    const klass = this.sourcesContext[alias];
+    const klass = this.sourcesContext[alias]?.source;
     if (!klass) {
       throw new Error(`No entity found with alias ${alias.toString()}`);
     }
@@ -345,7 +359,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     K extends keyof G["JoinedEntities"],
     F extends SelectSourceKeys<G["JoinedEntities"][K]>
   >(alias: K, field: F, order: "ASC" | "DESC"): this {
-    const klass = this.sourcesContext[alias];
+    const klass = this.sourcesContext[alias]?.source;
     if (!klass) {
       throw new Error(`No entity found with alias ${alias.toString()}`);
     }
@@ -521,7 +535,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     K extends keyof G["JoinedEntities"],
     F extends SelectSourceKeys<G["JoinedEntities"][K]>
   >(alias: K, field: F): this {
-    const entity = this.sourcesContext[alias];
+    const entity = this.sourcesContext[alias]?.source;
     if (!entity) {
       throw new Error(`No entity found with alias ${alias.toString()}`);
     }
@@ -602,11 +616,13 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
       );
     }
 
+    this.addSource(nextAlias, nextEntity, "entity");
+
     // Add the join we are currently creating to the contexts so it can be referenced in the sql
-    const targetSql = PseudoSQLReplacer.replaceIdentifiers(sql, {
-      ...this.sourcesContext,
-      [nextAlias]: nextEntity,
-    });
+    const targetSql = PseudoSQLReplacer.replaceIdentifiers(
+      sql,
+      this.sourcesContext
+    );
 
     const comparison = ComparisonFactory.createSql(
       targetSql,
@@ -631,7 +647,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     nextEntity: AnEntity,
     select: boolean
   ): void {
-    const parentEntity = this.sourcesContext[parentAlias];
+    const parentEntity = this.sourcesContext[parentAlias]?.source;
 
     if (!parentEntity) {
       throw new Error(
@@ -639,10 +655,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
       );
     }
 
-    this.sourcesContext = {
-      ...this.sourcesContext,
-      ...{ [nextAlias]: nextEntity },
-    };
+    this.addSource(nextAlias, nextEntity, "entity");
 
     const relation = METADATA_STORE.getRelation(
       parentEntity as AnEntity,

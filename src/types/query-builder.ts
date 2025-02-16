@@ -8,13 +8,20 @@ export type QueryBuilderGenerics = {
   ExplicitSelects: Record<string, any>;
 };
 
+export type SourcesContext<G extends QueryBuilderGenerics> = Record<
+  keyof (G["JoinedEntities"] & G["CTEs"]),
+  | { type: "entity"; source: AnEntity }
+  | { type: "cte"; source: CteSelectSource }
+>;
+
 export type Update<
   Input extends QueryBuilderGenerics,
   UpdateKey extends keyof Input,
   UpdateValue extends Input[UpdateKey]
 > = Omit<Input, UpdateKey> & Record<UpdateKey, UpdateValue>;
 
-export type SelectSource = AnEntity | Record<string, any>;
+export type CteSelectSource = Record<string, any>;
+export type SelectSource = AnEntity | CteSelectSource;
 
 export type SelectSourceField<
   E extends SelectSource,
