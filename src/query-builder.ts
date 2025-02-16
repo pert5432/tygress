@@ -174,13 +174,13 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
       );
 
       this.wheres.push(
-        ComparisonFactory.createColCol({
-          leftAlias: leftAliasOrSql.toString(),
-          leftColumn: leftColumn.name,
-          comparator: conditionOrComparator,
-          rightAlias: rightAlias!.toString(),
-          rightColumn: rightColumn.name,
-        })
+        ComparisonFactory.createColCol(
+          leftAliasOrSql.toString(),
+          leftColumn,
+          conditionOrComparator,
+          rightAlias!.toString(),
+          rightColumn
+        )
       );
 
       return this;

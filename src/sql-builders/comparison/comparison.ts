@@ -7,24 +7,11 @@ import {
 import { ComparisonSqlBuilder } from "./comparison-builder";
 import { WhereComparator } from "../../types";
 import { ParamBuilder } from "../param-builder";
+import { ColumnIdentifierSqlBuilder } from "../column-identifier";
 
 export abstract class Comparison extends ComparisonSqlBuilder {
-  leftAlias: string;
-  leftColumn: string;
-  leftCast?: string;
-
+  left: ColumnIdentifierSqlBuilder;
   comparator: WhereComparator;
-
-  rightAlias?: string;
-  rightColumn?: string;
-
-  params?: any[];
-
-  rightCast?: string;
-
-  protected formatCol(alias: string, col: string, cast?: string): string {
-    return `${dQ(alias)}.${dQ(col)}${cast ? `::${cast}` : ""}`;
-  }
 
   protected get comparatorF() {
     return WHERE_COMPARATORS[this.comparator];
@@ -32,57 +19,26 @@ export abstract class Comparison extends ComparisonSqlBuilder {
 }
 
 export class ColColComparison extends Comparison {
-  constructor({
-    leftAlias,
-    leftColumn,
-    leftCast,
-    comparator,
-    rightAlias,
-    rightColumn,
-    rightCast,
-  }: ColColComparisonArgs) {
+  constructor({ left, comparator, right }: ColColComparisonArgs) {
     super();
 
-    this.leftAlias = leftAlias;
-    this.leftColumn = leftColumn;
-    this.leftCast = leftCast;
-
+    this.left = left;
     this.comparator = comparator;
-
-    this.rightAlias = rightAlias;
-    this.rightColumn = rightColumn;
-    this.rightCast = rightCast;
+    this.right = right;
   }
 
-  override rightAlias: string;
-  override rightColumn: string;
+  right: ColumnIdentifierSqlBuilder;
 
   public sql(): string {
-    const left = this.formatCol(this.leftAlias, this.leftColumn, this.leftCast);
-    const right = this.formatCol(
-      this.rightAlias,
-      this.rightColumn,
-      this.rightCast
-    );
-
-    return `${left} ${this.comparatorF([right])}`;
+    return `${this.left.sql()} ${this.comparatorF([this.right.sql()])}`;
   }
 }
 
 export class ColParamComparison extends Comparison {
-  constructor({
-    leftAlias,
-    leftColumn,
-    leftCast,
-    comparator,
-    params,
-    rightCast,
-  }: ColParamComparisonArgs) {
+  constructor({ left, comparator, params, rightCast }: ColParamComparisonArgs) {
     super();
 
-    this.leftAlias = leftAlias;
-    this.leftColumn = leftColumn;
-    this.leftCast = leftCast;
+    this.left = left;
 
     this.comparator = comparator;
 
@@ -90,14 +46,14 @@ export class ColParamComparison extends Comparison {
     this.rightCast = rightCast;
   }
 
-  override params: any[];
+  params: any[];
+  rightCast?: string;
 
   public sql(paramBuilder: ParamBuilder): string {
-    const left = this.formatCol(this.leftAlias, this.leftColumn, this.leftCast);
     const right = this.params
       ?.map((val) => paramBuilder.addParam(val))
       .map((pNum) => `$${pNum}${this.rightCast ? `::${this.rightCast}` : ""}`);
 
-    return `${left} ${this.comparatorF(right)}`;
+    return `${this.left.sql()} ${this.comparatorF(right)}`;
   }
 }

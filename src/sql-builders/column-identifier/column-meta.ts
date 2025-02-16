@@ -6,7 +6,11 @@ export class ColumnMetadataColumnIdentifierSqlBuilder extends ColumnIdentifierSq
   alias: string;
   column: ColumnMetadata;
 
+  cast?: string;
+
   override sql(): string {
-    return `${dQ(this.alias)}.${dQ(this.column.name)}`;
+    const cast = this.cast?.length ? `::${this.cast}` : "";
+
+    return `${dQ(this.alias)}.${dQ(this.column.name)}${cast}`;
   }
 }

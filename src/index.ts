@@ -28,30 +28,14 @@ const main = async () => {
     .with("usr", createQueryBuilder("u", Users).select("u", "id", "id"))
 
     .where("pet.userId IN(SELECT id FROM usr)")
-    .select("pet", "name");
+    .where("pet", "userId", "in", "pet", "id")
+    .select("pet", "name")
+    .select("pet", "id")
+    .select("pet", "userId");
 
   const a = await builder.getRaw(client);
 
   console.log(a);
-
-  // const users = await Repository.select(client, Users, {
-  //   joins: {
-  //     pets: true,
-  //   },
-  // select: {
-  //   fullName: true,
-  //   pets: { name: true, user: { id: true } },
-  // },
-  // where: {
-  //   pets: { name: In(["a", "pootis", "moofis"]) },
-  // },
-  // order: {
-  //   pets: { name: "DESC", user: { id: "DESC" } },
-  //   fullName: "ASC",
-  // },
-  // });
-
-  // console.log(users[0]);
 };
 
 main();

@@ -9,11 +9,7 @@ import {
   ColColComparison,
   ColParamComparison,
 } from "../sql-builders/comparison/comparison";
-import { AnEntity, Parametrizable } from "../types";
-import {
-  ColColComparisonArgs,
-  ColParamComparisonArgs,
-} from "../types/create-args/comparison";
+import { AnEntity, Parametrizable, WhereComparator } from "../types";
 import { NamedParams } from "../types/named-params";
 import {
   NotConditionWrapper,
@@ -21,16 +17,46 @@ import {
   ParametrizedCondition,
   ParametrizedConditionWrapper,
 } from "../types/where-args";
+import { ColumnIdentifierSqlBuilderFactory } from "./column-identifier";
 
 export abstract class ComparisonFactory {
-  public static createColCol(args: ColColComparisonArgs): ColColComparison {
-    return new ColColComparison(args);
+  public static createColCol(
+    leftAlias: string,
+    leftColumn: ColumnMetadata,
+    comparator: WhereComparator,
+    rightAlias: string,
+    rightColumn: ColumnMetadata
+  ): ColColComparison {
+    const left = ColumnIdentifierSqlBuilderFactory.createColumnMeta(
+      leftAlias,
+      leftColumn
+    );
+    const right = ColumnIdentifierSqlBuilderFactory.createColumnMeta(
+      rightAlias,
+      rightColumn
+    );
+
+    return new ColColComparison({ left, right, comparator });
   }
 
   public static createColParam(
-    args: ColParamComparisonArgs
+    leftAlias: string,
+    leftColumn: ColumnMetadata,
+    comparator: WhereComparator,
+    params: any[],
+    cast?: string
   ): ColParamComparison {
-    return new ColParamComparison(args);
+    const left = ColumnIdentifierSqlBuilderFactory.createColumnMeta(
+      leftAlias,
+      leftColumn
+    );
+
+    return new ColParamComparison({
+      left,
+      comparator,
+      params,
+      rightCast: cast,
+    });
   }
 
   public static createSql(
@@ -56,13 +82,13 @@ export abstract class ComparisonFactory {
         ? [parentAlias, childAlias]
         : [childAlias, parentAlias];
 
-    return this.createColCol({
-      leftAlias: foreignAlias,
-      leftColumn: relation.foreignKey,
-      comparator: "eq",
-      rightAlias: primaryAlias,
-      rightColumn: relation.primaryKey,
-    });
+    return this.createColCol(
+      foreignAlias,
+      relation.foreignColumn,
+      "eq",
+      primaryAlias,
+      relation.primaryColumn
+    );
   }
 
   public static createFromCondition(
@@ -75,34 +101,24 @@ export abstract class ComparisonFactory {
       const parametrizedCondition =
         condition as ParametrizedCondition<Parametrizable>;
 
-      return this.createColParam({
-        leftAlias: alias,
-        leftColumn: column.name,
-        comparator: parametrizedCondition.comparator,
-        params: parametrizedCondition.parameters,
-      });
+      return this.createColParam(
+        alias,
+        column,
+        parametrizedCondition.comparator,
+        parametrizedCondition.parameters
+      );
     } else if (
       typeof condition === "number" ||
       typeof condition === "string" ||
       typeof condition === "boolean"
     ) {
-      return this.createColParam({
-        leftAlias: alias,
-        leftColumn: column.name,
-        comparator: "eq",
-        params: [condition],
-      });
+      return this.createColParam(alias, column, "eq", [condition]);
     } else if ((condition as Object) instanceof ParametrizedConditionWrapper) {
       const conditionWrapper =
         condition as ParametrizedConditionWrapper<Parametrizable>;
 
       const comparisons = conditionWrapper.conditions.map((c) =>
-        this.createColParam({
-          leftAlias: alias,
-          leftColumn: column.name,
-          comparator: c.comparator,
-          params: c.parameters,
-        })
+        this.createColParam(alias, column, c.comparator, c.parameters)
       );
 
       return new ComparisonWrapper(

@@ -5,7 +5,11 @@ export class ColumnNameColumnIdentifierSqlBuilder extends ColumnIdentifierSqlBui
   alias: string;
   columnName: string;
 
+  cast?: string;
+
   override sql(): string {
-    return `${dQ(this.alias)}.${dQ(this.columnName)}`;
+    const cast = this.cast?.length ? `::${this.cast}` : "";
+
+    return `${dQ(this.alias)}.${dQ(this.columnName)}${cast}`;
   }
 }

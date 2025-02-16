@@ -1,20 +1,17 @@
+import { ColumnIdentifierSqlBuilder } from "../../sql-builders";
 import { WhereComparator } from "../where-comparator";
 
 type ComparisonArgs = {
-  leftAlias: string;
-  leftColumn: string;
-  leftCast?: string;
+  left: ColumnIdentifierSqlBuilder;
 
   comparator: WhereComparator;
-
-  rightCast?: string;
 };
 
 export type ColColComparisonArgs = ComparisonArgs & {
-  rightAlias: string;
-  rightColumn: string;
+  right: ColumnIdentifierSqlBuilder;
 };
 
 export type ColParamComparisonArgs = ComparisonArgs & {
   params: any[];
+  rightCast?: string;
 };
