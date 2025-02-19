@@ -1,5 +1,5 @@
 import { AnEntity } from "..";
-import { ColumnMetadata, METADATA_STORE } from "../../metadata";
+import { ColumnMetadata } from "../../metadata";
 
 export class TargetNode<T extends AnEntity> {
   constructor(klass: T, alias: string) {
@@ -24,9 +24,7 @@ export class TargetNode<T extends AnEntity> {
 
   selectedFields: {
     fieldName: string;
-    fullName: string;
-    column: ColumnMetadata;
-    as?: string;
+    selectTarget: string;
   }[] = [];
 
   // Keys of ids of all parent nodes, aliased
@@ -41,29 +39,19 @@ export class TargetNode<T extends AnEntity> {
     [key: string]: TargetNode<AnEntity>;
   } = {};
 
-  public selectField(column: ColumnMetadata, as?: string): void {
+  public selectField(fieldName: string, selectTarget: string): void {
     // Don't add the exactly same field twice
     if (
       this.selectedFields.find(
-        (e) => e.fieldName === column.fieldName && e.as === as
+        (e) => e.fieldName === fieldName && e.selectTarget === selectTarget
       )
     ) {
       return;
     }
 
-    const fullName = as?.length ? as : `${this.alias}.${column.fieldName}`;
-
     this.selectedFields.push({
-      fieldName: column.fieldName,
-      fullName: fullName,
-      column,
-      as,
+      fieldName,
+      selectTarget,
     });
-  }
-
-  public selectAllFields(): void {
-    const table = METADATA_STORE.getTable(this.klass);
-
-    table.columnsSelectableByDefault.forEach((c) => this.selectField(c));
   }
 }

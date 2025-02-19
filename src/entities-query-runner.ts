@@ -1,5 +1,5 @@
 import { Client } from "pg";
-import { AnEntity, Entity } from "./types";
+import { AnEntity } from "./types";
 import { TargetNode, Query } from "./types/query";
 
 export class EntitiesQueryRunner<T extends AnEntity> {
@@ -19,10 +19,10 @@ export class EntitiesQueryRunner<T extends AnEntity> {
   public async run(): Promise<InstanceType<T>[]> {
     const { rows } = await this.client.query(this.sql, this.params);
 
-    let paths: TargetNode<Entity<unknown>>[][] = [];
+    let paths: TargetNode<AnEntity>[][] = [];
 
-    const buildPath = (parent: TargetNode<Entity<unknown>>[]): void => {
-      let node: TargetNode<Entity<unknown>> = parent[parent.length - 1]!;
+    const buildPath = (parent: TargetNode<AnEntity>[]): void => {
+      let node: TargetNode<AnEntity> = parent[parent.length - 1]!;
 
       const keys = Object.keys(node.joins);
 
@@ -52,7 +52,7 @@ export class EntitiesQueryRunner<T extends AnEntity> {
     paths = paths.map((e) => e.reverse());
 
     // This just might not be needed, idk, refactor later
-    const rootEntities = new Map<string, InstanceType<Entity<unknown>>>();
+    const rootEntities = new Map<string, InstanceType<AnEntity>>();
 
     // Go thru all rows, creating entities and grouping them by relations
     for (const row of rows) {
@@ -67,9 +67,9 @@ export class EntitiesQueryRunner<T extends AnEntity> {
           }
 
           // Construct entity
-          const e = new node.klass() as Entity<any>;
-          for (const { fieldName, fullName } of node.selectedFields) {
-            e[fieldName] = row[fullName];
+          const e = new node.klass() as AnEntity;
+          for (const { fieldName, selectTarget } of node.selectedFields) {
+            e[fieldName] = row[selectTarget];
           }
 
           // Is root entity

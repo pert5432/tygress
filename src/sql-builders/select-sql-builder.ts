@@ -195,17 +195,19 @@ export class SelectSqlBuilder<T extends AnEntity> {
     if (node.select) {
       for (const column of METADATA_STORE.getTable(node.klass)
         .columnsSelectableByDefault) {
+        const selectTarget = `${node.alias}.${column.fieldName}`;
+
         // Select the colum
         this.selectTargetSqlBuilders.push(
           SelectTargetSqlBuilderFactory.createColumn(
             node.alias,
             column,
-            `${node.alias}.${column.fieldName}`
+            selectTarget
           )
         );
 
         // Register the column as selected on the node
-        node.selectField(column);
+        node.selectField(column.fieldName, selectTarget);
       }
     }
 
@@ -225,13 +227,17 @@ export class SelectSqlBuilder<T extends AnEntity> {
         continue;
       }
 
+      if (!builder.nodeAlias || !builder.fieldName) {
+        continue;
+      }
+
       const node = this.targetNodesByAlias.get(builder.nodeAlias);
 
       if (!node) {
         throw new Error(`No target with alias ${builder.nodeAlias}`);
       }
 
-      node.selectField(builder.column, builder.as);
+      node.selectField(builder.fieldName, builder.as);
     }
   }
 
@@ -251,7 +257,9 @@ export class SelectSqlBuilder<T extends AnEntity> {
       // Add a select target for the primary key of the node if its not selected already
       if (
         !node.selectedFields.find(
-          (e) => e.column.name === node.primaryKeyColumn.name
+          (e) =>
+            e.selectTarget ===
+            `${node.alias}.${node.primaryKeyColumn.fieldName}`
         )
       ) {
         this.selectTargetSqlBuilders.push(

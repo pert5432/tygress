@@ -1,5 +1,6 @@
 import { ColumnMetadata, RelationMetadata } from "../metadata";
 import {
+  ColumnIdentifierSqlBuilder,
   ComparisonSqlBuilder,
   ComparisonWrapper,
   NotComparisonWrapper,
@@ -39,6 +40,14 @@ export abstract class ComparisonFactory {
     return new ColColComparison({ left, right, comparator });
   }
 
+  public static createColColIdentifiers(
+    left: ColumnIdentifierSqlBuilder,
+    comparator: WhereComparator,
+    right: ColumnIdentifierSqlBuilder
+  ): ColColComparison {
+    return new ColColComparison({ left, right, comparator });
+  }
+
   public static createColParam(
     leftAlias: string,
     leftColumn: ColumnMetadata,
@@ -51,6 +60,20 @@ export abstract class ComparisonFactory {
       leftColumn
     );
 
+    return new ColParamComparison({
+      left,
+      comparator,
+      params,
+      rightCast: cast,
+    });
+  }
+
+  public static createColParamIdentifier(
+    left: ColumnIdentifierSqlBuilder,
+    comparator: WhereComparator,
+    params: any[],
+    cast?: string
+  ): ColParamComparison {
     return new ColParamComparison({
       left,
       comparator,

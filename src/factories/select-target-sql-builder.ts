@@ -1,5 +1,6 @@
 import { ColumnMetadata } from "../metadata";
 import {
+  ColumnIdentifierSqlBuilder,
   ColumnSelectTargetSqlBuilder,
   SqlSelectTargetSqlBuilder,
 } from "../sql-builders";
@@ -21,7 +22,24 @@ export abstract class SelectTargetSqlBuilderFactory {
     e.as = as;
 
     e.nodeAlias = alias;
-    e.column = column;
+    e.fieldName = column.fieldName;
+
+    return e;
+  }
+
+  static createColumnIdentifier(
+    columnIdentifier: ColumnIdentifierSqlBuilder,
+    as: string,
+    nodeAlias?: string,
+    fieldName?: string
+  ): ColumnSelectTargetSqlBuilder {
+    const e = new ColumnSelectTargetSqlBuilder();
+
+    e.columnIdentifier = columnIdentifier;
+    e.as = as;
+
+    e.nodeAlias = nodeAlias;
+    e.fieldName = fieldName;
 
     return e;
   }

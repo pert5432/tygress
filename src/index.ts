@@ -33,7 +33,7 @@ const main = async () => {
     .select("pet", "id")
     .select("pet", "userId");
 
-  const a = await builder.getRaw(client);
+  const a = await builder.getEntities(client);
 
   console.log(a);
 };
