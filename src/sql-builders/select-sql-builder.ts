@@ -1,4 +1,8 @@
-import { SelectTargetSqlBuilderFactory, TargetNodeFactory } from "../factories";
+import {
+  ColumnIdentifierSqlBuilderFactory,
+  SelectTargetSqlBuilderFactory,
+  TargetNodeFactory,
+} from "../factories";
 import { METADATA_STORE, TableMetadata } from "../metadata";
 import { Entity, SelectQueryArgs, AnEntity } from "../types";
 import { TargetNode, Query } from "../types/query";
@@ -199,9 +203,11 @@ export class SelectSqlBuilder<T extends AnEntity> {
 
         // Select the colum
         this.selectTargetSqlBuilders.push(
-          SelectTargetSqlBuilderFactory.createColumn(
-            node.alias,
-            column,
+          SelectTargetSqlBuilderFactory.createColumnIdentifier(
+            ColumnIdentifierSqlBuilderFactory.createColumnMeta(
+              node.alias,
+              column
+            ),
             selectTarget
           )
         );
@@ -263,9 +269,11 @@ export class SelectSqlBuilder<T extends AnEntity> {
         )
       ) {
         this.selectTargetSqlBuilders.push(
-          SelectTargetSqlBuilderFactory.createColumn(
-            node.alias,
-            node.primaryKeyColumn,
+          SelectTargetSqlBuilderFactory.createColumnIdentifier(
+            ColumnIdentifierSqlBuilderFactory.createColumnMeta(
+              node.alias,
+              node.primaryKeyColumn
+            ),
             `${node.alias}.${node.primaryKeyColumn.fieldName}`
           )
         );
