@@ -159,4 +159,55 @@ export abstract class ComparisonFactory {
       throw new Error(`bogus condition ${condition}`);
     }
   }
+
+  public static createFromConditionIdentifier(
+    columnIdentifier: ColumnIdentifierSqlBuilder,
+    condition: ParameterArgs<Parametrizable>
+  ): ComparisonSqlBuilder {
+    if ((condition as Object) instanceof ParametrizedCondition) {
+      // To get type safety because inference doesn't work here for some reason ¯\_(ツ)_/¯
+      const parametrizedCondition =
+        condition as ParametrizedCondition<Parametrizable>;
+
+      return this.createColParamIdentifier(
+        columnIdentifier,
+        parametrizedCondition.comparator,
+        parametrizedCondition.parameters
+      );
+    } else if (
+      typeof condition === "number" ||
+      typeof condition === "string" ||
+      typeof condition === "boolean"
+    ) {
+      return this.createColParamIdentifier(columnIdentifier, "eq", [condition]);
+    } else if ((condition as Object) instanceof ParametrizedConditionWrapper) {
+      const conditionWrapper =
+        condition as ParametrizedConditionWrapper<Parametrizable>;
+
+      const comparisons = conditionWrapper.conditions.map((c) =>
+        this.createColParamIdentifier(
+          columnIdentifier,
+          c.comparator,
+          c.parameters
+        )
+      );
+
+      return new ComparisonWrapper(
+        comparisons,
+        conditionWrapper.logicalOperator
+      );
+    } else if ((condition as Object) instanceof NotConditionWrapper) {
+      const notConditionWrapper =
+        condition as NotConditionWrapper<Parametrizable>;
+
+      return new NotComparisonWrapper(
+        this.createFromConditionIdentifier(
+          columnIdentifier,
+          notConditionWrapper.condition
+        )
+      );
+    } else {
+      throw new Error(`bogus condition ${condition}`);
+    }
+  }
 }

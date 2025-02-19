@@ -100,6 +100,30 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     };
   }
 
+  private getColumnIdentifier(
+    alias: string,
+    fieldName: string
+  ): ColumnIdentifierSqlBuilder {
+    const source = this.sourcesContext[alias];
+    if (!source) {
+      throw new Error(`No select source found with alias ${alias}`);
+    }
+
+    switch (source.type) {
+      case "entity":
+        const column = METADATA_STORE.getColumn(source.source, fieldName);
+        return ColumnIdentifierSqlBuilderFactory.createColumnMeta(
+          alias,
+          column
+        );
+      case "cte":
+        return ColumnIdentifierSqlBuilderFactory.createColumnName(
+          alias,
+          fieldName
+        );
+    }
+  }
+
   public log() {
     console.log(this.joins);
     console.log(this.wheres);
@@ -177,39 +201,35 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
 
     // Adding a column cmp column condition
     if (typeof conditionOrComparator === "string") {
-      const leftColumn = METADATA_STORE.getColumn(
-        this.sourcesContext[leftAliasOrSql.toString()]!.source as AnEntity,
+      const left = this.getColumnIdentifier(
+        leftAliasOrSql.toString(),
         leftFieldOrParams!.toString()
       );
 
-      const rightColumn = METADATA_STORE.getColumn(
-        this.sourcesContext[rightAlias!.toString()]!.source as AnEntity,
+      const right = this.getColumnIdentifier(
+        rightAlias!.toString(),
         rightField!.toString()
       );
 
       this.wheres.push(
-        ComparisonFactory.createColCol(
-          leftAliasOrSql.toString(),
-          leftColumn,
+        ComparisonFactory.createColColIdentifiers(
+          left,
           conditionOrComparator,
-          rightAlias!.toString(),
-          rightColumn
+          right
         )
       );
 
       return this;
     }
 
-    // Adding a column cmp params condition
-    const column = METADATA_STORE.getColumn(
-      this.sourcesContext[leftAliasOrSql.toString()]!.source as AnEntity,
-      leftAliasOrSql.toString()
+    const columnIdentifier = this.getColumnIdentifier(
+      leftAliasOrSql.toString(),
+      leftFieldOrParams!.toString()
     );
 
     this.wheres.push(
-      ComparisonFactory.createFromCondition(
-        leftAliasOrSql.toString(),
-        column,
+      ComparisonFactory.createFromConditionIdentifier(
+        columnIdentifier,
         conditionOrComparator!
       )
     );
@@ -336,18 +356,28 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
       throw new Error(`No entity found with alias ${alias.toString()}`);
     }
 
-    // Select one or all columns from the entity based on field arg
-    const columns =
+    // TODO: this won't work for CTEs because they don't have an entity
+    // TODO: proposed solution is to extract the SelectTargetSqlBuilders from the CTEs query builder and use them here
+    // TOOD: not sure how exactly to do it at this point, making the select targets a public attribute seems kinda unlucky
+    const fieldNames: string[] =
       field === "*"
-        ? METADATA_STORE.getTable(klass as AnEntity).columns
-        : [METADATA_STORE.getColumn(klass as AnEntity, field.toString())];
+        ? METADATA_STORE.getTable(klass as AnEntity).columns.map(
+            (e) => e.fieldName
+          )
+        : [field.toString()];
 
-    for (const column of columns) {
+    const columnIdentifiers = fieldNames.map((f) => ({
+      fieldName: f,
+      identifier: this.getColumnIdentifier(alias.toString(), f),
+    }));
+
+    for (const { identifier, fieldName } of columnIdentifiers) {
       this.selects.push(
-        SelectTargetSqlBuilderFactory.createColumn(
+        SelectTargetSqlBuilderFactory.createColumnIdentifier(
+          identifier,
+          as ?? `${alias.toString()}.${fieldName}`,
           alias.toString(),
-          column,
-          as ?? `${alias.toString()}.${column.fieldName}`
+          fieldName
         )
       );
     }
@@ -369,6 +399,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
       field.toString()
     );
 
+    // TODO: Change this to use a ColumnIdentifierSqlBuilder
     this.orderBys.push({ alias: alias.toString(), column, order });
 
     return this;
@@ -535,29 +566,9 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     K extends keyof G["JoinedEntities"],
     F extends SelectSourceKeys<G["JoinedEntities"][K]>
   >(alias: K, field: F): this {
-    const entity = this.sourcesContext[alias]?.source;
-    if (!entity) {
-      throw new Error(`No entity found with alias ${alias.toString()}`);
-    }
-
-    const table = METADATA_STORE.getTable_(entity as AnEntity);
-    const column = table?.columnsMap.get(field.toString());
-
-    if (column) {
-      this.groupBys.push(
-        ColumnIdentifierSqlBuilderFactory.createColumnMeta(
-          alias.toString(),
-          column
-        )
-      );
-    } else {
-      this.groupBys.push(
-        ColumnIdentifierSqlBuilderFactory.createColumnName(
-          alias.toString(),
-          field.toString()
-        )
-      );
-    }
+    this.groupBys.push(
+      this.getColumnIdentifier(alias.toString(), field.toString())
+    );
 
     return this;
   }
@@ -647,24 +658,29 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     nextEntity: AnEntity,
     select: boolean
   ): void {
-    const parentEntity = this.sourcesContext[parentAlias]?.source;
+    const source = this.sourcesContext[parentAlias];
+    if (!source) {
+      throw new Error(`No select source found with alias ${parentAlias}`);
+    }
 
-    if (!parentEntity) {
+    if (source.type !== "entity") {
       throw new Error(
-        `No entity with alias ${parentAlias.toString()} found in query`
+        `Select source with alias ${parentAlias} needs to be an entity but is ${source.type}`
       );
     }
+
+    const parentEntity = source.source;
 
     this.addSource(nextAlias, nextEntity, "entity");
 
     const relation = METADATA_STORE.getRelation(
-      parentEntity as AnEntity,
+      parentEntity,
       parentField.toString()
     );
 
     const comparison = ComparisonFactory.createJoin(
       parentAlias.toString(),
-      parentEntity as AnEntity,
+      parentEntity,
       nextAlias,
       relation
     );
