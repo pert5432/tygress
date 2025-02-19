@@ -107,12 +107,9 @@ export abstract class PseudoSQLReplacer {
     const source = sourcesContext[alias];
 
     // No entity found with this alias, skipping
-    if (!source || source.type === "cte") return;
+    if (!source || source.type !== "entity") return;
 
-    const column = METADATA_STORE.getColumn(
-      source.source as AnEntity,
-      fieldName
-    );
+    const column = METADATA_STORE.getColumn(source.source, fieldName);
 
     const target = `${dQ(alias)}.${dQ(column.name)}`;
 
