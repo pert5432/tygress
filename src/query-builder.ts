@@ -100,6 +100,16 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     };
   }
 
+  private getSource(alias: string) {
+    const source = this.sourcesContext[alias];
+
+    if (!source) {
+      throw new Error(`No select source found with alias ${alias}`);
+    }
+
+    return source;
+  }
+
   private getColumnIdentifier(
     alias: string,
     fieldName: string
@@ -351,9 +361,11 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
       Record<string, SelectSourceField<G["JoinedEntities"][K], Stringify<F>>>
     >
   > {
-    const klass = this.sourcesContext[alias]?.source;
-    if (!klass) {
-      throw new Error(`No entity found with alias ${alias.toString()}`);
+    const source = this.getSource(alias.toString());
+    const klass = source.source;
+
+    if (field === "*" && source.type !== "entity") {
+      throw new Error(`Can't select * on other select sources than entity`);
     }
 
     // TODO: this won't work for CTEs because they don't have an entity
