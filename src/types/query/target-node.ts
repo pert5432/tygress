@@ -1,4 +1,4 @@
-import { AnEntity, Entity } from "..";
+import { AnEntity } from "..";
 import { ColumnMetadata, METADATA_STORE } from "../../metadata";
 
 export class TargetNode<T extends AnEntity> {
@@ -33,12 +33,12 @@ export class TargetNode<T extends AnEntity> {
   idKeys: string[] = [];
   // Instances of this entity that belong to a specific parent entity
   // Indexed by ids of all parent entities to this one
-  entitiesByParentsIdPath: Map<string, Entity<unknown>[]> = new Map();
+  entitiesByParentsIdPath: Map<string, AnEntity[]> = new Map();
   // Instance of this entity, indexed by ids of all parents + this entity
-  entityByIdPath: Map<string, Entity<unknown>> = new Map();
+  entityByIdPath: Map<string, AnEntity> = new Map();
 
   joins: {
-    [key: string]: TargetNode<Entity<unknown>>;
+    [key: string]: TargetNode<AnEntity>;
   } = {};
 
   public selectField(column: ColumnMetadata, as?: string): void {
