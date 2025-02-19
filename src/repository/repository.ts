@@ -15,6 +15,7 @@ import { EntitiesQueryRunner } from "../entities-query-runner";
 import { JoinArg } from "../types/query/join-arg";
 import { METADATA_STORE, TableMetadata } from "../metadata";
 import {
+  ColumnIdentifierSqlBuilderFactory,
   ComparisonFactory,
   JoinArgFactory,
   SelectTargetSqlBuilderFactory,
@@ -345,9 +346,11 @@ export abstract class Repository {
       }
 
       wheresResult.push(
-        ComparisonFactory.createFromCondition(
-          parentNode.alias,
-          column,
+        ComparisonFactory.createFromConditionIdentifier(
+          ColumnIdentifierSqlBuilderFactory.createColumnMeta(
+            parentNode.alias,
+            column
+          ),
           whereArgs[key]!
         )
       );
@@ -372,9 +375,11 @@ export abstract class Repository {
       // Select all columns
       selectsResult.push(
         ...parentTableMeta.columnsSelectableByDefault.map((column) =>
-          SelectTargetSqlBuilderFactory.createColumn(
-            parentNode.alias,
-            column,
+          SelectTargetSqlBuilderFactory.createColumnIdentifier(
+            ColumnIdentifierSqlBuilderFactory.createColumnMeta(
+              parentNode.alias,
+              column
+            ),
             `${parentNode.alias}.${column.fieldName}`
           )
         )
@@ -407,18 +412,22 @@ export abstract class Repository {
       if (selectArgs[key] === true) {
         if (column) {
           selectsResult.push(
-            SelectTargetSqlBuilderFactory.createColumn(
-              parentNode.alias,
-              column,
+            SelectTargetSqlBuilderFactory.createColumnIdentifier(
+              ColumnIdentifierSqlBuilderFactory.createColumnMeta(
+                parentNode.alias,
+                column
+              ),
               `${parentNode.alias}.${column.fieldName}`
             )
           );
         } else {
           selectsResult.push(
             ...parentTableMeta.columnsSelectableByDefault.map((column) =>
-              SelectTargetSqlBuilderFactory.createColumn(
-                parentNode.alias,
-                column,
+              SelectTargetSqlBuilderFactory.createColumnIdentifier(
+                ColumnIdentifierSqlBuilderFactory.createColumnMeta(
+                  parentNode.alias,
+                  column
+                ),
                 `${parentNode.alias}.${column.fieldName}`
               )
             )
