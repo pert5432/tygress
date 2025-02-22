@@ -30,14 +30,6 @@ import { JoinNode } from ".";
 import { QueryResultType } from "../enums";
 import { OrderByExpressionSqlBuilder } from "../sql-builders/order-by-expression";
 
-// TODO: Replace with usage of SelectQueryArgs type
-type ArgsTransformations = {
-  joins: JoinArg<AnEntity>[];
-  wheres: ComparisonSqlBuilder[];
-  selects: SelectTargetSqlBuilder[];
-  orderBys: OrderByExpressionSqlBuilder[];
-};
-
 export abstract class Repository {
   public static async select<T extends AnEntity>(
     client: Client,
@@ -46,18 +38,12 @@ export abstract class Repository {
   ): Promise<InstanceType<T>[]> {
     const paramBuilder = new ParamBuilder();
 
-    const transformedArgs = this.transformArgs(
-      entity,
-      args.joins,
-      args.where,
-      args.select,
-      args.order
-    );
+    const transformedArgs = this.transformArgs(entity, args);
 
     const queryArgs: SelectQueryArgs = {
-      ...args,
       ...transformedArgs,
-      resultType: QueryResultType.ENTITIES,
+      limit: args.limit,
+      offset: args.offset,
     };
 
     const query = new SelectSqlBuilder<T>(
@@ -70,19 +56,16 @@ export abstract class Repository {
 
   private static transformArgs<T extends AnEntity>(
     entity: T,
-    joins: Joins<InstanceType<T>> = {},
-    wheres: Wheres<InstanceType<T>> = {},
-    selects: SelectTargetArgs<InstanceType<T>> = {},
-    orderBys: OrderArgs<InstanceType<T>> = {}
-  ): ArgsTransformations {
+    { joins, where, select, order }: SelectArgs<InstanceType<T>>
+  ): SelectQueryArgs {
     const rootEntityMeta = METADATA_STORE.getTable(entity);
 
     const rootNode = JoinNodeFactory.createRoot(rootEntityMeta);
 
-    this.nodesFromJoins(joins, rootNode, rootEntityMeta);
-    this.nodesFromWheres(wheres, rootNode, rootEntityMeta);
-    this.nodesFromSelects(selects, rootNode, rootEntityMeta);
-    this.nodesFromOrderBys(orderBys, rootNode, rootEntityMeta);
+    this.nodesFromJoins(joins ?? {}, rootNode, rootEntityMeta);
+    this.nodesFromWheres(where ?? {}, rootNode, rootEntityMeta);
+    this.nodesFromSelects(select ?? {}, rootNode, rootEntityMeta);
+    this.nodesFromOrderBys(order ?? {}, rootNode, rootEntityMeta);
 
     const joinsResult: JoinArg<AnEntity>[] = [
       JoinArgFactory.createRoot(entity, entityNameToAlias(entity.name)),
@@ -92,16 +75,17 @@ export abstract class Repository {
     const orderBysResult: OrderByExpressionSqlBuilder[] = [];
 
     this.processJoins(joinsResult, rootNode);
-    this.processWheres(wheresResult, wheres, rootNode);
+    this.processWheres(wheresResult, where ?? {}, rootNode);
     this.processSelects(
       selectsResult,
-      selects,
+      select ?? {},
       rootNode,
-      Object.keys(selects).length < 1
+      Object.keys(select ?? {}).length < 1
     );
-    this.processOrderBys(orderBysResult, orderBys, rootNode);
+    this.processOrderBys(orderBysResult, order ?? {}, rootNode);
 
     return {
+      resultType: QueryResultType.ENTITIES,
       joins: joinsResult,
       wheres: wheresResult,
       selects: selectsResult,
