@@ -3,6 +3,7 @@ import { JoinStrategy, JoinType, QueryResultType } from "./enums";
 import {
   ColumnIdentifierSqlBuilderFactory,
   ComparisonFactory,
+  OrderByExpressionSqlBuilderFactory,
   SelectTargetSqlBuilderFactory,
   TableIdentifierSqlBuilderFactory,
 } from "./factories";
@@ -16,12 +17,7 @@ import {
   SelectTargetSqlBuilder,
   ColumnIdentifierSqlBuilder,
 } from "./sql-builders";
-import {
-  AnEntity,
-  Parametrizable,
-  SelectQueryOrder,
-  WhereComparator,
-} from "./types";
+import { AnEntity, Parametrizable, WhereComparator } from "./types";
 import { NamedParams } from "./types/named-params";
 import { Query } from "./types/query";
 import { JoinArg } from "./types/query/join-arg";
@@ -38,6 +34,7 @@ import {
   Stringify,
   Update,
 } from "./types/query-builder";
+import { OrderByExpressionSqlBuilder } from "./sql-builders/order-by-expression";
 
 type JoinImplArgs = {
   strategy: JoinStrategy;
@@ -73,7 +70,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   private joins: JoinArg<AnEntity>[] = [];
   private wheres: ComparisonSqlBuilder[] = [];
   private selects: SelectTargetSqlBuilder[] = [];
-  private orderBys: SelectQueryOrder[] = [];
+  private orderBys: OrderByExpressionSqlBuilder[] = [];
   private groupBys: ColumnIdentifierSqlBuilder[] = [];
   private CTEs: CteTableIdentifierSqlBuilder[] = [];
 
@@ -400,19 +397,15 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   public orderBy<
     K extends keyof G["JoinedEntities"],
     F extends SelectSourceKeys<G["JoinedEntities"][K]>
-  >(alias: K, field: F, order: "ASC" | "DESC"): this {
-    const klass = this.sourcesContext[alias]?.source;
-    if (!klass) {
-      throw new Error(`No entity found with alias ${alias.toString()}`);
-    }
-
-    const column = METADATA_STORE.getColumn(
-      klass as AnEntity,
+  >(alias: K, field: F, order?: "ASC" | "DESC"): this {
+    const identifier = this.getColumnIdentifier(
+      alias.toString(),
       field.toString()
     );
 
-    // TODO: Change this to use a ColumnIdentifierSqlBuilder
-    this.orderBys.push({ alias: alias.toString(), column, order });
+    this.orderBys.push(
+      OrderByExpressionSqlBuilderFactory.create(identifier, order)
+    );
 
     return this;
   }

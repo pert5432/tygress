@@ -4,10 +4,10 @@ import {
   ComparisonSqlBuilder,
   SelectTargetSqlBuilder,
 } from "../sql-builders";
+import { OrderByExpressionSqlBuilder } from "../sql-builders/order-by-expression";
 import { CteTableIdentifierSqlBuilder } from "../sql-builders/table-identifier";
 import { AnEntity } from "./entity";
 import { JoinArg } from "./query/join-arg";
-import { SelectQueryOrder } from "./select-query-order";
 
 export type SelectQueryArgs = {
   resultType: QueryResultType;
@@ -18,7 +18,7 @@ export type SelectQueryArgs = {
 
   wheres?: ComparisonSqlBuilder[];
 
-  orderBys?: SelectQueryOrder[];
+  orderBys?: OrderByExpressionSqlBuilder[];
 
   groupBys?: ColumnIdentifierSqlBuilder[];
 

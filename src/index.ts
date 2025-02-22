@@ -31,7 +31,8 @@ const main = async () => {
     .where("pet", "userId", "in", "pet", "id")
     .select("pet", "name")
     .select("pet", "id")
-    .select("pet", "userId");
+    .select("pet", "userId")
+    .orderBy("pet", "name", "DESC");
 
   const a = await builder.getEntities(client);
 

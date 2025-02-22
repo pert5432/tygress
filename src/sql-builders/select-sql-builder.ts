@@ -4,7 +4,7 @@ import {
   TargetNodeFactory,
 } from "../factories";
 import { METADATA_STORE, TableMetadata } from "../metadata";
-import { Entity, SelectQueryArgs, AnEntity } from "../types";
+import { SelectQueryArgs, AnEntity } from "../types";
 import { TargetNode, Query } from "../types/query";
 import { dQ } from "../utils";
 import { JoinArg } from "../types/query/join-arg";
@@ -36,7 +36,6 @@ export class SelectSqlBuilder<T extends AnEntity> {
   private table: TableMetadata;
   private whereConditions: string[] = [];
   private sqlJoins: string[] = [];
-  private orderBys: string[] = [];
 
   private selectTargetSqlBuilders: SelectTargetSqlBuilder[] = [];
 
@@ -46,7 +45,6 @@ export class SelectSqlBuilder<T extends AnEntity> {
   public buildSelect(): Query {
     this.buildJoins();
     this.buildWhereConditions();
-    this.buildOrder();
     this.selectDesiredFields();
 
     //
@@ -75,8 +73,8 @@ export class SelectSqlBuilder<T extends AnEntity> {
       sql += ` WHERE ${this.whereConditions.join(" AND ")}`;
     }
 
-    if (this.orderBys.length) {
-      sql += ` ORDER BY ${this.orderBys.join(", ")}`;
+    if (this.args.orderBys?.length) {
+      sql += ` ORDER BY ${this.args.orderBys.map((e) => e.sql()).join(", ")}`;
     }
 
     if (this.args.groupBys?.length) {
@@ -155,16 +153,6 @@ export class SelectSqlBuilder<T extends AnEntity> {
           join.alias
         )} ON ${join.comparison!.sql(this.paramBuilder)}`
       );
-    }
-  }
-
-  private buildOrder(): void {
-    if (!this.args.orderBys?.length) {
-      return;
-    }
-
-    for (const { alias, column, order } of this.args.orderBys) {
-      this.orderBys.push(`${dQ(alias)}.${dQ(column.name)} ${order}`);
     }
   }
 

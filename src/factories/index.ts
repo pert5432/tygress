@@ -10,3 +10,4 @@ export { JoinArgFactory } from "./join-arg";
 export { SelectTargetSqlBuilderFactory } from "./select-target-sql-builder";
 export { ColumnIdentifierSqlBuilderFactory } from "./column-identifier";
 export { TableIdentifierSqlBuilderFactory } from "./table-identifier";
+export { OrderByExpressionSqlBuilderFactory } from "./order-by-expression-sql-builder";

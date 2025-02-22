@@ -5,8 +5,6 @@ import {
   OrderArgs,
   SelectArgs,
   SelectQueryArgs,
-  SelectQueryOrder,
-  SelectQueryTarget,
   SelectTargetArgs,
   Wheres,
 } from "../types";
@@ -18,6 +16,7 @@ import {
   ColumnIdentifierSqlBuilderFactory,
   ComparisonFactory,
   JoinArgFactory,
+  OrderByExpressionSqlBuilderFactory,
   SelectTargetSqlBuilderFactory,
 } from "../factories";
 import { entityNameToAlias } from "../utils";
@@ -29,13 +28,14 @@ import {
 import { JoinNodeFactory } from "../factories/repository";
 import { JoinNode } from ".";
 import { QueryResultType } from "../enums";
+import { OrderByExpressionSqlBuilder } from "../sql-builders/order-by-expression";
 
 // TODO: Replace with usage of SelectQueryArgs type
 type ArgsTransformations = {
   joins: JoinArg<AnEntity>[];
   wheres: ComparisonSqlBuilder[];
   selects: SelectTargetSqlBuilder[];
-  orderBys: SelectQueryOrder[];
+  orderBys: OrderByExpressionSqlBuilder[];
 };
 
 export abstract class Repository {
@@ -89,7 +89,7 @@ export abstract class Repository {
     ];
     const wheresResult: ComparisonSqlBuilder[] = [];
     const selectsResult: SelectTargetSqlBuilder[] = [];
-    const orderBysResult: SelectQueryOrder[] = [];
+    const orderBysResult: OrderByExpressionSqlBuilder[] = [];
 
     this.processJoins(joinsResult, rootNode);
     this.processWheres(wheresResult, wheres, rootNode);
@@ -460,7 +460,7 @@ export abstract class Repository {
   }
 
   private static processOrderBys(
-    orderBysResult: SelectQueryOrder[],
+    orderBysResult: OrderByExpressionSqlBuilder[],
     orderByArgs: OrderArgs<AnEntity>,
     parentNode: JoinNode
   ): void {
@@ -481,12 +481,19 @@ export abstract class Repository {
           );
         }
 
-        orderBysResult.push({
-          alias: parentNode.alias,
-          column,
-          // What is type inferrence? ¯\_(ツ)_/¯
-          order: order as "ASC" | "DESC",
-        });
+        const columnIdentifier =
+          ColumnIdentifierSqlBuilderFactory.createColumnMeta(
+            parentNode.alias,
+            column
+          );
+
+        orderBysResult.push(
+          OrderByExpressionSqlBuilderFactory.create(
+            columnIdentifier,
+            // What is type inferrence? ¯\_(ツ)_/¯
+            order as "ASC" | "DESC"
+          )
+        );
 
         continue;
       } else {
