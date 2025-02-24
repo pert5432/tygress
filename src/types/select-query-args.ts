@@ -6,13 +6,12 @@ import {
 } from "../sql-builders";
 import { OrderByExpressionSqlBuilder } from "../sql-builders/order-by-expression";
 import { CteTableIdentifierSqlBuilder } from "../sql-builders/table-identifier";
-import { AnEntity } from "./entity";
 import { JoinArg } from "./query/join-arg";
 
 export type SelectQueryArgs = {
   resultType: QueryResultType;
 
-  joins: JoinArg<AnEntity>[];
+  joins: JoinArg[];
 
   selects?: SelectTargetSqlBuilder[];
 

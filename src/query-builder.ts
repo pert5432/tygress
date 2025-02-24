@@ -24,7 +24,10 @@ import { JoinArg } from "./types/query/join-arg";
 import { ParameterArgs } from "./types/where-args";
 import { RawQueryRunner } from "./raw-query-runner";
 import { UnionToIntersection } from "./types/helpers";
-import { CteTableIdentifierSqlBuilder } from "./sql-builders/table-identifier";
+import {
+  CteTableIdentifierSqlBuilder,
+  TableIdentifierSqlBuilder,
+} from "./sql-builders/table-identifier";
 import {
   QueryBuilderGenerics,
   SelectSource,
@@ -67,7 +70,7 @@ type FlattenSelectSources<
 export class QueryBuilder<G extends QueryBuilderGenerics> {
   private sourcesContext: SourcesContext<G>;
 
-  private joins: JoinArg<AnEntity>[] = [];
+  private joins: JoinArg[] = [];
   private wheres: ComparisonSqlBuilder[] = [];
   private selects: SelectTargetSqlBuilder[] = [];
   private orderBys: OrderByExpressionSqlBuilder[] = [];
@@ -83,7 +86,17 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     } as SourcesContext<G>;
 
     // Set the first join to be the root entity
-    this.joins = [{ alias, klass: entity }];
+    this.joins = [
+      {
+        alias,
+        klass: entity,
+        type: "entity",
+        identifier: TableIdentifierSqlBuilderFactory.createEntity(
+          alias,
+          entity
+        ),
+      },
+    ];
   }
 
   private addSource(
@@ -91,6 +104,10 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     source: SelectSource,
     type: "entity" | "cte"
   ): void {
+    if (this.sourcesContext[alias]) {
+      throw new Error(`Select source with alias ${alias} already exists`);
+    }
+
     this.sourcesContext = {
       ...this.sourcesContext,
       ...{ [alias]: { source, type } },
@@ -146,9 +163,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
       ExplicitSelects: T;
     }>
   ): QueryBuilder<Update<G, "CTEs", G["CTEs"] & Record<A, T>>> {
-    if (this.sourcesContext[alias]) {
-      throw new Error(`Entity with alias ${alias} already exists`);
-    }
+    this.addSource(alias, Object, "cte");
 
     this.CTEs.push(TableIdentifierSqlBuilderFactory.createCTE(alias, qb));
 
@@ -648,11 +663,18 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     this.joins.push({
       alias: nextAlias,
       klass: nextEntity,
+      identifier: TableIdentifierSqlBuilderFactory.createEntity(
+        nextAlias,
+        nextEntity
+      ),
+
       comparison,
       select,
 
       parentAlias,
       parentField,
+
+      type: "entity",
     });
   }
 
@@ -693,10 +715,89 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     this.joins.push({
       alias: nextAlias,
       klass: nextEntity,
+      identifier: TableIdentifierSqlBuilderFactory.createEntity(
+        nextAlias,
+        nextEntity
+      ),
+
       parentAlias: parentAlias.toString(),
       parentField: parentField.toString(),
       comparison: comparison,
       select,
+
+      type: "entity",
+    });
+  }
+
+  public joinCTE<
+    A extends string,
+    C extends keyof G["CTEs"],
+    K extends keyof G["JoinedEntities"],
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>
+  >(
+    targetAlias: A,
+    CTEName: C,
+    CTEField: string,
+    comparator: WhereComparator,
+    parentAlias: K,
+    parentField: F
+  ): QueryBuilder<
+    Update<G, "JoinedEntities", G["JoinedEntities"] & Record<A, Object>>
+  > {
+    if (this.sourcesContext[targetAlias]) {
+      throw new Error(`Select source with alias ${targetAlias} already exists`);
+    }
+
+    this.addSource(targetAlias, Object, "cte");
+
+    this.joinViaComparison(
+      parentAlias.toString(),
+      parentField.toString(),
+      comparator,
+      targetAlias,
+      this.getSource(targetAlias),
+      TableIdentifierSqlBuilderFactory.createTablename(
+        targetAlias,
+        CTEName.toString()
+      ),
+      CTEField,
+      false
+    );
+
+    return this as any;
+  }
+
+  public joinViaComparison(
+    parentAlias: string,
+    parentField: string,
+    comparator: WhereComparator,
+    nextAlias: string,
+    nextSelectSource: SelectSource,
+    nextSelectSourceIdentifier: TableIdentifierSqlBuilder,
+    nextSelectSourceField: string,
+    select: boolean
+  ): void {
+    const parentIdentifier = this.getColumnIdentifier(parentAlias, parentField);
+    const childIdentifier = this.getColumnIdentifier(
+      nextAlias,
+      nextSelectSourceField
+    );
+
+    this.joins.push({
+      alias: nextAlias,
+      klass: nextSelectSource.source,
+
+      identifier: nextSelectSourceIdentifier,
+      parentAlias,
+      parentField,
+      comparison: ComparisonFactory.createColColIdentifiers(
+        parentIdentifier,
+        comparator,
+        childIdentifier
+      ),
+      select,
+
+      type: nextSelectSource.type,
     });
   }
 

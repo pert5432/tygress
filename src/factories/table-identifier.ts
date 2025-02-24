@@ -1,9 +1,11 @@
+import { METADATA_STORE } from "../metadata";
 import { QueryBuilder } from "../query-builder";
 import {
   CteTableIdentifierSqlBuilder,
   SubQueryTableIdentifierSqlBuilder,
   TablenameTableIdentifierSqlBuilder,
 } from "../sql-builders/table-identifier";
+import { AnEntity } from "../types";
 
 export abstract class TableIdentifierSqlBuilderFactory {
   static createCTE(
@@ -42,6 +44,20 @@ export abstract class TableIdentifierSqlBuilderFactory {
 
     e.alias = alias;
     e.tablename = tablename;
+
+    return e;
+  }
+
+  static createEntity(
+    alias: string,
+    entity: AnEntity
+  ): TablenameTableIdentifierSqlBuilder {
+    const e = new TablenameTableIdentifierSqlBuilder();
+
+    const entityMeta = METADATA_STORE.getTable(entity);
+
+    e.alias = alias;
+    e.tablename = entityMeta.tablename;
 
     return e;
   }

@@ -18,6 +18,7 @@ import {
   JoinArgFactory,
   OrderByExpressionSqlBuilderFactory,
   SelectTargetSqlBuilderFactory,
+  TableIdentifierSqlBuilderFactory,
 } from "../factories";
 import { entityNameToAlias } from "../utils";
 import {
@@ -67,9 +68,17 @@ export abstract class Repository {
     this.nodesFromSelects(select ?? {}, rootNode, rootEntityMeta);
     this.nodesFromOrderBys(order ?? {}, rootNode, rootEntityMeta);
 
-    const joinsResult: JoinArg<AnEntity>[] = [
-      JoinArgFactory.createRoot(entity, entityNameToAlias(entity.name)),
+    const joinsResult: JoinArg[] = [
+      JoinArgFactory.createRoot(
+        entity,
+        entityNameToAlias(entity.name),
+        TableIdentifierSqlBuilderFactory.createEntity(
+          entityNameToAlias(entity.name),
+          entity
+        )
+      ),
     ];
+
     const wheresResult: ComparisonSqlBuilder[] = [];
     const selectsResult: SelectTargetSqlBuilder[] = [];
     const orderBysResult: OrderByExpressionSqlBuilder[] = [];
@@ -251,7 +260,7 @@ export abstract class Repository {
   //
 
   private static processJoins(
-    joinsResult: JoinArg<AnEntity>[],
+    joinsResult: JoinArg[],
     parentNode: JoinNode
   ): void {
     const parentTableMeta = parentNode.entityMeta;
@@ -284,6 +293,10 @@ export abstract class Repository {
         key,
         inverseTable,
         nextJoinArgAlias,
+        TableIdentifierSqlBuilderFactory.createEntity(
+          nextJoinArgAlias,
+          inverseTable
+        ),
         comparison
       );
 

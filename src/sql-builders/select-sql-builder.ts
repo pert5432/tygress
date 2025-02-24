@@ -20,16 +20,16 @@ export class SelectSqlBuilder<T extends AnEntity> {
     private args: SelectQueryArgs,
     private paramBuilder: ParamBuilder
   ) {
-    const rootJoinArg = args.joins[0]! as JoinArg<T>;
+    const rootJoinArg = args.joins[0]! as JoinArg;
 
     this.table = METADATA_STORE.getTable(rootJoinArg.klass);
 
-    const rootTargetNode = TargetNodeFactory.createRoot<T>(
+    const rootTargetNode = TargetNodeFactory.createRoot(
       rootJoinArg.klass,
       rootJoinArg.alias
     );
 
-    this.targetNodes = rootTargetNode;
+    this.targetNodes = rootTargetNode as TargetNode<T>;
     this.targetNodesByAlias.set(rootJoinArg.alias, rootTargetNode);
   }
 
@@ -121,13 +121,11 @@ export class SelectSqlBuilder<T extends AnEntity> {
 
     // Skip first node since its the root
     for (const join of this.args.joins.slice(1)) {
-      const tableMeta = METADATA_STORE.getTable(join.klass);
-
       let nextTargetNode: TargetNode<AnEntity>;
-      if (join.parentAlias) {
-        const parentTargetNode = this.targetNodesByAlias.get(
-          join.parentAlias!
-        )!;
+      if (join.type === "cte") {
+        nextTargetNode = TargetNodeFactory.createCTE(join.alias);
+      } else if (join.parentAlias) {
+        const parentTargetNode = this.targetNodesByAlias.get(join.parentAlias)!;
 
         nextTargetNode = TargetNodeFactory.create(
           join.alias,
@@ -149,8 +147,8 @@ export class SelectSqlBuilder<T extends AnEntity> {
       this.targetNodesByAlias.set(join.alias, nextTargetNode);
 
       this.sqlJoins.push(
-        `INNER JOIN ${dQ(tableMeta.fullName)} ${dQ(
-          join.alias
+        `INNER JOIN ${join.identifier.sql(
+          this.paramBuilder
         )} ON ${join.comparison!.sql(this.paramBuilder)}`
       );
     }

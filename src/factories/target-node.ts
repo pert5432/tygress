@@ -1,4 +1,3 @@
-import { Relation } from "../enums";
 import { METADATA_STORE } from "../metadata";
 import { AnEntity, Entity } from "../types";
 import { TargetNode } from "../types/query";
@@ -11,9 +10,9 @@ export abstract class TargetNodeFactory {
     fieldName: string,
     select?: boolean
   ): TargetNode<T> {
-    const primaryKey = METADATA_STORE.getTablePrimaryKey(klass);
-
     const e = new TargetNode(klass, alias);
+
+    const primaryKey = METADATA_STORE.getTablePrimaryKey(klass);
 
     e.parentField = fieldName;
 
@@ -38,9 +37,9 @@ export abstract class TargetNodeFactory {
     alias: string,
     select?: boolean
   ): TargetNode<T> {
-    const primaryKey = METADATA_STORE.getTablePrimaryKey(klass);
-
     const e = new TargetNode(klass, alias);
+
+    const primaryKey = METADATA_STORE.getTablePrimaryKey(klass);
 
     e.idKeys = [`${alias}.${primaryKey.fieldName}`];
 
@@ -49,5 +48,9 @@ export abstract class TargetNodeFactory {
     e.select = select === false ? false : true;
 
     return e;
+  }
+
+  public static createCTE(alias: string): TargetNode<AnEntity> {
+    return new TargetNode(Object, alias);
   }
 }

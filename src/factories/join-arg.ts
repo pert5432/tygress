@@ -1,4 +1,7 @@
-import { ComparisonSqlBuilder } from "../sql-builders";
+import {
+  ComparisonSqlBuilder,
+  TableIdentifierSqlBuilder,
+} from "../sql-builders";
 import { AnEntity } from "../types";
 import { JoinArg } from "../types/query/join-arg";
 
@@ -8,12 +11,14 @@ export abstract class JoinArgFactory {
     parentField: string,
     entity: T,
     alias: string,
+    identifier: TableIdentifierSqlBuilder,
     comparison: ComparisonSqlBuilder
-  ): JoinArg<T> {
-    const e = new JoinArg<T>();
+  ): JoinArg {
+    const e = new JoinArg();
 
     e.klass = entity;
     e.alias = alias;
+    e.identifier = identifier;
 
     e.parentAlias = parentAlias;
     e.parentField = parentField;
@@ -25,12 +30,14 @@ export abstract class JoinArgFactory {
 
   public static createRoot<T extends AnEntity>(
     entity: T,
-    alias: string
-  ): JoinArg<T> {
-    const e = new JoinArg<T>();
+    alias: string,
+    identifier: TableIdentifierSqlBuilder
+  ): JoinArg {
+    const e = new JoinArg();
 
     e.klass = entity;
     e.alias = alias;
+    e.identifier = identifier;
 
     return e;
   }

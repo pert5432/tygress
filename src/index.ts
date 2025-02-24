@@ -24,11 +24,8 @@ const main = async () => {
   await client.connect();
 
   const builder = createQueryBuilder("pet", Pets)
-    // .joinAndSelect("usr", Users, "pet", "user")
-    .with("usr", createQueryBuilder("u", Users).select("u", "id", "id"))
-
-    .where("pet.userId IN(SELECT id FROM usr)")
-    .where("pet", "userId", "in", "pet", "id")
+    .with("user", createQueryBuilder("u", Users).select("u", "id", "id"))
+    .joinCTE("usr", "user", "id", "eq", "pet", "userId")
     .select("pet", "name")
     .select("pet", "id")
     .select("pet", "userId")
