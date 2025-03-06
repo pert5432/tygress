@@ -1,14 +1,14 @@
 import { Relation } from "../../enums/";
-import { Entity } from "../entity";
+import { AnEntity } from "../entity";
 
 export type RelationMetadataArgs = {
   type: Relation;
 
-  foreign: Entity<unknown>;
+  foreign: AnEntity;
   foreignField: string;
   foreignKey?: string;
 
-  primary: Entity<unknown>;
+  primary: AnEntity;
   primaryField: string;
   primaryKey?: string;
 };

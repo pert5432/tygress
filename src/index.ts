@@ -24,11 +24,11 @@ const main = async () => {
   await client.connect();
 
   const builder = createQueryBuilder("pet", Pets)
-    .with("user", createQueryBuilder("u", Users).select("u", "id", "id"))
-    .joinCTE("usr", "user", "id", "eq", "pet", "userId")
+    .joinAndSelect("usr", Users, "pet", "user")
     .select("pet", "name")
     .select("pet", "id")
     .select("pet", "userId")
+    .select("usr", "id")
     .orderBy("pet", "name", "DESC");
 
   const a = await builder.getEntities(client);

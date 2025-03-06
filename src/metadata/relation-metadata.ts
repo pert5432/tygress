@@ -14,7 +14,7 @@ export class RelationMetadata {
   primaryKey: string;
 
   get primaryColumn(): ColumnMetadata {
-    return METADATA_STORE.getColumn(this.primary, this.primaryField);
+    return METADATA_STORE.getColumn(this.primary, this.primaryKey);
   }
 
   // this table has other_id
@@ -25,7 +25,7 @@ export class RelationMetadata {
   foreignKey: string;
 
   get foreignColumn(): ColumnMetadata {
-    return METADATA_STORE.getColumn(this.foreign, this.foreignField);
+    return METADATA_STORE.getColumn(this.foreign, this.foreignKey);
   }
 
   public getOtherTable(table: Entity<unknown>): Entity<unknown> {

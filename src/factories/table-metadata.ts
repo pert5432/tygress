@@ -30,8 +30,22 @@ export abstract class TableMetadataFactory {
 
     for (const relation of relations) {
       if (relation.foreign === klass) {
+        // Ensure column referenced by relation exists
+        if (!e.columnsMap.get(relation.foreignKey)) {
+          throw new Error(
+            `No column found for entity ${e}, field name ${relation.foreignKey}`
+          );
+        }
+
         e.relations.set(relation.foreignField, relation);
       } else if (relation.primary === klass) {
+        // Ensure column referenced by relation exists
+        if (!e.columnsMap.get(relation.primaryKey)) {
+          throw new Error(
+            `No column found for entity ${e}, field name ${relation.primaryKey}`
+          );
+        }
+
         e.relations.set(relation.primaryField, relation);
       } else {
         throw new Error(

@@ -191,19 +191,6 @@ class MetadataStore {
       }
     }
 
-    // Ensure foreign key column is registered to foreign table
-    if (relation.type === Relation.MANY_TO_ONE) {
-      // this.addColumn({
-      //   name: relation.foreignKey,
-      //   // This maybe should be a different field name?
-      //   // Or this should be a special case of a column all together
-      //   fieldName: relation.foreignField,
-      //   klass: relation.foreign,
-      //   // Don't select implicit join columns
-      //   select: false,
-      // });
-    }
-
     // Finally insert new relation into the array
     this.relations.push(relation);
 
