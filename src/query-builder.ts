@@ -258,8 +258,8 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     cteAlias: C,
     subQuery: (
       qb: QueryBuilder<{
-        RootEntity: new () => Object;
-        JoinedEntities: G["CTEs"];
+        RootEntity: AnEntity;
+        JoinedEntities: G["JoinedEntities"] & Pick<G["CTEs"], C>;
         CTEs: {};
         SelectedEntities: {};
         ExplicitSelects: {};
@@ -278,7 +278,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
         "cte",
         this.sourcesContext,
         this.paramBuilder
-      )
+      ) as any
     );
 
     const subQueryIdentifier =
