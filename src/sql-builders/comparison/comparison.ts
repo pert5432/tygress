@@ -1,13 +1,14 @@
-import { dQ } from "../../utils";
 import { WHERE_COMPARATORS } from "../../where-comparators";
 import {
   ColColComparisonArgs,
   ColParamComparisonArgs,
+  ColTableIdentifierComparisonArgs,
 } from "../../types/create-args/comparison";
 import { ComparisonSqlBuilder } from "./comparison-builder";
 import { WhereComparator } from "../../types";
 import { ParamBuilder } from "../param-builder";
 import { ColumnIdentifierSqlBuilder } from "../column-identifier";
+import { TableIdentifierSqlBuilder } from "../table-identifier";
 
 export abstract class Comparison extends ComparisonSqlBuilder {
   left: ColumnIdentifierSqlBuilder;
@@ -55,5 +56,27 @@ export class ColParamComparison extends Comparison {
       .map((pNum) => `$${pNum}${this.rightCast ? `::${this.rightCast}` : ""}`);
 
     return `${this.left.sql()} ${this.comparatorF(right)}`;
+  }
+}
+
+export class ColTableIdentifierComparison extends Comparison {
+  constructor({
+    left,
+    comparator,
+    tableIdentifier,
+  }: ColTableIdentifierComparisonArgs) {
+    super();
+
+    this.left = left;
+    this.comparator = comparator;
+    this.tableIdentifier = tableIdentifier;
+  }
+
+  tableIdentifier: TableIdentifierSqlBuilder;
+
+  public sql(paramBuilder: ParamBuilder): string {
+    return `${this.left.sql()} ${this.comparatorF([
+      this.tableIdentifier.sql(paramBuilder),
+    ])}`;
   }
 }

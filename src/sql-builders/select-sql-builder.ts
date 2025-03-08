@@ -121,7 +121,19 @@ export class SelectSqlBuilder<T extends AnEntity> {
 
     // Skip first node since its the root
     for (const join of this.args.joins.slice(1)) {
+      this.sqlJoins.push(
+        `INNER JOIN ${join.identifier.sql(
+          this.paramBuilder
+        )} ON ${join.comparison!.sql(this.paramBuilder)}`
+      );
+
+      // Don't need to build target nodes if we aren't planning on returning entities
+      if (!this.returningEntities()) {
+        continue;
+      }
+
       let nextTargetNode: TargetNode<AnEntity>;
+
       if (join.type === "cte") {
         nextTargetNode = TargetNodeFactory.createCTE(join.alias);
       } else if (join.parentAlias) {
@@ -145,12 +157,6 @@ export class SelectSqlBuilder<T extends AnEntity> {
       }
 
       this.targetNodesByAlias.set(join.alias, nextTargetNode);
-
-      this.sqlJoins.push(
-        `INNER JOIN ${join.identifier.sql(
-          this.paramBuilder
-        )} ON ${join.comparison!.sql(this.paramBuilder)}`
-      );
     }
   }
 
@@ -223,6 +229,10 @@ export class SelectSqlBuilder<T extends AnEntity> {
         continue;
       }
 
+      if (!this.returningEntities()) {
+        continue;
+      }
+
       const node = this.targetNodesByAlias.get(builder.nodeAlias);
 
       if (!node) {
@@ -269,5 +279,13 @@ export class SelectSqlBuilder<T extends AnEntity> {
     for (const key in node.joins) {
       this.ensurePrimaryKeySelection(node.joins[key]!);
     }
+  }
+
+  //
+  // Utils
+  //
+
+  private returningEntities(): boolean {
+    return this.args.resultType === QueryResultType.ENTITIES;
   }
 }

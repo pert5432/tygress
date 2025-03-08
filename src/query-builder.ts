@@ -67,6 +67,24 @@ type FlattenSelectSources<
     }
   : never;
 
+export const createQueryBuilder = <A extends string, E extends AnEntity>(
+  alias: A,
+  entity: E,
+  paramBuilder?: ParamBuilder
+) =>
+  new QueryBuilder<{
+    RootEntity: E;
+    JoinedEntities: Record<A, E>;
+    CTEs: {};
+    SelectedEntities: Record<A, E>;
+    ExplicitSelects: {};
+  }>(
+    alias,
+    entity,
+    { [alias]: { type: "entity", source: entity } } as any,
+    paramBuilder
+  );
+
 export class QueryBuilder<G extends QueryBuilderGenerics> {
   private sourcesContext: SourcesContext<G>;
 
@@ -80,10 +98,13 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   private _limit?: number;
   private _offset?: number;
 
+  private paramBuilder: ParamBuilder;
+
   constructor(
     alias: string,
     entity: AnEntity,
-    sourcesContext: SourcesContext<G>
+    sourcesContext: SourcesContext<G>,
+    paramBuilder?: ParamBuilder
   ) {
     this.sourcesContext = sourcesContext;
 
@@ -99,6 +120,8 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
         ),
       },
     ];
+
+    this.paramBuilder = paramBuilder ?? new ParamBuilder();
   }
 
   private addSource(
@@ -170,6 +193,53 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     this.CTEs.push(TableIdentifierSqlBuilderFactory.createCTE(alias, qb));
 
     return this as any;
+  }
+
+  public whereIn<
+    K extends keyof G["JoinedEntities"],
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>,
+    A extends string,
+    E extends AnEntity
+  >(
+    leftAlias: K,
+    leftField: F,
+    rightAlias: A,
+    rightEntity: E,
+    subQuery: (
+      qb: QueryBuilder<{
+        RootEntity: E;
+        JoinedEntities: G["JoinedEntities"] & Record<A, E>;
+        CTEs: G["CTEs"];
+        SelectedEntities: {};
+        ExplicitSelects: {};
+      }>
+    ) => QueryBuilder<any>
+  ): QueryBuilder<G> {
+    const left = this.getColumnIdentifier(
+      leftAlias.toString(),
+      leftField.toString()
+    );
+
+    const resultQb = subQuery(
+      new QueryBuilder(
+        rightAlias,
+        rightEntity,
+        {
+          ...this.sourcesContext,
+          [rightAlias]: { type: "entity", source: rightEntity },
+        },
+        this.paramBuilder
+      )
+    );
+
+    const subQueryIdentifier =
+      TableIdentifierSqlBuilderFactory.createSubQuery(resultQb);
+
+    this.wheres.push(
+      ComparisonFactory.colTableIdentifier(left, "in", subQueryIdentifier)
+    );
+
+    return this;
   }
 
   public where<
@@ -384,7 +454,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
 
     // TODO: this won't work for CTEs because they don't have an entity
     // TODO: proposed solution is to extract the SelectTargetSqlBuilders from the CTEs query builder and use them here
-    // TOOD: not sure how exactly to do it at this point, making the select targets a public attribute seems kinda unlucky
+    // TODO: not sure how exactly to do it at this point, making the select targets a public attribute seems kinda unlucky
     const fieldNames: string[] =
       field === "*"
         ? METADATA_STORE.getTable(klass as AnEntity).columns.map(
@@ -841,10 +911,8 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
 
   public getQuery(
     resultType: QueryResultType,
-    _paramBuilder?: ParamBuilder
+    paramBuilder?: ParamBuilder
   ): Query {
-    const paramBuilder = _paramBuilder ?? new ParamBuilder();
-
     return new SelectSqlBuilder<G["RootEntity"]>(
       {
         resultType,
@@ -859,7 +927,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
         limit: this._limit,
         offset: this._offset,
       },
-      paramBuilder
+      paramBuilder ?? this.paramBuilder
     ).buildSelect();
   }
 

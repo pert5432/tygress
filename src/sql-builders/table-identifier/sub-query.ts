@@ -5,7 +5,7 @@ import { ParamBuilder } from "../param-builder";
 import { TableIdentifierSqlBuilder } from "./builder";
 
 export class SubQueryTableIdentifierSqlBuilder extends TableIdentifierSqlBuilder {
-  alias: string; // This is the name of the subquery
+  alias?: string; // This is the name of the subquery
   qb: QueryBuilder<any>;
 
   columnList?: string[];
@@ -17,6 +17,10 @@ export class SubQueryTableIdentifierSqlBuilder extends TableIdentifierSqlBuilder
       ? `(${this.columnList.map((e) => dQ(e)).join(", ")})`
       : "";
 
-    return `(${innerQuery}) ${dQ(this.alias)}${columnList}`;
+    const identifier = this.alias?.length
+      ? ` ${dQ(this.alias)}${columnList}`
+      : "";
+
+    return `(${innerQuery})${identifier}`;
   }
 }

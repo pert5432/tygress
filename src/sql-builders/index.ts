@@ -5,6 +5,7 @@ export {
   ComparisonSqlBuilder,
   ComparisonWrapper,
   NotComparisonWrapper,
+  ColTableIdentifierComparison,
 } from "./comparison";
 export {
   ColumnSelectTargetSqlBuilder,

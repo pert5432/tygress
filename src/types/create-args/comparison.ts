@@ -1,4 +1,7 @@
-import { ColumnIdentifierSqlBuilder } from "../../sql-builders";
+import {
+  ColumnIdentifierSqlBuilder,
+  TableIdentifierSqlBuilder,
+} from "../../sql-builders";
 import { WhereComparator } from "../where-comparator";
 
 type ComparisonArgs = {
@@ -14,4 +17,8 @@ export type ColColComparisonArgs = ComparisonArgs & {
 export type ColParamComparisonArgs = ComparisonArgs & {
   params: any[];
   rightCast?: string;
+};
+
+export type ColTableIdentifierComparisonArgs = ComparisonArgs & {
+  tableIdentifier: TableIdentifierSqlBuilder;
 };

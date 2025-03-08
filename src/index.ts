@@ -4,20 +4,8 @@ import { Users } from "./experiments/users";
 import { JoinNode, Repository } from "./repository";
 import { Pets } from "./experiments/pets";
 import { And, Eq, Gt, In, Lt, Not, Or } from "./api";
-import { QueryBuilder } from "./query-builder";
+import { createQueryBuilder, QueryBuilder } from "./query-builder";
 import { AnEntity } from "./types";
-
-const createQueryBuilder = <A extends string, E extends AnEntity>(
-  alias: A,
-  entity: E
-) =>
-  new QueryBuilder<{
-    RootEntity: E;
-    JoinedEntities: Record<A, E>;
-    CTEs: {};
-    SelectedEntities: Record<A, E>;
-    ExplicitSelects: {};
-  }>(alias, entity, { [alias]: { type: "entity", source: entity } } as any);
 
 const main = async () => {
   const client = new Client("postgres://petr@localhost:5437/tygress");
@@ -29,7 +17,9 @@ const main = async () => {
     .select("pet", "id")
     .select("pet", "userId")
     .select("usr", "id")
-    .orderBy("pet", "name", "DESC");
+    .orderBy("pet", "name", "DESC")
+
+    .whereIn("pet", "id", "u", Users, (qb) => qb.select("u", "id"));
 
   const a = await builder.getEntities(client);
 

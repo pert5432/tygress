@@ -4,11 +4,13 @@ import {
   ComparisonSqlBuilder,
   ComparisonWrapper,
   NotComparisonWrapper,
+  TableIdentifierSqlBuilder,
 } from "../sql-builders";
 import { SqlComparison } from "../sql-builders/comparison";
 import {
   ColColComparison,
   ColParamComparison,
+  ColTableIdentifierComparison,
 } from "../sql-builders/comparison/comparison";
 import { AnEntity, Parametrizable, WhereComparator } from "../types";
 import { NamedParams } from "../types/named-params";
@@ -40,6 +42,18 @@ export abstract class ComparisonFactory {
       comparator,
       params,
       rightCast: cast,
+    });
+  }
+
+  public static colTableIdentifier(
+    left: ColumnIdentifierSqlBuilder,
+    comparator: WhereComparator,
+    tableIdentifier: TableIdentifierSqlBuilder
+  ): ColTableIdentifierComparison {
+    return new ColTableIdentifierComparison({
+      left,
+      comparator,
+      tableIdentifier,
     });
   }
 

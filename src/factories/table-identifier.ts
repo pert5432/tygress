@@ -23,14 +23,14 @@ export abstract class TableIdentifierSqlBuilderFactory {
   }
 
   static createSubQuery(
-    alias: string,
     qb: QueryBuilder<any>,
+    alias?: string,
     columnList?: string[]
   ): SubQueryTableIdentifierSqlBuilder {
     const e = new SubQueryTableIdentifierSqlBuilder();
 
-    e.alias = alias;
     e.qb = qb;
+    e.alias = alias;
     e.columnList = columnList;
 
     return e;
