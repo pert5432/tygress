@@ -38,6 +38,7 @@ import {
   Update,
 } from "./types/query-builder";
 import { OrderByExpressionSqlBuilder } from "./sql-builders/order-by-expression";
+import { QueryBuilderFactory } from "./query-builder-factory";
 
 type JoinImplArgs = {
   strategy: JoinStrategy;
@@ -202,23 +203,11 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
 
   public whereIn<
     K extends keyof G["JoinedEntities"],
-    F extends SelectSourceKeys<G["JoinedEntities"][K]>,
-    A extends string,
-    E extends AnEntity
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>
   >(
     leftAlias: K,
     leftField: F,
-    rightAlias: A,
-    rightEntity: E,
-    subQuery: (
-      qb: QueryBuilder<{
-        RootEntity: E;
-        JoinedEntities: G["JoinedEntities"] & Record<A, E>;
-        CTEs: G["CTEs"];
-        SelectedEntities: {};
-        ExplicitSelects: {};
-      }>
-    ) => QueryBuilder<any>
+    subQuery: (qb: QueryBuilderFactory<G>) => QueryBuilder<any>
   ): QueryBuilder<G> {
     const left = this.getColumnIdentifier(
       leftAlias.toString(),
@@ -226,59 +215,10 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     );
 
     const resultQb = subQuery(
-      new QueryBuilder(
-        rightAlias,
-        rightEntity,
-        "entity",
-        {
-          ...this.sourcesContext,
-          [rightAlias]: { type: "entity", source: rightEntity },
-        },
-        this.paramBuilder
-      )
-    );
-
-    const subQueryIdentifier =
-      TableIdentifierSqlBuilderFactory.createSubQuery(resultQb);
-
-    this.wheres.push(
-      ComparisonFactory.colTableIdentifier(left, "in", subQueryIdentifier)
-    );
-
-    return this;
-  }
-
-  public whereInCTE<
-    K extends keyof G["JoinedEntities"],
-    F extends SelectSourceKeys<G["JoinedEntities"][K]>,
-    C extends keyof G["CTEs"]
-  >(
-    leftAlias: K,
-    leftField: F,
-    cteAlias: C,
-    subQuery: (
-      qb: QueryBuilder<{
-        RootEntity: AnEntity;
-        JoinedEntities: G["JoinedEntities"] & Pick<G["CTEs"], C>;
-        CTEs: {};
-        SelectedEntities: {};
-        ExplicitSelects: {};
-      }>
-    ) => QueryBuilder<any>
-  ): QueryBuilder<G> {
-    const left = this.getColumnIdentifier(
-      leftAlias.toString(),
-      leftField.toString()
-    );
-
-    const resultQb = subQuery(
-      new QueryBuilder(
-        cteAlias.toString(),
-        Object,
-        "cte",
-        this.sourcesContext,
-        this.paramBuilder
-      ) as any
+      new QueryBuilderFactory<G>({
+        sourcesContext: this.sourcesContext,
+        paramBuilder: this.paramBuilder,
+      })
     );
 
     const subQueryIdentifier =
