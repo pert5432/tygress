@@ -17,7 +17,7 @@ const createQueryBuilder = <A extends string, E extends AnEntity>(
     CTEs: {};
     SelectedEntities: Record<A, E>;
     ExplicitSelects: {};
-  }>(alias, entity);
+  }>(alias, entity, { [alias]: { type: "entity", source: entity } } as any);
 
 const main = async () => {
   const client = new Client("postgres://petr@localhost:5437/tygress");

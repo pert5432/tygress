@@ -80,10 +80,12 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   private _limit?: number;
   private _offset?: number;
 
-  constructor(alias: string, entity: AnEntity) {
-    this.sourcesContext = {
-      [alias]: { type: "entity", source: entity },
-    } as SourcesContext<G>;
+  constructor(
+    alias: string,
+    entity: AnEntity,
+    sourcesContext: SourcesContext<G>
+  ) {
+    this.sourcesContext = sourcesContext;
 
     // Set the first join to be the root entity
     this.joins = [
