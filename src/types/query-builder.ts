@@ -10,8 +10,7 @@ export type QueryBuilderGenerics = {
 
 export type SourcesContext<G extends QueryBuilderGenerics> = Record<
   keyof (G["JoinedEntities"] & G["CTEs"]),
-  | { type: "entity"; source: AnEntity }
-  | { type: "cte"; source: CteSelectSource }
+  SelectSourceContext
 >;
 
 export type Update<
@@ -22,6 +21,10 @@ export type Update<
 
 export type CteSelectSource = Record<string, any>;
 export type SelectSource = AnEntity | CteSelectSource;
+
+export type SelectSourceContext =
+  | { type: "entity"; source: AnEntity }
+  | { type: "cte"; source: CteSelectSource };
 
 export type SelectSourceField<
   E extends SelectSource,

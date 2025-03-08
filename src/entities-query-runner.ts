@@ -8,6 +8,12 @@ export class EntitiesQueryRunner<T extends AnEntity> {
   private joinNodes: TargetNode<AnEntity>;
 
   constructor(private client: Client, query: Query) {
+    if (!query.joinNodes) {
+      throw new Error(
+        `Query factory didn't return any join nodes but the are required for EntitiesQueryRunner`
+      );
+    }
+
     this.sql = query.sql;
     this.params = query.params;
     this.joinNodes = query.joinNodes;

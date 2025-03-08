@@ -13,13 +13,14 @@ const main = async () => {
 
   const builder = createQueryBuilder("pet", Pets)
     .joinAndSelect("usr", Users, "pet", "user")
+    .with("u", createQueryBuilder("asdf", Users).select("asdf", "id", "id"))
     .select("pet", "name")
     .select("pet", "id")
     .select("pet", "userId")
     .select("usr", "id")
     .orderBy("pet", "name", "DESC")
 
-    .whereIn("pet", "id", "u", Users, (qb) => qb.select("u", "id"));
+    .whereInCTE("pet", "id", "u", (qb) => qb.select("u", "id"));
 
   const a = await builder.getEntities(client);
 

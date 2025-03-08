@@ -81,6 +81,7 @@ export const createQueryBuilder = <A extends string, E extends AnEntity>(
   }>(
     alias,
     entity,
+    "entity",
     { [alias]: { type: "entity", source: entity } } as any,
     paramBuilder
   );
@@ -103,6 +104,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   constructor(
     alias: string,
     entity: AnEntity,
+    type: "entity" | "cte",
     sourcesContext: SourcesContext<G>,
     paramBuilder?: ParamBuilder
   ) {
@@ -113,10 +115,13 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
       {
         alias,
         klass: entity,
-        type: "entity",
-        identifier: TableIdentifierSqlBuilderFactory.createEntity(
+        type,
+        identifier: TableIdentifierSqlBuilderFactory.createSelectSourceContext(
           alias,
-          entity
+          {
+            type,
+            source: entity,
+          }
         ),
       },
     ];
@@ -224,10 +229,54 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
       new QueryBuilder(
         rightAlias,
         rightEntity,
+        "entity",
         {
           ...this.sourcesContext,
           [rightAlias]: { type: "entity", source: rightEntity },
         },
+        this.paramBuilder
+      )
+    );
+
+    const subQueryIdentifier =
+      TableIdentifierSqlBuilderFactory.createSubQuery(resultQb);
+
+    this.wheres.push(
+      ComparisonFactory.colTableIdentifier(left, "in", subQueryIdentifier)
+    );
+
+    return this;
+  }
+
+  public whereInCTE<
+    K extends keyof G["JoinedEntities"],
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>,
+    C extends keyof G["CTEs"]
+  >(
+    leftAlias: K,
+    leftField: F,
+    cteAlias: C,
+    subQuery: (
+      qb: QueryBuilder<{
+        RootEntity: new () => Object;
+        JoinedEntities: G["CTEs"];
+        CTEs: {};
+        SelectedEntities: {};
+        ExplicitSelects: {};
+      }>
+    ) => QueryBuilder<any>
+  ): QueryBuilder<G> {
+    const left = this.getColumnIdentifier(
+      leftAlias.toString(),
+      leftField.toString()
+    );
+
+    const resultQb = subQuery(
+      new QueryBuilder(
+        cteAlias.toString(),
+        Object,
+        "cte",
+        this.sourcesContext,
         this.paramBuilder
       )
     );

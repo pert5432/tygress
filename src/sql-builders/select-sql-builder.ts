@@ -6,7 +6,6 @@ import {
 import { METADATA_STORE, TableMetadata } from "../metadata";
 import { SelectQueryArgs, AnEntity } from "../types";
 import { TargetNode, Query } from "../types/query";
-import { dQ } from "../utils";
 import { JoinArg } from "../types/query/join-arg";
 import { ParamBuilder } from "./param-builder";
 import {
@@ -20,26 +19,27 @@ export class SelectSqlBuilder<T extends AnEntity> {
     private args: SelectQueryArgs,
     private paramBuilder: ParamBuilder
   ) {
-    const rootJoinArg = args.joins[0]! as JoinArg;
+    this.rootJoinArg = args.joins[0]! as JoinArg;
 
-    this.table = METADATA_STORE.getTable(rootJoinArg.klass);
+    // Only create target nodes when selecting entities as their are useless otherwise
+    if (this.rootJoinArg.type === "entity") {
+      const rootTargetNode = TargetNodeFactory.createRoot(
+        this.rootJoinArg.klass,
+        this.rootJoinArg.alias
+      );
 
-    const rootTargetNode = TargetNodeFactory.createRoot(
-      rootJoinArg.klass,
-      rootJoinArg.alias
-    );
-
-    this.targetNodes = rootTargetNode as TargetNode<T>;
-    this.targetNodesByAlias.set(rootJoinArg.alias, rootTargetNode);
+      this.targetNodes = rootTargetNode as TargetNode<T>;
+      this.targetNodesByAlias.set(this.rootJoinArg.alias, rootTargetNode);
+    }
   }
 
-  private table: TableMetadata;
+  private rootJoinArg: JoinArg;
   private whereConditions: string[] = [];
   private sqlJoins: string[] = [];
 
   private selectTargetSqlBuilders: SelectTargetSqlBuilder[] = [];
 
-  private targetNodes: TargetNode<T>;
+  private targetNodes?: TargetNode<T>;
   private targetNodesByAlias = new Map<string, TargetNode<AnEntity>>();
 
   public buildSelect(): Query {
@@ -61,9 +61,9 @@ export class SelectSqlBuilder<T extends AnEntity> {
 
     sql += `SELECT ${this.selectTargetSqlBuilders
       .map((e) => e.sql(this.paramBuilder))
-      .join(", ")} FROM ${dQ(this.table.tablename)} ${dQ(
-      this.targetNodes.alias
-    )}`;
+      .join(", ")}`;
+
+    sql += ` FROM ${this.rootJoinArg.identifier.sql(this.paramBuilder)}`;
 
     if (this.sqlJoins.length) {
       sql += ` ${this.sqlJoins.join(" ")}`;
@@ -186,8 +186,12 @@ export class SelectSqlBuilder<T extends AnEntity> {
   // Select all fields that are selectable by default on all join nodes
   // TODO: decide whether this should even be the responsibility of this class
   private selectFieldsFromJoinNode = <E extends AnEntity>(
-    node: TargetNode<E>
+    node?: TargetNode<E>
   ): void => {
+    if (!node) {
+      return;
+    }
+
     if (node.select) {
       for (const column of METADATA_STORE.getTable(node.klass)
         .columnsSelectableByDefault) {
@@ -244,13 +248,10 @@ export class SelectSqlBuilder<T extends AnEntity> {
   }
 
   // Make sure primary keys of entities we want to select are selected (if we need them)
-  private ensurePrimaryKeySelection(node: TargetNode<AnEntity>): void {
+  private ensurePrimaryKeySelection(node?: TargetNode<AnEntity>): void {
     // No desire to enforce selecing primary keys for raw results
     // Can't enforce selecting all primary keys when GROUP BY is used
-    if (
-      this.args.resultType === QueryResultType.RAW ||
-      this.args.groupBys?.length
-    ) {
+    if (!this.returningEntities() || this.args.groupBys?.length || !node) {
       return;
     }
 

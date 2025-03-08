@@ -3,9 +3,11 @@ import { QueryBuilder } from "../query-builder";
 import {
   CteTableIdentifierSqlBuilder,
   SubQueryTableIdentifierSqlBuilder,
+  TableIdentifierSqlBuilder,
   TablenameTableIdentifierSqlBuilder,
 } from "../sql-builders/table-identifier";
 import { AnEntity } from "../types";
+import { SelectSourceContext } from "../types/query-builder";
 
 export abstract class TableIdentifierSqlBuilderFactory {
   static createCTE(
@@ -60,5 +62,18 @@ export abstract class TableIdentifierSqlBuilderFactory {
     e.tablename = entityMeta.tablename;
 
     return e;
+  }
+
+  static createSelectSourceContext(
+    alias: string,
+    source: SelectSourceContext
+  ): TableIdentifierSqlBuilder {
+    switch (source.type) {
+      case "entity":
+        return this.createEntity(alias, source.source);
+      case "cte":
+        // Use the CTEs name as an alias
+        return this.createTablename(alias, alias);
+    }
   }
 }
