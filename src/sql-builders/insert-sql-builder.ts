@@ -1,7 +1,13 @@
+import {
+  ColumnIdentifierSqlBuilderFactory,
+  SelectTargetSqlBuilderFactory,
+  TargetNodeFactory,
+} from "../factories";
 import { ColumnMetadata, TableMetadata } from "../metadata";
-import { InsertArgs } from "../types";
+import { AnEntity, InsertArgs } from "../types";
 import { Insert } from "../types/insert";
-import { dQ } from "../utils";
+import { TargetNode } from "../types/query";
+import { dQ, entityNameToAlias } from "../utils";
 import { ParamBuilder } from "./param-builder";
 
 export class InsertSqlBuilder {
@@ -9,13 +15,25 @@ export class InsertSqlBuilder {
   private columns: ColumnMetadata[];
   private values: Object[];
 
+  private returning: ColumnMetadata[];
+
   private paramBuilder: ParamBuilder;
 
-  constructor({ entity, columns, values, paramBuilder }: InsertArgs) {
+  private targetNode: TargetNode<AnEntity>;
+
+  constructor({
+    entity,
+    columns,
+    values,
+    paramBuilder,
+    returning,
+  }: InsertArgs) {
     this.entity = entity;
     this.columns = columns;
     this.values = values;
     this.paramBuilder = paramBuilder;
+
+    this.returning = returning;
   }
 
   sql(): Insert {
@@ -25,9 +43,30 @@ export class InsertSqlBuilder {
 
     sql += ` VALUES ${this.values.map((e) => this.serializeRow(e)).join(", ")}`;
 
+    if (this.returning.length) {
+      const alias = entityNameToAlias(this.entity.klass.name);
+      const targets = this.returning.map((c) =>
+        SelectTargetSqlBuilderFactory.createColumnIdentifier(
+          ColumnIdentifierSqlBuilderFactory.createNaked(c),
+          `${alias}.${c.fieldName}`,
+          alias,
+          c.fieldName
+        )
+      );
+
+      sql += ` RETURNING ${targets
+        .map((e) => e.sql(this.paramBuilder))
+        .join(", ")}`;
+
+      this.targetNode = TargetNodeFactory.createRoot(this.entity.klass, alias);
+
+      targets.forEach((e) => this.targetNode.selectField(e.fieldName!, e.as));
+    }
+
     return {
       sql,
       params: this.paramBuilder.params,
+      targetNode: this.targetNode,
     };
   }
 

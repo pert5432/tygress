@@ -2,6 +2,7 @@ import { ColumnMetadata } from "../metadata";
 import {
   ColumnMetadataColumnIdentifierSqlBuilder,
   ColumnNameColumnIdentifierSqlBuilder,
+  NakedColumnIdentifierSqlBuilder,
 } from "../sql-builders";
 
 export abstract class ColumnIdentifierSqlBuilderFactory {
@@ -29,6 +30,14 @@ export abstract class ColumnIdentifierSqlBuilderFactory {
     e.alias = alias;
     e.columnName = columName;
     e.cast = cast;
+
+    return e;
+  }
+
+  static createNaked(column: ColumnMetadata): NakedColumnIdentifierSqlBuilder {
+    const e = new NakedColumnIdentifierSqlBuilder();
+
+    e.column = column;
 
     return e;
   }

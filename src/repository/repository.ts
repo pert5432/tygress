@@ -36,10 +36,14 @@ import { QueryRunner } from "../query-runner";
 import { InsertResult } from "../types/insert-result";
 
 export abstract class Repository {
-  public static async insert<T extends AnEntity>(
+  public static async insert<
+    T extends AnEntity,
+    K extends keyof InstanceType<T>
+  >(
     client: ConnectionWrapper,
     entity: T,
-    values: InsertPayload<T>[]
+    values: InsertPayload<T>[],
+    returning?: K[]
   ): Promise<InsertResult<T>> {
     const tableMeta = METADATA_STORE.getTable(entity);
 
@@ -61,18 +65,54 @@ export abstract class Repository {
       }
     }
 
+    // Collect columns supposed to be returned from the insert
+    const returningColumns = [];
+    for (const field of returning ?? []) {
+      const column = tableMeta.columnsMap.get(field.toString());
+
+      if (!column) {
+        throw new Error(`No column found for field ${field.toString()}`);
+      }
+
+      returningColumns.push(column);
+    }
+
+    // Ensure primary key is returned if any columns are returned
+    if (returningColumns.length) {
+      if (
+        !returningColumns.find(
+          (c) => c.fieldName === tableMeta.primaryKey.fieldName
+        )
+      ) {
+        returningColumns.push(
+          tableMeta.columnsMap.get(tableMeta.primaryKey.fieldName)!
+        );
+      }
+    }
+
+    //
+    // Generate SQL
+    //
     const insert = new InsertSqlBuilder({
       entity: tableMeta,
       values,
       columns,
       paramBuilder: new ParamBuilder(),
+
+      returning: returningColumns,
     }).sql();
+
+    if (returningColumns.length && !insert.targetNode) {
+      throw new Error(
+        "Returning rows from an INSERT requires a target node but sql builder didn't return one"
+      );
+    }
 
     const res = await new QueryRunner(client, insert.sql, insert.params).run();
 
     return {
       affectedRows: res.rowCount!,
-      rows: [],
+      rows: await QueryResultEntitiesParser.parse(res.rows, insert.targetNode!),
     };
   }
 
@@ -81,19 +121,18 @@ export abstract class Repository {
     entity: T,
     args: SelectArgs<InstanceType<T>>
   ): Promise<InstanceType<T>[]> {
-    const paramBuilder = new ParamBuilder();
-
+    // Transform args to fit sql builder
     const transformedArgs = this.transformArgs(entity, args);
-
     const queryArgs: SelectQueryArgs = {
       ...transformedArgs,
       limit: args.limit,
       offset: args.offset,
     };
 
+    // Generate SQL
     const query = new SelectSqlBuilder<T>(
       queryArgs,
-      paramBuilder
+      new ParamBuilder()
     ).buildSelect();
 
     if (!query.joinNodes) {
@@ -102,6 +141,7 @@ export abstract class Repository {
       );
     }
 
+    // Run query and return entities
     return await QueryResultEntitiesParser.parse<T>(
       (
         await new QueryRunner(client, query.sql, query.params).run()

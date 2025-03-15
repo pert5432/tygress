@@ -16,6 +16,7 @@ export {
   ColumnIdentifierSqlBuilder,
   ColumnMetadataColumnIdentifierSqlBuilder,
   ColumnNameColumnIdentifierSqlBuilder,
+  NakedColumnIdentifierSqlBuilder,
 } from "./column-identifier";
 export {
   TableIdentifierSqlBuilder,

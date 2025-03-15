@@ -6,6 +6,11 @@ export abstract class QueryResultEntitiesParser {
     rows: any[],
     joinNodes: TargetNode<AnEntity>
   ): Promise<InstanceType<T>[]> {
+    // Don't bother doing anything when we know we won't return anything
+    if (!rows.length) {
+      return [];
+    }
+
     let paths: TargetNode<AnEntity>[][] = [];
 
     const buildPath = (parent: TargetNode<AnEntity>[]): void => {
