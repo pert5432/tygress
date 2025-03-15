@@ -959,11 +959,12 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
       ? UnionToIntersection<FlattenSelectSources<G["SelectedEntities"]>>[]
       : G["ExplicitSelects"][]
   > {
+    const query = this.getQuery(QueryResultType.RAW);
+
     return this.client.withConnection(
-      (conn) =>
-        RawQueryResultParser.run(
-          conn,
-          this.getQuery(QueryResultType.RAW)
+      async (conn) =>
+        RawQueryResultParser.parse(
+          (await new QueryRunner(conn, query.sql, query.params).run()).rows
         ) as any
     );
   }
