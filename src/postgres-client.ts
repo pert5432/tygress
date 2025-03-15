@@ -5,6 +5,7 @@ import { ConnectionWrapper } from "./connection-wrapper";
 import { ParamBuilder } from "./sql-builders";
 import { QueryBuilder } from "./query-builder";
 import { InsertPayload } from "./types/insert-payload";
+import { InsertResult } from "./types/insert-result";
 
 export type PostgresClientOptions = {
   databaseUrl: string;
@@ -72,7 +73,7 @@ export class PostgresClient {
   public async insert<T extends AnEntity>(
     entity: T,
     values: InsertPayload<T>[]
-  ): Promise<void> {
+  ): Promise<InsertResult<T>> {
     return this.withConnection((conn) =>
       Repository.insert(conn, entity, values)
     );

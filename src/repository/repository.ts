@@ -33,13 +33,14 @@ import { ConnectionWrapper } from "../connection-wrapper";
 import { InsertSqlBuilder } from "../sql-builders/insert-sql-builder";
 import { InsertPayload } from "../types/insert-payload";
 import { QueryRunner } from "../query-runner";
+import { InsertResult } from "../types/insert-result";
 
 export abstract class Repository {
   public static async insert<T extends AnEntity>(
     client: ConnectionWrapper,
     entity: T,
     values: InsertPayload<T>[]
-  ): Promise<void> {
+  ): Promise<InsertResult<T>> {
     const tableMeta = METADATA_STORE.getTable(entity);
 
     // Collect all fields that have a value provided in the input
@@ -69,7 +70,10 @@ export abstract class Repository {
 
     const res = await new QueryRunner(client, insert.sql, insert.params).run();
 
-    console.log(res);
+    return {
+      affectedRows: res.rowCount!,
+      rows: [],
+    };
   }
 
   public static async select<T extends AnEntity>(
