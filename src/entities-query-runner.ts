@@ -1,13 +1,13 @@
-import { Client } from "pg";
 import { AnEntity } from "./types";
 import { TargetNode, Query } from "./types/query";
+import { ConnectionWrapper } from "./connection-wrapper";
 
 export class EntitiesQueryRunner<T extends AnEntity> {
   private sql: string;
   private params: any[];
   private joinNodes: TargetNode<AnEntity>;
 
-  constructor(private client: Client, query: Query) {
+  constructor(private client: ConnectionWrapper, query: Query) {
     if (!query.joinNodes) {
       throw new Error(
         `Query factory didn't return any join nodes but the are required for EntitiesQueryRunner`
@@ -23,7 +23,7 @@ export class EntitiesQueryRunner<T extends AnEntity> {
   }
 
   public async run(): Promise<InstanceType<T>[]> {
-    const { rows } = await this.client.query(this.sql, this.params);
+    const { rows } = await this.client.client.query(this.sql, this.params);
 
     let paths: TargetNode<AnEntity>[][] = [];
 

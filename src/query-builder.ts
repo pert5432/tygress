@@ -1,4 +1,3 @@
-import { Client } from "pg";
 import { JoinStrategy, JoinType, QueryResultType } from "./enums";
 import {
   ColumnIdentifierSqlBuilderFactory,
@@ -39,6 +38,8 @@ import {
 } from "./types/query-builder";
 import { OrderByExpressionSqlBuilder } from "./sql-builders/order-by-expression";
 import { QueryBuilderFactory } from "./query-builder-factory";
+import { ConnectionWrapper } from "./connection-wrapper";
+import { PostgresClient } from "./postgres-client";
 
 type JoinImplArgs = {
   strategy: JoinStrategy;
@@ -68,26 +69,9 @@ type FlattenSelectSources<
     }
   : never;
 
-export const createQueryBuilder = <A extends string, E extends AnEntity>(
-  alias: A,
-  entity: E,
-  paramBuilder?: ParamBuilder
-) =>
-  new QueryBuilder<{
-    RootEntity: E;
-    JoinedEntities: Record<A, E>;
-    CTEs: {};
-    SelectedEntities: Record<A, E>;
-    ExplicitSelects: {};
-  }>(
-    alias,
-    entity,
-    "entity",
-    { [alias]: { type: "entity", source: entity } } as any,
-    paramBuilder
-  );
-
 export class QueryBuilder<G extends QueryBuilderGenerics> {
+  private client: PostgresClient;
+
   private sourcesContext: SourcesContext<G>;
 
   private joins: JoinArg[] = [];
@@ -103,12 +87,15 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   private paramBuilder: ParamBuilder;
 
   constructor(
+    client: PostgresClient,
     alias: string,
     entity: AnEntity,
     type: "entity" | "cte",
     sourcesContext: SourcesContext<G>,
     paramBuilder?: ParamBuilder
   ) {
+    this.client = client;
+
     this.sourcesContext = sourcesContext;
 
     // Set the first join to be the root entity
@@ -216,6 +203,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
 
     const resultQb = subQuery(
       new QueryBuilderFactory<G>({
+        client: this.client,
         sourcesContext: this.sourcesContext,
         paramBuilder: this.paramBuilder,
       })
@@ -920,25 +908,23 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     ).buildSelect();
   }
 
-  public async getEntities(
-    client: Client
-  ): Promise<InstanceType<G["RootEntity"]>[]> {
-    return new EntitiesQueryRunner<G["RootEntity"]>(
-      client,
-      this.getQuery(QueryResultType.ENTITIES)
-    ).run();
+  public async getEntities(): Promise<InstanceType<G["RootEntity"]>[]> {
+    return this.client.withConnection((conn) =>
+      new EntitiesQueryRunner<G["RootEntity"]>(
+        conn,
+        this.getQuery(QueryResultType.ENTITIES)
+      ).run()
+    );
   }
 
-  public async getRaw(
-    client: Client
-  ): Promise<
+  public async getRaw(): Promise<
     keyof G["ExplicitSelects"] extends never
       ? UnionToIntersection<FlattenSelectSources<G["SelectedEntities"]>>[]
       : G["ExplicitSelects"][]
   > {
-    return RawQueryRunner.run(
-      client,
-      this.getQuery(QueryResultType.RAW)
-    ) as any;
+    return this.client.withConnection(
+      (conn) =>
+        RawQueryRunner.run(conn, this.getQuery(QueryResultType.RAW)) as any
+    );
   }
 }

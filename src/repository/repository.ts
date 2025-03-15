@@ -1,4 +1,4 @@
-import { Client } from "pg";
+import { ClientBase } from "pg";
 import {
   AnEntity,
   Joins,
@@ -30,10 +30,11 @@ import { JoinNodeFactory } from "../factories/repository";
 import { JoinNode } from ".";
 import { QueryResultType } from "../enums";
 import { OrderByExpressionSqlBuilder } from "../sql-builders/order-by-expression";
+import { ConnectionWrapper } from "../connection-wrapper";
 
 export abstract class Repository {
   public static async select<T extends AnEntity>(
-    client: Client,
+    client: ConnectionWrapper,
     entity: T,
     args: SelectArgs<InstanceType<T>>
   ): Promise<InstanceType<T>[]> {
