@@ -1,4 +1,3 @@
-import { ClientBase } from "pg";
 import {
   AnEntity,
   Joins,
@@ -31,8 +30,47 @@ import { JoinNode } from ".";
 import { QueryResultType } from "../enums";
 import { OrderByExpressionSqlBuilder } from "../sql-builders/order-by-expression";
 import { ConnectionWrapper } from "../connection-wrapper";
+import { InsertSqlBuilder } from "../sql-builders/insert-sql-builder";
+import { InsertPayload } from "../types/insert-payload";
 
 export abstract class Repository {
+  public static async insert<T extends AnEntity>(
+    client: ConnectionWrapper,
+    entity: T,
+    values: InsertPayload<T>[]
+  ): Promise<void> {
+    const tableMeta = METADATA_STORE.getTable(entity);
+
+    // Collect all fields that have a value provided in the input
+    const insertedFields = new Set<string>();
+    for (const value of values) {
+      for (const key of Object.keys(value)) {
+        insertedFields.add(key);
+      }
+    }
+
+    // Collect columns that are being inserted into based on which fields have data in them
+    const columns = [];
+    for (const field of insertedFields.values()) {
+      const column = tableMeta.columnsMap.get(field);
+
+      if (column) {
+        columns.push(column);
+      }
+    }
+
+    const insert = new InsertSqlBuilder({
+      entity: tableMeta,
+      values,
+      columns,
+      paramBuilder: new ParamBuilder(),
+    }).sql();
+
+    const res = await client.client.query(insert.sql, insert.params);
+
+    console.log(res);
+  }
+
   public static async select<T extends AnEntity>(
     client: ConnectionWrapper,
     entity: T,

@@ -14,6 +14,7 @@ import {
 } from "./select-target";
 import { QueryResultType } from "../enums";
 
+// TODO: get rid of the useless generic arg
 export class SelectSqlBuilder<T extends AnEntity> {
   constructor(
     private args: SelectQueryArgs,

@@ -2,6 +2,7 @@ import { METADATA_STORE } from "../metadata";
 import { QueryBuilder } from "../query-builder";
 import {
   CteTableIdentifierSqlBuilder,
+  DmlTableIdentifierSqlBuilder,
   SubQueryTableIdentifierSqlBuilder,
   TableIdentifierSqlBuilder,
   TablenameTableIdentifierSqlBuilder,
@@ -75,5 +76,13 @@ export abstract class TableIdentifierSqlBuilderFactory {
         // Use the CTEs name as an alias
         return this.createTablename(alias, alias);
     }
+  }
+
+  static createDML(tablename: string): DmlTableIdentifierSqlBuilder {
+    const e = new DmlTableIdentifierSqlBuilder();
+
+    e.tablename = tablename;
+
+    return e;
   }
 }

@@ -1,7 +1,8 @@
 import { ColumnMetadata } from "./column-metadata";
 import { RelationMetadata } from "./relation-metadata";
-import { AnEntity, Entity } from "../types/entity";
+import { AnEntity } from "../types/entity";
 import { UniqueConstraintMetadata } from "./unique-constraint";
+import { TableIdentifierSqlBuilderFactory } from "../factories";
 
 export class TableMetadata {
   tablename: string;
@@ -10,12 +11,8 @@ export class TableMetadata {
 
   schemaname?: string;
 
-  get fullName(): string {
-    if (this.schemaname?.length) {
-      return `${this.schemaname}.${this.tablename}`;
-    }
-
-    return this.tablename;
+  get dmlIdentifier() {
+    return TableIdentifierSqlBuilderFactory.createDML(this.tablename);
   }
 
   columns: ColumnMetadata[] = [];
