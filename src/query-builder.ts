@@ -18,7 +18,6 @@ import {
 } from "./sql-builders";
 import { AnEntity, Parametrizable, WhereComparator } from "./types";
 import { NamedParams } from "./types/named-params";
-import { Query } from "./types/query";
 import { JoinArg } from "./types/query/join-arg";
 import { ParameterArgs } from "./types/where-args";
 import { RawQueryRunner } from "./raw-query-runner";
@@ -38,8 +37,8 @@ import {
 } from "./types/query-builder";
 import { OrderByExpressionSqlBuilder } from "./sql-builders/order-by-expression";
 import { QueryBuilderFactory } from "./query-builder-factory";
-import { ConnectionWrapper } from "./connection-wrapper";
 import { PostgresClient } from "./postgres-client";
+import { Query } from "./types/query";
 
 type JoinImplArgs = {
   strategy: JoinStrategy;
@@ -166,10 +165,29 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     }
   }
 
+  private childQbFactory(): QueryBuilderFactory<G> {
+    return new QueryBuilderFactory<G>({
+      client: this.client,
+      sourcesContext: this.sourcesContext,
+      paramBuilder: this.paramBuilder,
+    });
+  }
+
   public log() {
     console.log(this.joins);
     console.log(this.wheres);
   }
+
+  public with<A extends string, T extends Record<string, any>>(
+    alias: A,
+    qb: (qb: QueryBuilderFactory<G>) => QueryBuilder<{
+      RootEntity: any;
+      JoinedEntities: any;
+      CTEs: any;
+      SelectedEntities: any;
+      ExplicitSelects: T;
+    }>
+  ): QueryBuilder<Update<G, "CTEs", G["CTEs"] & Record<A, T>>>;
 
   public with<A extends string, T extends Record<string, any>>(
     alias: A,
@@ -180,10 +198,32 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
       SelectedEntities: any;
       ExplicitSelects: T;
     }>
+  ): QueryBuilder<Update<G, "CTEs", G["CTEs"] & Record<A, T>>>;
+
+  public with<A extends string, T extends Record<string, any>>(
+    alias: A,
+    qb:
+      | QueryBuilder<{
+          RootEntity: any;
+          JoinedEntities: any;
+          CTEs: any;
+          SelectedEntities: any;
+          ExplicitSelects: T;
+        }>
+      | ((qb: QueryBuilderFactory<G>) => QueryBuilder<{
+          RootEntity: any;
+          JoinedEntities: any;
+          CTEs: any;
+          SelectedEntities: any;
+          ExplicitSelects: T;
+        }>)
   ): QueryBuilder<Update<G, "CTEs", G["CTEs"] & Record<A, T>>> {
     this.addSource(alias, Object, "cte");
 
-    this.CTEs.push(TableIdentifierSqlBuilderFactory.createCTE(alias, qb));
+    const resultQb =
+      qb instanceof QueryBuilder ? qb : qb(this.childQbFactory());
+
+    this.CTEs.push(TableIdentifierSqlBuilderFactory.createCTE(alias, resultQb));
 
     return this as any;
   }
@@ -201,13 +241,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
       leftField.toString()
     );
 
-    const resultQb = subQuery(
-      new QueryBuilderFactory<G>({
-        client: this.client,
-        sourcesContext: this.sourcesContext,
-        paramBuilder: this.paramBuilder,
-      })
-    );
+    const resultQb = subQuery(this.childQbFactory());
 
     const subQueryIdentifier =
       TableIdentifierSqlBuilderFactory.createSubQuery(resultQb);

@@ -26,6 +26,7 @@ export class QueryBuilderFactory<G extends QueryBuilderGenerics> {
   }
 
   // Create from a simple entity select
+  // Maintaining JoinedEntities and CTEs of parent query builder
   public from<A extends string, E extends AnEntity>(
     alias: A,
     entity: E
@@ -38,12 +39,13 @@ export class QueryBuilderFactory<G extends QueryBuilderGenerics> {
   }>;
 
   // Create from a select from CTE from outer query
+  // Maintaining JoinedEntities and CTEs of parent query builder and adding the selected CTE to JoinedEntities
   public from<C extends keyof G["CTEs"]>(
     cteAlias: C
   ): QueryBuilder<{
     RootEntity: new () => Object;
     JoinedEntities: G["JoinedEntities"] & Pick<G["CTEs"], C>;
-    CTEs: {};
+    CTEs: G["CTEs"];
     SelectedEntities: {};
     ExplicitSelects: {};
   }>;

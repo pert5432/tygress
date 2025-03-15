@@ -17,15 +17,15 @@ const main = async () => {
 
   const builder = DB.queryBuilder("pet", Pets)
     .joinAndSelect("usr", Users, "pet", "user")
-    .with("u", DB.queryBuilder("asdf", Users).select("asdf", "id", "id"))
-    .with("uu", DB.queryBuilder("asdf", Users).select("asdf", "id", "id"))
+    .with("u", (qb) => qb.from("asdf", Users).select("asdf", "id", "id"))
+    .with("uu", (qb) => qb.from("u").select("u", "id", "id"))
     .select("pet", "name")
     .select("pet", "id")
     .select("pet", "userId")
     .select("usr", "id")
     .orderBy("pet", "name", "DESC")
 
-    .whereIn("usr", "id", (qb) => qb.from("uwu", Users).select("uwu", "id"));
+    .whereIn("usr", "id", (qb) => qb.from("uu", Users).select("uu", "id"));
 
   const a = await builder.getEntities();
 
