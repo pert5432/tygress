@@ -1,30 +1,11 @@
 import { AnEntity } from "./types";
-import { TargetNode, Query } from "./types/query";
-import { ConnectionWrapper } from "./connection-wrapper";
+import { TargetNode } from "./types/query";
 
-export class EntitiesQueryRunner<T extends AnEntity> {
-  private sql: string;
-  private params: any[];
-  private joinNodes: TargetNode<AnEntity>;
-
-  constructor(private client: ConnectionWrapper, query: Query) {
-    if (!query.joinNodes) {
-      throw new Error(
-        `Query factory didn't return any join nodes but the are required for EntitiesQueryRunner`
-      );
-    }
-
-    this.sql = query.sql;
-    this.params = query.params;
-    this.joinNodes = query.joinNodes;
-
-    console.log(this.sql);
-    console.log(this.params);
-  }
-
-  public async run(): Promise<InstanceType<T>[]> {
-    const { rows } = await this.client.client.query(this.sql, this.params);
-
+export abstract class QueryResultEntitiesParser {
+  public static async parse<T extends AnEntity>(
+    rows: any[],
+    joinNodes: TargetNode<AnEntity>
+  ): Promise<InstanceType<T>[]> {
     let paths: TargetNode<AnEntity>[][] = [];
 
     const buildPath = (parent: TargetNode<AnEntity>[]): void => {
@@ -49,7 +30,7 @@ export class EntitiesQueryRunner<T extends AnEntity> {
       return buildPath(parent);
     };
 
-    const path = [this.joinNodes];
+    const path = [joinNodes];
     paths.push(path);
 
     buildPath(path);
@@ -126,7 +107,10 @@ export class EntitiesQueryRunner<T extends AnEntity> {
   }
 
   // Util to propagate entity instances into relation fields on its parent
-  private propagateEntitiesToParent = <P extends AnEntity, C extends AnEntity>(
+  private static propagateEntitiesToParent = <
+    P extends AnEntity,
+    C extends AnEntity
+  >(
     parentEntityMap: Map<string, InstanceType<P>>,
     node: TargetNode<C>
   ) => {

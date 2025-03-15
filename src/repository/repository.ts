@@ -8,7 +8,7 @@ import {
   Wheres,
 } from "../types";
 import { SelectSqlBuilder } from "../sql-builders/select-sql-builder";
-import { EntitiesQueryRunner } from "../entities-query-runner";
+import { QueryResultEntitiesParser } from "../entities-query-result-parser";
 import { JoinArg } from "../types/query/join-arg";
 import { METADATA_STORE, TableMetadata } from "../metadata";
 import {
@@ -32,6 +32,7 @@ import { OrderByExpressionSqlBuilder } from "../sql-builders/order-by-expression
 import { ConnectionWrapper } from "../connection-wrapper";
 import { InsertSqlBuilder } from "../sql-builders/insert-sql-builder";
 import { InsertPayload } from "../types/insert-payload";
+import { QueryRunner } from "../query-runner";
 
 export abstract class Repository {
   public static async insert<T extends AnEntity>(
@@ -66,7 +67,7 @@ export abstract class Repository {
       paramBuilder: new ParamBuilder(),
     }).sql();
 
-    const res = await client.client.query(insert.sql, insert.params);
+    const res = await new QueryRunner(client, insert.sql, insert.params).run();
 
     console.log(res);
   }
@@ -91,7 +92,18 @@ export abstract class Repository {
       paramBuilder
     ).buildSelect();
 
-    return await new EntitiesQueryRunner<T>(client, query).run();
+    if (!query.joinNodes) {
+      throw new Error(
+        `Query doesn't have joinNodes but they are required for parsing entities from the result`
+      );
+    }
+
+    return await QueryResultEntitiesParser.parse<T>(
+      (
+        await new QueryRunner(client, query.sql, query.params).run()
+      ).rows,
+      query.joinNodes
+    );
   }
 
   private static transformArgs<T extends AnEntity>(
@@ -114,7 +126,8 @@ export abstract class Repository {
         TableIdentifierSqlBuilderFactory.createEntity(
           entityNameToAlias(entity.name),
           entity
-        )
+        ),
+        "entity"
       ),
     ];
 
@@ -336,7 +349,8 @@ export abstract class Repository {
           nextJoinArgAlias,
           inverseTable
         ),
-        comparison
+        comparison,
+        "entity"
       );
 
       joinsResult.push(nextJoinArg);

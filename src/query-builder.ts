@@ -7,7 +7,7 @@ import {
   TableIdentifierSqlBuilderFactory,
 } from "./factories";
 import { METADATA_STORE } from "./metadata";
-import { EntitiesQueryRunner } from "./entities-query-runner";
+import { QueryResultEntitiesParser } from "./entities-query-result-parser";
 import {
   ComparisonSqlBuilder,
   PseudoSQLReplacer,
@@ -20,7 +20,7 @@ import { AnEntity, Parametrizable, WhereComparator } from "./types";
 import { NamedParams } from "./types/named-params";
 import { JoinArg } from "./types/query/join-arg";
 import { ParameterArgs } from "./types/where-args";
-import { RawQueryRunner } from "./raw-query-runner";
+import { RawQueryResultParser } from "./raw-query-result-parser";
 import { UnionToIntersection } from "./types/helpers";
 import {
   CteTableIdentifierSqlBuilder,
@@ -39,6 +39,7 @@ import { OrderByExpressionSqlBuilder } from "./sql-builders/order-by-expression"
 import { QueryBuilderFactory } from "./query-builder-factory";
 import { PostgresClient } from "./postgres-client";
 import { Query } from "./types/query";
+import { QueryRunner } from "./query-runner";
 
 type JoinImplArgs = {
   strategy: JoinStrategy;
@@ -943,11 +944,13 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   }
 
   public async getEntities(): Promise<InstanceType<G["RootEntity"]>[]> {
-    return this.client.withConnection((conn) =>
-      new EntitiesQueryRunner<G["RootEntity"]>(
-        conn,
-        this.getQuery(QueryResultType.ENTITIES)
-      ).run()
+    const query = this.getQuery(QueryResultType.ENTITIES);
+
+    return this.client.withConnection(async (conn) =>
+      QueryResultEntitiesParser.parse<G["RootEntity"]>(
+        (await new QueryRunner(conn, query.sql, query.params).run()).rows,
+        query.joinNodes!
+      )
     );
   }
 
@@ -958,7 +961,10 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   > {
     return this.client.withConnection(
       (conn) =>
-        RawQueryRunner.run(conn, this.getQuery(QueryResultType.RAW)) as any
+        RawQueryResultParser.run(
+          conn,
+          this.getQuery(QueryResultType.RAW)
+        ) as any
     );
   }
 }

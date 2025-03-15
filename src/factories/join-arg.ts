@@ -12,7 +12,8 @@ export abstract class JoinArgFactory {
     entity: T,
     alias: string,
     identifier: TableIdentifierSqlBuilder,
-    comparison: ComparisonSqlBuilder
+    comparison: ComparisonSqlBuilder,
+    type: "entity" | "cte"
   ): JoinArg {
     const e = new JoinArg();
 
@@ -25,19 +26,24 @@ export abstract class JoinArgFactory {
 
     e.comparison = comparison;
 
+    e.type = type;
+
     return e;
   }
 
   public static createRoot<T extends AnEntity>(
     entity: T,
     alias: string,
-    identifier: TableIdentifierSqlBuilder
+    identifier: TableIdentifierSqlBuilder,
+    type: "entity" | "cte"
   ): JoinArg {
     const e = new JoinArg();
 
     e.klass = entity;
     e.alias = alias;
     e.identifier = identifier;
+
+    e.type = type;
 
     return e;
   }

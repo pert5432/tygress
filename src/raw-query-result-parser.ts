@@ -1,7 +1,8 @@
 import { Query } from "./types/query";
 import { ConnectionWrapper } from "./connection-wrapper";
+import { QueryRunner } from "./query-runner";
 
-export abstract class RawQueryRunner {
+export abstract class RawQueryResultParser {
   public static async run<T extends { [key: string]: any }>(
     client: ConnectionWrapper,
     { sql, params }: Query
@@ -9,7 +10,7 @@ export abstract class RawQueryRunner {
     console.log(sql);
     console.log(params);
 
-    const { rows } = await client.client.query<T>(sql, params);
+    const { rows } = await new QueryRunner(client, sql, params).run();
 
     return rows;
   }
