@@ -44,9 +44,11 @@ const main = async () => {
   // );
 
   console.log(
-    await DB.insert(Users, [
-      { username: "asdasd", fullName: "Crazy Hamburger" },
-    ])
+    await DB.insert(
+      Users,
+      [{ username: "asdasd", fullName: "Crazy Hamburger" }],
+      { returning: ["fullName"] }
+    )
   );
 };
 

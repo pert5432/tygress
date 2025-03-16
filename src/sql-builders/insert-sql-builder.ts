@@ -4,7 +4,7 @@ import {
   TargetNodeFactory,
 } from "../factories";
 import { ColumnMetadata, TableMetadata } from "../metadata";
-import { AnEntity, InsertArgs } from "../types";
+import { AnEntity, InsertSqlArgs } from "../types";
 import { Insert } from "../types/insert";
 import { TargetNode } from "../types/query";
 import { dQ, entityNameToAlias } from "../utils";
@@ -27,7 +27,7 @@ export class InsertSqlBuilder {
     values,
     paramBuilder,
     returning,
-  }: InsertArgs) {
+  }: InsertSqlArgs) {
     this.entity = entity;
     this.columns = columns;
     this.values = values;

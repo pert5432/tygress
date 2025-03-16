@@ -10,6 +10,6 @@ export { OrderArgs } from "./order-args";
 export { SelectTargetArgs } from "./select-target-args";
 export { SelectQueryArgs } from "./select-query-args";
 export { SelectQueryTarget } from "./select-query-target";
-export { InsertArgs } from "./insert-args";
+export { InsertSqlArgs } from "./insert-sql-args";
 
 export * from "./conditions";

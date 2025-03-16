@@ -34,6 +34,7 @@ import { InsertSqlBuilder } from "../sql-builders/insert-sql-builder";
 import { InsertPayload } from "../types/insert-payload";
 import { QueryRunner } from "../query-runner";
 import { InsertResult } from "../types/insert-result";
+import { InsertOptions } from "../types/insert-options";
 
 export abstract class Repository {
   public static async insert<
@@ -43,7 +44,7 @@ export abstract class Repository {
     client: ConnectionWrapper,
     entity: T,
     values: InsertPayload<T>[],
-    returning?: K[]
+    { returning }: InsertOptions<T, K>
   ): Promise<InsertResult<T>> {
     const tableMeta = METADATA_STORE.getTable(entity);
 

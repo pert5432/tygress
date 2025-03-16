@@ -6,6 +6,7 @@ import { ParamBuilder } from "./sql-builders";
 import { QueryBuilder } from "./query-builder";
 import { InsertPayload } from "./types/insert-payload";
 import { InsertResult } from "./types/insert-result";
+import { InsertOptions } from "./types/insert-options";
 
 export type PostgresClientOptions = {
   databaseUrl: string;
@@ -73,10 +74,10 @@ export class PostgresClient {
   public async insert<T extends AnEntity, K extends keyof InstanceType<T>>(
     entity: T,
     values: InsertPayload<T>[],
-    returning?: K[]
+    options?: InsertOptions<T, K>
   ): Promise<InsertResult<T>> {
     return this.withConnection((conn) =>
-      Repository.insert(conn, entity, values, returning)
+      Repository.insert(conn, entity, values, options ?? {})
     );
   }
 }
