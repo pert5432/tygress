@@ -46,8 +46,12 @@ const main = async () => {
   console.log(
     await DB.insert(
       Users,
-      [{ username: "asdasd", fullName: "Crazy Hamburger" }],
-      { returning: ["fullName"] }
+      [{ id: 10, username: "bububububu", fullName: "hahahahaah" }],
+      {
+        returning: ["fullName"],
+        onConflict: "DO UPDATE",
+        conflictFields: ["id"],
+      }
     )
   );
 };

@@ -71,10 +71,14 @@ export class PostgresClient {
     return this.withConnection((conn) => Repository.select(conn, entity, args));
   }
 
-  public async insert<T extends AnEntity, K extends keyof InstanceType<T>>(
+  public async insert<
+    T extends AnEntity,
+    ReturnedFields extends keyof InstanceType<T>,
+    ConflictFields extends keyof InstanceType<T>
+  >(
     entity: T,
     values: InsertPayload<T>[],
-    options?: InsertOptions<T, K>
+    options?: InsertOptions<T, ReturnedFields, ConflictFields>
   ): Promise<InsertResult<T>> {
     return this.withConnection((conn) =>
       Repository.insert(conn, entity, values, options ?? {})

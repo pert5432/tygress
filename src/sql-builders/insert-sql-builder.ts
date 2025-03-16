@@ -8,9 +8,12 @@ import { AnEntity, InsertSqlArgs } from "../types";
 import { Insert } from "../types/insert";
 import { TargetNode } from "../types/query";
 import { dQ, entityNameToAlias } from "../utils";
+import { NakedColumnIdentifierSqlBuilder } from "./column-identifier";
 import { ParamBuilder } from "./param-builder";
 
 export class InsertSqlBuilder {
+  private args: InsertSqlArgs;
+
   private entity: TableMetadata;
   private columns: ColumnMetadata[];
   private values: Object[];
@@ -21,27 +24,61 @@ export class InsertSqlBuilder {
 
   private targetNode: TargetNode<AnEntity>;
 
-  constructor({
-    entity,
-    columns,
-    values,
-    paramBuilder,
-    returning,
-  }: InsertSqlArgs) {
+  private columnIdentifiers: NakedColumnIdentifierSqlBuilder[];
+
+  constructor(args: InsertSqlArgs) {
+    const { entity, columns, values, paramBuilder, returning } = args;
+
+    this.args = args;
+
     this.entity = entity;
     this.columns = columns;
     this.values = values;
     this.paramBuilder = paramBuilder;
 
     this.returning = returning;
+
+    this.columnIdentifiers = columns.map((c) =>
+      ColumnIdentifierSqlBuilderFactory.createNaked(c)
+    );
   }
 
   sql(): Insert {
     let sql = `INSERT INTO ${this.entity.dmlIdentifier.sql()}`;
 
-    sql += ` (${this.columns.map((c) => dQ(c.name)).join(", ")})`;
+    sql += ` (${this.columnIdentifiers.map((e) => e.sql()).join(", ")})`;
 
     sql += ` VALUES ${this.values.map((e) => this.serializeRow(e)).join(", ")}`;
+
+    if (this.args.onConflict) {
+      const columnIdentifiers = this.args.conflictColumns.map((c) =>
+        ColumnIdentifierSqlBuilderFactory.createNaked(c)
+      );
+
+      if (this.args.onConflict === "DO UPDATE" && !columnIdentifiers.length) {
+        throw new Error(
+          `ON CONFLICT DO UPDATE needs a list of conflict columns`
+        );
+      }
+
+      const conflictColumnsSql = columnIdentifiers?.length
+        ? `(${columnIdentifiers.map((e) => e.sql()).join(", ")})`
+        : "";
+
+      sql += ` ON CONFLICT`;
+
+      if (this.args.onConflict === "DO NOTHING") {
+        sql += ` ${conflictColumnsSql} DO NOTHING`;
+      } else if (this.args.onConflict === "DO UPDATE") {
+        sql += ` ${conflictColumnsSql} DO UPDATE`;
+
+        sql += ` SET ${this.columnIdentifiers.map(
+          (e) => `${e.sql()} = EXCLUDED.${e.sql()}`
+        )}`;
+      } else {
+        throw new Error(`Invalid ON CONFLICT clause ${this.args.onConflict}`);
+      }
+    }
 
     if (this.returning.length) {
       const alias = entityNameToAlias(this.entity.klass.name);

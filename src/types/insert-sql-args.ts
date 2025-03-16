@@ -9,4 +9,7 @@ export type InsertSqlArgs = {
   values: Object[];
 
   returning: ColumnMetadata[];
+
+  onConflict?: "DO NOTHING" | "DO UPDATE";
+  conflictColumns: ColumnMetadata[];
 };

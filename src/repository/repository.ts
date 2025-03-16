@@ -39,12 +39,17 @@ import { InsertOptions } from "../types/insert-options";
 export abstract class Repository {
   public static async insert<
     T extends AnEntity,
-    K extends keyof InstanceType<T>
+    ReturnedFields extends keyof InstanceType<T>,
+    ConflictFields extends keyof InstanceType<T>
   >(
     client: ConnectionWrapper,
     entity: T,
     values: InsertPayload<T>[],
-    { returning }: InsertOptions<T, K>
+    {
+      returning,
+      onConflict,
+      conflictFields,
+    }: InsertOptions<T, ReturnedFields, ConflictFields>
   ): Promise<InsertResult<T>> {
     const tableMeta = METADATA_STORE.getTable(entity);
 
@@ -67,16 +72,13 @@ export abstract class Repository {
     }
 
     // Collect columns supposed to be returned from the insert
-    const returningColumns = [];
-    for (const field of returning ?? []) {
-      const column = tableMeta.columnsMap.get(field.toString());
+    const returningColumns = (returning ?? []).map((e) =>
+      tableMeta.getColumn(e.toString())
+    );
 
-      if (!column) {
-        throw new Error(`No column found for field ${field.toString()}`);
-      }
-
-      returningColumns.push(column);
-    }
+    const conflictColumns = (conflictFields ?? []).map((e) =>
+      tableMeta.getColumn(e.toString())
+    );
 
     // Ensure primary key is returned if any columns are returned
     if (returningColumns.length) {
@@ -101,6 +103,8 @@ export abstract class Repository {
       paramBuilder: new ParamBuilder(),
 
       returning: returningColumns,
+      onConflict,
+      conflictColumns,
     }).sql();
 
     if (returningColumns.length && !insert.targetNode) {

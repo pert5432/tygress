@@ -17,6 +17,16 @@ export class TableMetadata {
 
   columns: ColumnMetadata[] = [];
 
+  getColumn(fieldName: string) {
+    const c = this.columnsMap.get(fieldName);
+
+    if (!c) {
+      throw new Error(`No column found with field name ${fieldName}`);
+    }
+
+    return c;
+  }
+
   get columnsSelectableByDefault() {
     return this.columns.filter((e) => e.select);
   }

@@ -2,17 +2,25 @@ import { AnEntity } from "./entity";
 
 export type InsertOptions<
   T extends AnEntity,
-  K extends keyof InstanceType<T>
+  ReturnedFields extends keyof InstanceType<T>,
+  ConflictFields extends keyof InstanceType<T>
 > = {
-  returning?: K[];
-} & OnConflict<T, K>;
+  returning?: ReturnedFields[];
+} & OnConflict<T, ConflictFields>;
 
-type OnConflict<T extends AnEntity, K extends keyof InstanceType<T>> =
-  | {}
+type OnConflict<
+  T extends AnEntity,
+  ConflictFields extends keyof InstanceType<T>
+> =
+  | {
+      onConflict?: undefined;
+      conflictFields?: undefined;
+    }
   | {
       onConflict: "DO NOTHING";
+      conflictFields?: ConflictFields[];
     }
   | {
       onConflict: "DO UPDATE";
-      conflictColumns: K[];
+      conflictFields: ConflictFields[];
     };
