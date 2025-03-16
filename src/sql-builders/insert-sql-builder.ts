@@ -55,10 +55,18 @@ export class InsertSqlBuilder {
         ColumnIdentifierSqlBuilderFactory.createNaked(c)
       );
 
-      if (this.args.onConflict === "DO UPDATE" && !columnIdentifiers.length) {
-        throw new Error(
-          `ON CONFLICT DO UPDATE needs a list of conflict columns`
-        );
+      if (this.args.onConflict === "DO UPDATE") {
+        if (!columnIdentifiers.length) {
+          throw new Error(
+            `ON CONFLICT DO UPDATE requires a list of conflict columns`
+          );
+        }
+
+        if (!this.args.updateColumns.length) {
+          throw new Error(
+            `ON CONFLICT DO UPDATE requires a list of columns to update`
+          );
+        }
       }
 
       const conflictColumnsSql = columnIdentifiers?.length
@@ -72,7 +80,11 @@ export class InsertSqlBuilder {
       } else if (this.args.onConflict === "DO UPDATE") {
         sql += ` ${conflictColumnsSql} DO UPDATE`;
 
-        sql += ` SET ${this.columnIdentifiers.map(
+        const updateColumnIdentifiers = this.args.updateColumns.map((e) =>
+          ColumnIdentifierSqlBuilderFactory.createNaked(e)
+        );
+
+        sql += ` SET ${updateColumnIdentifiers.map(
           (e) => `${e.sql()} = EXCLUDED.${e.sql()}`
         )}`;
       } else {

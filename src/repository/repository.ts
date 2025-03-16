@@ -40,7 +40,8 @@ export abstract class Repository {
   public static async insert<
     T extends AnEntity,
     ReturnedFields extends keyof InstanceType<T>,
-    ConflictFields extends keyof InstanceType<T>
+    ConflictFields extends keyof InstanceType<T>,
+    UpdateFields extends keyof InstanceType<T>
   >(
     client: ConnectionWrapper,
     entity: T,
@@ -49,7 +50,8 @@ export abstract class Repository {
       returning,
       onConflict,
       conflictFields,
-    }: InsertOptions<T, ReturnedFields, ConflictFields>
+      updateFields,
+    }: InsertOptions<T, ReturnedFields, ConflictFields, UpdateFields>
   ): Promise<InsertResult<T>> {
     const tableMeta = METADATA_STORE.getTable(entity);
 
@@ -71,12 +73,15 @@ export abstract class Repository {
       }
     }
 
-    // Collect columns supposed to be returned from the insert
     const returningColumns = (returning ?? []).map((e) =>
       tableMeta.getColumn(e.toString())
     );
 
     const conflictColumns = (conflictFields ?? []).map((e) =>
+      tableMeta.getColumn(e.toString())
+    );
+
+    const updateColumns = (updateFields ?? []).map((e) =>
       tableMeta.getColumn(e.toString())
     );
 
@@ -105,6 +110,7 @@ export abstract class Repository {
       returning: returningColumns,
       onConflict,
       conflictColumns,
+      updateColumns,
     }).sql();
 
     if (returningColumns.length && !insert.targetNode) {

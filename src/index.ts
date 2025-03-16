@@ -46,11 +46,15 @@ const main = async () => {
   console.log(
     await DB.insert(
       Users,
-      [{ id: 10, username: "bububububu", fullName: "hahahahaah" }],
+      [
+        { id: 10, username: "bububububu", fullName: "iuhnsifndsf" },
+        { username: "asdasdasd", fullName: "adasdasgsdfd" },
+      ],
       {
         returning: ["fullName"],
         onConflict: "DO UPDATE",
         conflictFields: ["id"],
+        updateFields: ["fullName"],
       }
     )
   );

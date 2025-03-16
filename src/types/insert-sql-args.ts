@@ -12,4 +12,5 @@ export type InsertSqlArgs = {
 
   onConflict?: "DO NOTHING" | "DO UPDATE";
   conflictColumns: ColumnMetadata[];
+  updateColumns: ColumnMetadata[];
 };
