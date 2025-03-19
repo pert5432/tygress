@@ -1,6 +1,6 @@
 import { AnEntity } from "./entity";
 
-export type InsertResult<T extends AnEntity> = {
+export type DeleteResult<T extends AnEntity> = {
   affectedRows: number;
 
   rows: InstanceType<T>[];

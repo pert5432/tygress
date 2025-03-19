@@ -1,5 +1,5 @@
 import { ClientConfig, Pool } from "pg";
-import { AnEntity, SelectArgs } from "./types";
+import { AnEntity, SelectArgs, Wheres } from "./types";
 import { Repository } from "./repository";
 import { ConnectionWrapper } from "./connection-wrapper";
 import { ParamBuilder } from "./sql-builders";
@@ -7,6 +7,8 @@ import { QueryBuilder } from "./query-builder";
 import { InsertPayload } from "./types/insert-payload";
 import { InsertResult } from "./types/insert-result";
 import { InsertOptions } from "./types/insert-options";
+import { DeleteOptions } from "./types/delete-options";
+import { DeleteResult } from "./types/delete-result";
 
 export type PostgresClientOptions = {
   databaseUrl: string;
@@ -83,6 +85,19 @@ export class PostgresClient {
   ): Promise<InsertResult<T>> {
     return this.withConnection((conn) =>
       Repository.insert(conn, entity, values, options ?? {})
+    );
+  }
+
+  public async delete<
+    T extends AnEntity,
+    ReturnedFields extends keyof InstanceType<T>
+  >(
+    entity: T,
+    where?: Wheres<InstanceType<T>>,
+    options?: DeleteOptions<T, ReturnedFields>
+  ): Promise<DeleteResult<T>> {
+    return this.withConnection((conn) =>
+      Repository.delete(conn, entity, where ?? {}, options ?? {})
     );
   }
 }

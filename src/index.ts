@@ -43,21 +43,25 @@ const main = async () => {
   //   })
   // );
 
-  console.log(
-    await DB.insert(
-      Users,
-      [
-        { id: 10, username: "bububububu", fullName: "iuhnsifndsf" },
-        { username: "asdasdasd", fullName: "adasdasgsdfd" },
-      ],
-      {
-        returning: ["fullName"],
-        onConflict: "DO UPDATE",
-        conflictFields: ["id"],
-        updateFields: ["fullName"],
-      }
-    )
+  const { rows } = await DB.insert(
+    Users,
+    [{ username: "asdasdasd", fullName: "adasdasgsdfd" }],
+    {
+      returning: ["id"],
+    }
   );
+
+  console.log(rows);
+
+  const { rows: deletedRows } = await DB.delete(
+    Users,
+    {
+      id: In(rows.map((e) => e.id)),
+    },
+    { returning: ["id", "fullName", "username"] }
+  );
+
+  console.log(deletedRows);
 };
 
 main();

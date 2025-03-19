@@ -35,6 +35,8 @@ import { InsertPayload } from "../types/insert-payload";
 import { QueryRunner } from "../query-runner";
 import { InsertResult } from "../types/insert-result";
 import { InsertOptions } from "../types/insert-options";
+import { DeleteOptions } from "../types/delete-options";
+import { DeleteSqlBuilder } from "../sql-builders/delete-sql-builder";
 
 export abstract class Repository {
   public static async insert<
@@ -124,6 +126,48 @@ export abstract class Repository {
     return {
       affectedRows: res.rowCount!,
       rows: await QueryResultEntitiesParser.parse(res.rows, insert.targetNode!),
+    };
+  }
+
+  public static async delete<
+    T extends AnEntity,
+    ReturnedFields extends keyof InstanceType<T>
+  >(
+    client: ConnectionWrapper,
+    entity: T,
+    where: Wheres<InstanceType<T>>,
+    { returning }: DeleteOptions<T, ReturnedFields>
+  ) {
+    const tableMeta = METADATA_STORE.getTable(entity);
+
+    const rootNode = JoinNodeFactory.createRoot(tableMeta);
+
+    const wheresResult: ComparisonSqlBuilder[] = [];
+    this.processWheres(wheresResult, where ?? {}, rootNode);
+
+    const returningColumns = (returning ?? []).map((e) =>
+      tableMeta.getColumn(e.toString())
+    );
+
+    const del = new DeleteSqlBuilder({
+      paramBuilder: new ParamBuilder(),
+      entity: rootNode,
+
+      wheres: wheresResult,
+      returning: returningColumns,
+    }).sql();
+
+    if (returningColumns.length && !del.targetNode) {
+      throw new Error(
+        "Returning rows from an DELETE requires a target node but sql builder didn't return one"
+      );
+    }
+
+    const res = await new QueryRunner(client, del.sql, del.params).run();
+
+    return {
+      affectedRows: res.rowCount!,
+      rows: await QueryResultEntitiesParser.parse(res.rows, del.targetNode!),
     };
   }
 
