@@ -9,6 +9,8 @@ import { InsertResult } from "./types/insert-result";
 import { InsertOptions } from "./types/insert-options";
 import { DeleteOptions } from "./types/delete-options";
 import { DeleteResult } from "./types/delete-result";
+import { UpdateOptions } from "./types/update-options";
+import { UpdateResult } from "./types/update-result";
 
 export type PostgresClientOptions = {
   databaseUrl: string;
@@ -85,6 +87,20 @@ export class PostgresClient {
   ): Promise<InsertResult<T>> {
     return this.withConnection((conn) =>
       Repository.insert(conn, entity, values, options ?? {})
+    );
+  }
+
+  public async update<
+    T extends AnEntity,
+    ReturnedFields extends keyof InstanceType<T>
+  >(
+    entity: T,
+    values: Partial<InstanceType<T>>,
+    where?: Wheres<InstanceType<T>>,
+    options?: UpdateOptions<T, ReturnedFields>
+  ): Promise<UpdateResult<T>> {
+    return this.withConnection((conn) =>
+      Repository.update(conn, entity, values, where ?? {}, options ?? {})
     );
   }
 

@@ -37,6 +37,8 @@ import { InsertResult } from "../types/insert-result";
 import { InsertOptions } from "../types/insert-options";
 import { DeleteOptions } from "../types/delete-options";
 import { DeleteSqlBuilder } from "../sql-builders/delete-sql-builder";
+import { UpdateOptions } from "../types/update-options";
+import { UpdateSqlBuilder } from "../sql-builders/update-sql-builder";
 
 export abstract class Repository {
   public static async insert<
@@ -126,6 +128,65 @@ export abstract class Repository {
     return {
       affectedRows: res.rowCount!,
       rows: await QueryResultEntitiesParser.parse(res.rows, insert.targetNode!),
+    };
+  }
+
+  public static async update<
+    T extends AnEntity,
+    ReturnedFields extends keyof InstanceType<T>
+  >(
+    client: ConnectionWrapper,
+    entity: T,
+    values: Partial<InstanceType<T>>,
+    where: Wheres<InstanceType<T>>,
+    { returning }: UpdateOptions<T, ReturnedFields>
+  ) {
+    if (!Object.keys(values).length) {
+      throw new Error(`UPDATE needs some values`);
+    }
+
+    const tableMeta = METADATA_STORE.getTable(entity);
+
+    const rootNode = JoinNodeFactory.createRoot(tableMeta);
+
+    const columnValues = Object.entries(values).map(([key, value]) => {
+      const column = tableMeta.columnsMap.get(key);
+      if (!column) {
+        throw new Error(
+          `No column found for entity ${entity.name}, field name ${key}`
+        );
+      }
+
+      return { column, value };
+    });
+
+    const wheresResult: ComparisonSqlBuilder[] = [];
+    this.processWheres(wheresResult, where ?? {}, rootNode);
+
+    const returningColumns = (returning ?? []).map((e) =>
+      tableMeta.getColumn(e.toString())
+    );
+
+    const update = new UpdateSqlBuilder({
+      paramBuilder: new ParamBuilder(),
+      entity: rootNode,
+
+      values: columnValues,
+      wheres: wheresResult,
+      returning: returningColumns,
+    }).sql();
+
+    if (returningColumns.length && !update.targetNode) {
+      throw new Error(
+        "Returning rows from an UPDATE requires a target node but sql builder didn't return one"
+      );
+    }
+
+    const res = await new QueryRunner(client, update.sql, update.params).run();
+
+    return {
+      affectedRows: res.rowCount!,
+      rows: await QueryResultEntitiesParser.parse(res.rows, update.targetNode!),
     };
   }
 

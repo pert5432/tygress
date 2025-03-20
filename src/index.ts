@@ -53,6 +53,15 @@ const main = async () => {
 
   console.log(rows);
 
+  const { rows: updatedRows } = await DB.update(
+    Users,
+    { username: "joaha" },
+    { id: In(rows.map((e) => e.id)) },
+    { returning: ["id", "fullName", "username"] }
+  );
+
+  console.log(updatedRows);
+
   const { rows: deletedRows } = await DB.delete(
     Users,
     {

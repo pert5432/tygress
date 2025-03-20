@@ -5,28 +5,36 @@ import {
   TargetNodeFactory,
 } from "../factories";
 import { AnEntity } from "../types";
-import { Delete } from "../types/delete";
-import { DeleteSqlArgs } from "../types/delete-sql-args";
 import { TargetNode } from "../types/query";
-import { entityNameToAlias } from "../utils";
+import { Update } from "../types/update";
+import { UpdateSqlArgs } from "../types/update-sql-args";
 import { ParamBuilder } from "./param-builder";
 
-export class DeleteSqlBuilder {
+export class UpdateSqlBuilder {
   private paramBuilder: ParamBuilder;
 
   private targetNode: TargetNode<AnEntity>;
 
-  constructor(private args: DeleteSqlArgs) {
+  constructor(private args: UpdateSqlArgs) {
     this.paramBuilder = args.paramBuilder;
   }
 
-  sql(): Delete {
+  sql(): Update {
     const tableIdentifier = TableIdentifierSqlBuilderFactory.createEntity(
       this.args.entity.alias,
       this.args.entity.entityMeta.klass
     );
 
-    let sql = `DELETE FROM ${tableIdentifier.sql(this.paramBuilder)}`;
+    let sql = `UPDATE ${tableIdentifier.sql(this.paramBuilder)}`;
+
+    sql += ` SET `;
+
+    sql += this.args.values.map(({ column, value }) => {
+      const columnIdentifier =
+        ColumnIdentifierSqlBuilderFactory.createNaked(column);
+
+      return `${columnIdentifier.sql()} = ${this.serializeValue(value)}`;
+    });
 
     if (this.args.wheres.length) {
       sql += ` WHERE `;
@@ -37,12 +45,11 @@ export class DeleteSqlBuilder {
     }
 
     if (this.args.returning.length) {
-      const alias = entityNameToAlias(this.args.entity.entityMeta.klass.name);
       const targets = this.args.returning.map((c) =>
         SelectTargetSqlBuilderFactory.createColumnIdentifier(
           ColumnIdentifierSqlBuilderFactory.createNaked(c),
-          `${alias}.${c.fieldName}`,
-          alias,
+          `${tableIdentifier.alias}.${c.fieldName}`,
+          tableIdentifier.alias,
           c.fieldName
         )
       );
@@ -53,7 +60,7 @@ export class DeleteSqlBuilder {
 
       this.targetNode = TargetNodeFactory.createRoot(
         this.args.entity.entityMeta.klass,
-        alias
+        tableIdentifier.alias
       );
 
       targets.forEach((e) => this.targetNode.selectField(e.fieldName!, e.as));
@@ -65,5 +72,17 @@ export class DeleteSqlBuilder {
 
       targetNode: this.targetNode,
     };
+  }
+
+  private serializeValue(value: any): string {
+    if (value === undefined) {
+      return "DEFAULT";
+    }
+
+    if (value === null) {
+      return "NULL";
+    }
+
+    return `$${this.paramBuilder.addParam(value)}`;
   }
 }
