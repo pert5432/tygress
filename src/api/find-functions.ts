@@ -9,31 +9,31 @@ import {
 } from "../types/where-args";
 
 export const Eq = <T>(param: T): ParametrizedCondition<T> => {
-  return ParametrizedConditionFactory.create("eq", [param]);
+  return ParametrizedConditionFactory.create("=", [param]);
 };
 
 export const Gt = <T>(param: T): ParametrizedCondition<T> => {
-  return ParametrizedConditionFactory.create("gt", [param]);
+  return ParametrizedConditionFactory.create(">", [param]);
 };
 
 export const Gte = <T>(param: T): ParametrizedCondition<T> => {
-  return ParametrizedConditionFactory.create("gte", [param]);
+  return ParametrizedConditionFactory.create(">=", [param]);
 };
 
 export const Lt = <T>(param: T): ParametrizedCondition<T> => {
-  return ParametrizedConditionFactory.create("lt", [param]);
+  return ParametrizedConditionFactory.create("<", [param]);
 };
 
 export const Lte = <T>(param: T): ParametrizedCondition<T> => {
-  return ParametrizedConditionFactory.create("lte", [param]);
+  return ParametrizedConditionFactory.create("<=", [param]);
 };
 
 export const NotEq = <T>(param: T): ParametrizedCondition<T> => {
-  return ParametrizedConditionFactory.create("not-eq", [param]);
+  return ParametrizedConditionFactory.create("<>", [param]);
 };
 
 export const In = <T>(params: T[]): ParametrizedCondition<T> => {
-  return ParametrizedConditionFactory.create("in", params);
+  return ParametrizedConditionFactory.create("IN", params);
 };
 
 export const And = <T>(

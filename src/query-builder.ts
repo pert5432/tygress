@@ -248,7 +248,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
       TableIdentifierSqlBuilderFactory.createSubQuery(resultQb);
 
     this.wheres.push(
-      ComparisonFactory.colTableIdentifier(left, "in", subQueryIdentifier)
+      ComparisonFactory.colTableIdentifier(left, "IN", subQueryIdentifier)
     );
 
     return this;

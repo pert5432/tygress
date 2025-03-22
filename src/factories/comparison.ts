@@ -85,7 +85,7 @@ export abstract class ComparisonFactory {
         foreignAlias,
         relation.foreignColumn
       ),
-      "eq",
+      "=",
       ColumnIdentifierSqlBuilderFactory.createColumnMeta(
         primaryAlias,
         relation.primaryColumn
@@ -112,7 +112,7 @@ export abstract class ComparisonFactory {
       typeof condition === "string" ||
       typeof condition === "boolean"
     ) {
-      return this.createColParamIdentifier(columnIdentifier, "eq", [condition]);
+      return this.createColParamIdentifier(columnIdentifier, "=", [condition]);
     } else if ((condition as Object) instanceof ParametrizedConditionWrapper) {
       const conditionWrapper =
         condition as ParametrizedConditionWrapper<Parametrizable>;
