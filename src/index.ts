@@ -19,14 +19,16 @@ const main = async () => {
     .joinAndSelect("usr", Users, "pet", "user")
     .with("u", (qb) => qb.from("asdf", Users).select("asdf", "id", "id"))
     .with("uu", (qb) => qb.from("u").select("u", "id", "id"))
+    .where("usr", "id", "<=", (qb) =>
+      qb.from("uu", Users).selectSQL("MAX(uu.id)", "id")
+    );
+
+  const b = builder
     .select("pet", "name")
     .select("pet", "id")
     .select("pet", "userId")
     .select("usr", "id")
-    .selectSQL("UPPER(pet.name)", "name")
-    .orderBy("pet", "name", "DESC")
-
-    .whereIn("usr", "id", (qb) => qb.from("uu", Users).select("uu", "id"));
+    .orderBy("pet", "name", "DESC");
 
   const a = await builder.getRaw();
 

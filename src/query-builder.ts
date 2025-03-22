@@ -229,30 +229,15 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     return this as any;
   }
 
-  public whereIn<
+  public where<
     K extends keyof G["JoinedEntities"],
     F extends SelectSourceKeys<G["JoinedEntities"][K]>
   >(
     leftAlias: K,
     leftField: F,
+    comparator: WhereComparator,
     subQuery: (qb: QueryBuilderFactory<G>) => QueryBuilder<any>
-  ): QueryBuilder<G> {
-    const left = this.getColumnIdentifier(
-      leftAlias.toString(),
-      leftField.toString()
-    );
-
-    const resultQb = subQuery(this.childQbFactory());
-
-    const subQueryIdentifier =
-      TableIdentifierSqlBuilderFactory.createSubQuery(resultQb);
-
-    this.wheres.push(
-      ComparisonFactory.colTableIdentifier(left, "IN", subQueryIdentifier)
-    );
-
-    return this;
-  }
+  ): QueryBuilder<G>;
 
   public where<
     K extends keyof G["JoinedEntities"],
@@ -285,7 +270,9 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     leftAliasOrSql: K | string,
     leftFieldOrParams: F | NamedParams | undefined,
     conditionOrComparator?: ParameterArgs<Parametrizable> | WhereComparator,
-    rightAlias?: K,
+    rightAliasOrSubQuery?:
+      | K
+      | ((qb: QueryBuilderFactory<G>) => QueryBuilder<any>),
     rightField?: F
   ): QueryBuilder<G> {
     // Adding a pseudo-sql condition
@@ -305,15 +292,37 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
       return this;
     }
 
-    // Adding a column cmp column condition
-    if (typeof conditionOrComparator === "string") {
-      const left = this.getColumnIdentifier(
-        leftAliasOrSql.toString(),
-        leftFieldOrParams!.toString()
+    // Now we know left side of the condition
+    const left = this.getColumnIdentifier(
+      leftAliasOrSql.toString(),
+      leftFieldOrParams!.toString()
+    );
+
+    // Adding a "WHERE cmp (subquery)"
+    if (
+      typeof conditionOrComparator === "string" &&
+      typeof rightAliasOrSubQuery === "function"
+    ) {
+      const resultQb = rightAliasOrSubQuery(this.childQbFactory());
+
+      const subQueryIdentifier =
+        TableIdentifierSqlBuilderFactory.createSubQuery(resultQb);
+
+      this.wheres.push(
+        ComparisonFactory.colTableIdentifier(
+          left,
+          conditionOrComparator,
+          subQueryIdentifier
+        )
       );
 
+      return this;
+    }
+
+    // Adding a column cmp column condition
+    if (typeof conditionOrComparator === "string") {
       const right = this.getColumnIdentifier(
-        rightAlias!.toString(),
+        rightAliasOrSubQuery!.toString(),
         rightField!.toString()
       );
 
@@ -328,6 +337,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
       return this;
     }
 
+    // Adding a WHERE based on a Comparison
     const columnIdentifier = this.getColumnIdentifier(
       leftAliasOrSql.toString(),
       leftFieldOrParams!.toString()
