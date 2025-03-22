@@ -6,7 +6,7 @@ export type InsertOptions<
   ConflictFields extends keyof InstanceType<T>,
   UpdateFields extends keyof InstanceType<T>
 > = {
-  returning?: ReturnedFields[];
+  returning?: ReturnedFields[] | "*";
 } & OnConflict<T, ConflictFields, UpdateFields>;
 
 type OnConflict<

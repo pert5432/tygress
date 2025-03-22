@@ -77,9 +77,10 @@ export abstract class Repository {
       }
     }
 
-    const returningColumns = (returning ?? []).map((e) =>
-      tableMeta.getColumn(e.toString())
-    );
+    const returningColumns =
+      returning === "*"
+        ? tableMeta.columns
+        : (returning ?? []).map((e) => tableMeta.getColumn(e.toString()));
 
     const conflictColumns = (conflictFields ?? []).map((e) =>
       tableMeta.getColumn(e.toString())
@@ -163,9 +164,10 @@ export abstract class Repository {
     const wheresResult: ComparisonSqlBuilder[] = [];
     this.processWheres(wheresResult, where ?? {}, rootNode);
 
-    const returningColumns = (returning ?? []).map((e) =>
-      tableMeta.getColumn(e.toString())
-    );
+    const returningColumns =
+      returning === "*"
+        ? tableMeta.columns
+        : (returning ?? []).map((e) => tableMeta.getColumn(e.toString()));
 
     const update = new UpdateSqlBuilder({
       paramBuilder: new ParamBuilder(),
@@ -206,9 +208,10 @@ export abstract class Repository {
     const wheresResult: ComparisonSqlBuilder[] = [];
     this.processWheres(wheresResult, where ?? {}, rootNode);
 
-    const returningColumns = (returning ?? []).map((e) =>
-      tableMeta.getColumn(e.toString())
-    );
+    const returningColumns =
+      returning === "*"
+        ? tableMeta.columns
+        : (returning ?? []).map((e) => tableMeta.getColumn(e.toString()));
 
     const del = new DeleteSqlBuilder({
       paramBuilder: new ParamBuilder(),

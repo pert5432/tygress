@@ -47,7 +47,7 @@ const main = async () => {
     Users,
     [{ username: "asdasdasd", fullName: "adasdasgsdfd" }],
     {
-      returning: ["id"],
+      returning: "*",
     }
   );
 
@@ -57,7 +57,7 @@ const main = async () => {
     Users,
     { username: "joaha" },
     { id: In(rows.map((e) => e.id)) },
-    { returning: ["id", "fullName", "username"] }
+    { returning: "*" }
   );
 
   console.log(updatedRows);
@@ -67,7 +67,7 @@ const main = async () => {
     {
       id: In(rows.map((e) => e.id)),
     },
-    { returning: ["id", "fullName", "username"] }
+    { returning: "*" }
   );
 
   console.log(deletedRows);
