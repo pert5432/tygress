@@ -1,4 +1,4 @@
-import { ClientConfig, Pool } from "pg";
+import { ClientConfig, Pool, QueryResult } from "pg";
 import { AnEntity, SelectArgs, Wheres } from "./types";
 import { Repository } from "./repository";
 import { ConnectionWrapper } from "./connection-wrapper";
@@ -115,5 +115,12 @@ export class PostgresClient {
     return this.withConnection((conn) =>
       Repository.delete(conn, entity, where ?? {}, options ?? {})
     );
+  }
+
+  public async query<T extends { [key: string]: any } = any>(
+    sql: string,
+    params?: any[]
+  ): Promise<QueryResult<T>> {
+    return this.withConnection((conn) => conn.client.query(sql, params ?? []));
   }
 }
