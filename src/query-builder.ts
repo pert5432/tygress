@@ -343,7 +343,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     return this;
   }
 
-  public selectRaw<T extends any, Alias extends string>(
+  public selectSQL<T extends any, Alias extends string>(
     sql: string,
     as: Alias,
     f: () => T,
@@ -360,16 +360,18 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     >
   >;
 
-  public selectRaw<T extends any, Alias extends string>(
+  public selectSQL<T extends any, Alias extends string>(
     sql: string,
     as: Alias,
     params?: NamedParams
-  ): QueryBuilder<Update<G, "ExplicitSelects", Record<Alias, T>>>;
+  ): QueryBuilder<
+    Update<G, "ExplicitSelects", G["ExplicitSelects"] & Record<Alias, T>>
+  >;
 
-  public selectRaw<T extends any, Alias extends string>(
+  public selectSQL<T extends any, Alias extends string>(
     sql: string,
     as: Alias,
-    fOrParams?: () => T | NamedParams,
+    fOrParams?: NamedParams | (() => T),
     _f?: () => T
   ): QueryBuilder<Update<G, "ExplicitSelects", Record<Alias, T>>> {
     const params = fOrParams && Object.keys(fOrParams).length ? fOrParams : {};
@@ -461,7 +463,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     const klass = source.source;
 
     if (field === "*" && source.type !== "entity") {
-      throw new Error(`Can't select * on other select sources than entity`);
+      throw new Error(`SELECT * FROM CTE is not supported yet`);
     }
 
     // TODO: this won't work for CTEs because they don't have an entity

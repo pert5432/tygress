@@ -15,21 +15,22 @@ const main = async () => {
     entities: [],
   });
 
-  // const builder = DB.queryBuilder("pet", Pets)
-  //   .joinAndSelect("usr", Users, "pet", "user")
-  //   .with("u", (qb) => qb.from("asdf", Users).select("asdf", "id", "id"))
-  //   .with("uu", (qb) => qb.from("u").select("u", "id", "id"))
-  //   .select("pet", "name")
-  //   .select("pet", "id")
-  //   .select("pet", "userId")
-  //   .select("usr", "id")
-  //   .orderBy("pet", "name", "DESC")
+  const builder = DB.queryBuilder("pet", Pets)
+    .joinAndSelect("usr", Users, "pet", "user")
+    .with("u", (qb) => qb.from("asdf", Users).select("asdf", "id", "id"))
+    .with("uu", (qb) => qb.from("u").select("u", "id", "id"))
+    .select("pet", "name")
+    .select("pet", "id")
+    .select("pet", "userId")
+    .select("usr", "id")
+    .selectSQL("UPPER(pet.name)", "name")
+    .orderBy("pet", "name", "DESC")
 
-  //   .whereIn("usr", "id", (qb) => qb.from("uu", Users).select("uu", "id"));
+    .whereIn("usr", "id", (qb) => qb.from("uu", Users).select("uu", "id"));
 
-  // const a = await builder.getEntities();
+  const a = await builder.getRaw();
 
-  // console.log(a);
+  console.log(a);
 
   // console.log(
   //   await DB.select(Users, {
@@ -43,34 +44,34 @@ const main = async () => {
   //   })
   // );
 
-  const { rows } = await DB.insert(
-    Users,
-    [{ username: "asdasdasd", fullName: "adasdasgsdfd" }],
-    {
-      returning: "*",
-    }
-  );
+  // const { rows } = await DB.insert(
+  //   Users,
+  //   [{ username: "asdasdasd", fullName: "adasdasgsdfd" }],
+  //   {
+  //     returning: "*",
+  //   }
+  // );
 
-  console.log(rows);
+  // console.log(rows);
 
-  const { rows: updatedRows } = await DB.update(
-    Users,
-    { username: "joaha" },
-    { id: In(rows.map((e) => e.id)) },
-    { returning: "*" }
-  );
+  // const { rows: updatedRows } = await DB.update(
+  //   Users,
+  //   { username: "joaha" },
+  //   { id: In(rows.map((e) => e.id)) },
+  //   { returning: "*" }
+  // );
 
-  console.log(updatedRows);
+  // console.log(updatedRows);
 
-  const { rows: deletedRows } = await DB.delete(
-    Users,
-    {
-      id: In(rows.map((e) => e.id)),
-    },
-    { returning: "*" }
-  );
+  // const { rows: deletedRows } = await DB.delete(
+  //   Users,
+  //   {
+  //     id: In(rows.map((e) => e.id)),
+  //   },
+  //   { returning: "*" }
+  // );
 
-  console.log(deletedRows);
+  // console.log(deletedRows);
 };
 
 main();
