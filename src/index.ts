@@ -16,21 +16,19 @@ const main = async () => {
   });
 
   const builder = DB.queryBuilder("pet", Pets)
-    .joinAndSelect("usr", Users, "pet", "user")
+    .join("usr", Users, (j) =>
+      j.sql("usr.id = pet.userId AND usr.fullName > LOWER(:name)", {
+        name: "asdasd",
+      })
+    )
+
     .with("u", (qb) => qb.from("asdf", Users).select("asdf", "id", "id"))
     .with("uu", (qb) => qb.from("u").select("u", "id", "id"))
     .where("usr", "id", "<=", (qb) =>
       qb.from("uu", Users).selectSQL("MAX(uu.id)", "id")
     );
 
-  const b = builder
-    .select("pet", "name")
-    .select("pet", "id")
-    .select("pet", "userId")
-    .select("usr", "id")
-    .orderBy("pet", "name", "DESC");
-
-  const a = await builder.getRaw();
+  const a = await builder.getEntities();
 
   console.log(a);
 

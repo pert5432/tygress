@@ -40,23 +40,8 @@ import { QueryBuilderFactory } from "./query-builder-factory";
 import { PostgresClient } from "./postgres-client";
 import { Query } from "./types/query";
 import { QueryRunner } from "./query-runner";
-
-type JoinImplArgs = {
-  strategy: JoinStrategy;
-
-  targetAlias: string;
-  targetEntity: AnEntity;
-
-  select: boolean;
-
-  type: JoinType;
-
-  parentAlias?: string;
-  parentField?: string;
-
-  sql?: string;
-  namedParams?: NamedParams;
-};
+import { JoinImplArgs } from "./types/query-builder";
+import { JoinFactory } from "./join-factory";
 
 type FlattenSelectSources<
   T extends { [key: string]: SelectSource },
@@ -609,83 +594,29 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     return this as any;
   }
 
-  public join<
-    A extends string,
-    E extends AnEntity,
-    K extends keyof G["JoinedEntities"],
-    F extends SelectSourceKeys<G["JoinedEntities"][K]>
-  >(
-    targetAlias: A,
-    targetEntity: E,
-    parentAlias: K,
-    parentField: F
-  ): QueryBuilder<
-    Update<G, "JoinedEntities", G["JoinedEntities"] & Record<A, E>>
-  >;
-
   public join<A extends string, E extends AnEntity>(
     targetAlias: A,
     targetEntity: E,
-    sql: string,
-    namedParams?: NamedParams
-  ): QueryBuilder<
-    Update<G, "JoinedEntities", G["JoinedEntities"] & Record<A, E>>
-  >;
-
-  public join<
-    A extends string,
-    E extends AnEntity,
-    K extends keyof G["JoinedEntities"],
-    F extends SelectSourceKeys<G["JoinedEntities"][K]>
-  >(
-    targetAlias: A,
-    targetEntity: E,
-    parentAliasOrSql: K | string,
-    optionalParentFieldOrNamedParams?: F | NamedParams
+    conditionFn: (
+      j: JoinFactory<
+        Update<G, "JoinedEntities", G["JoinedEntities"] & Record<A, E>>
+      >
+    ) => JoinImplArgs
   ): QueryBuilder<
     Update<G, "JoinedEntities", G["JoinedEntities"] & Record<A, E>>
   > {
-    // Join either by sql or by relation based on args
-    if (typeof optionalParentFieldOrNamedParams === "string") {
-      this.joinImpl({
-        strategy: JoinStrategy.RELATION,
-        type: JoinType.INNER,
-
-        targetAlias,
-        targetEntity,
-        parentAlias: parentAliasOrSql as string,
-        parentField: optionalParentFieldOrNamedParams,
-        select: false,
-      });
-    } else {
-      this.joinImpl({
-        strategy: JoinStrategy.SQL,
-        type: JoinType.INNER,
-
-        targetAlias,
-        targetEntity,
-
-        sql: parentAliasOrSql as string,
-        namedParams: optionalParentFieldOrNamedParams as NamedParams,
-
-        select: false,
-      });
-    }
+    this.joinImpl(
+      conditionFn(
+        new JoinFactory(targetAlias, targetEntity, JoinType.INNER, false)
+      )
+    );
 
     return this as any;
   }
 
-  private joinImpl({
-    type,
-    select,
-    strategy,
-    targetAlias,
-    targetEntity,
-    parentAlias,
-    parentField,
-    sql,
-    namedParams,
-  }: JoinImplArgs): void {
+  private joinImpl(args: JoinImplArgs): void {
+    const { type, select, strategy, targetAlias, targetEntity } = args;
+
     if (this.sourcesContext[targetAlias]) {
       throw new Error(`Entity with alias ${targetAlias} is already joined in`);
     }
@@ -693,8 +624,8 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     switch (strategy) {
       case JoinStrategy.RELATION:
         this.joinViaRelation(
-          parentAlias!,
-          parentField!,
+          args.parentAlias,
+          args.parentField,
           targetAlias,
           targetEntity,
           select
@@ -705,11 +636,11 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
         this.joinViaSql(
           targetAlias,
           targetEntity,
-          sql!,
+          args.sql,
           select,
-          parentAlias,
-          parentField,
-          namedParams
+          args.parentAlias,
+          args.parentField,
+          args.namedParams
         );
     }
   }

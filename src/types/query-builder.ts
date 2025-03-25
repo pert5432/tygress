@@ -1,4 +1,7 @@
+import { JoinStrategy, JoinType } from "../enums";
 import { AnEntity } from "./entity";
+import { NamedParams } from "./named-params";
+import { WhereComparator } from "./where-comparator";
 
 export type QueryBuilderGenerics = {
   RootEntity: AnEntity;
@@ -36,3 +39,33 @@ export type SelectSourceKeys<S extends SelectSource> = S extends AnEntity
   : keyof S;
 
 export type Stringify<T> = T extends string ? T : never;
+
+export type JoinImplArgs = {
+  targetAlias: string;
+  targetEntity: AnEntity;
+
+  select: boolean;
+
+  type: JoinType;
+} & (
+  | {
+      strategy: JoinStrategy.RELATION;
+      parentAlias: string;
+      parentField: string;
+    }
+  | {
+      strategy: JoinStrategy.SQL;
+      sql: string;
+      namedParams?: NamedParams;
+      parentAlias?: string;
+      parentField?: string;
+    }
+  | {
+      strategy: JoinStrategy.COMPARISON;
+      leftAlias: string;
+      leftField: string;
+      comparator: WhereComparator;
+      rightAlias: string;
+      rightField: string;
+    }
+);
