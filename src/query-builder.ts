@@ -146,10 +146,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     alias: string,
     fieldName: string
   ): ColumnIdentifierSqlBuilder {
-    const source = this.sourcesContext[alias];
-    if (!source) {
-      throw new Error(`No select source found with alias ${alias}`);
-    }
+    const source = this.getSource(alias);
 
     switch (source.type) {
       case "entity":
@@ -678,17 +675,6 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     return this as any;
   }
 
-  public groupBy<
-    K extends keyof G["JoinedEntities"],
-    F extends SelectSourceKeys<G["JoinedEntities"][K]>
-  >(alias: K, field: F): this {
-    this.groupBys.push(
-      this.getColumnIdentifier(alias.toString(), field.toString())
-    );
-
-    return this;
-  }
-
   private joinImpl({
     type,
     select,
@@ -781,10 +767,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     nextEntity: AnEntity,
     select: boolean
   ): void {
-    const source = this.sourcesContext[parentAlias];
-    if (!source) {
-      throw new Error(`No select source found with alias ${parentAlias}`);
-    }
+    const source = this.getSource(parentAlias);
 
     if (source.type !== "entity") {
       throw new Error(
@@ -863,7 +846,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     return this as any;
   }
 
-  public joinViaComparison(
+  private joinViaComparison(
     parentAlias: string,
     parentField: string,
     comparator: WhereComparator,
@@ -895,6 +878,17 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
 
       type: nextSelectSource.type,
     });
+  }
+
+  public groupBy<
+    K extends keyof G["JoinedEntities"],
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>
+  >(alias: K, field: F): this {
+    this.groupBys.push(
+      this.getColumnIdentifier(alias.toString(), field.toString())
+    );
+
+    return this;
   }
 
   public limit(val: number): this {
