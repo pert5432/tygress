@@ -16,17 +16,10 @@ const main = async () => {
   });
 
   const builder = DB.queryBuilder("pet", Pets)
-    .join("usr", Users, (j) =>
-      j.sql("usr.id = pet.userId AND usr.fullName > LOWER(:name)", {
-        name: "asdasd",
-      })
-    )
-
     .with("u", (qb) => qb.from("asdf", Users).select("asdf", "id", "id"))
     .with("uu", (qb) => qb.from("u").select("u", "id", "id"))
-    .where("usr", "id", "<=", (qb) =>
-      qb.from("uu", Users).selectSQL("MAX(uu.id)", "id")
-    );
+
+    .join("asdasd", Users, (j) => j.relation("pet", "user"));
 
   const a = await builder.getEntities();
 

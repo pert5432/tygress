@@ -22,7 +22,7 @@ export type Update<
   UpdateValue extends Input[UpdateKey]
 > = Omit<Input, UpdateKey> & Record<UpdateKey, UpdateValue>;
 
-export type CteSelectSource = Record<string, any>;
+export type CteSelectSource = Record<string, any> & (new () => any);
 export type SelectSource = AnEntity | CteSelectSource;
 
 export type SelectSourceContext =
@@ -50,11 +50,13 @@ export type JoinImplArgs = {
 } & (
   | {
       strategy: JoinStrategy.RELATION;
+
       parentAlias: string;
       parentField: string;
     }
   | {
       strategy: JoinStrategy.SQL;
+
       sql: string;
       namedParams?: NamedParams;
       parentAlias?: string;
@@ -62,6 +64,7 @@ export type JoinImplArgs = {
     }
   | {
       strategy: JoinStrategy.COMPARISON;
+
       leftAlias: string;
       leftField: string;
       comparator: WhereComparator;
