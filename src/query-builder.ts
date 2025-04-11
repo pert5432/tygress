@@ -520,12 +520,15 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     targetAlias: A,
     CTEName: C,
     conditionFn: (
-      j: JoinFactory<
-        Update<
-          G,
-          "JoinedEntities",
-          G["JoinedEntities"] & Record<A, G["CTEs"][C]>
-        >
+      j: Omit<
+        JoinFactory<
+          Update<
+            G,
+            "JoinedEntities",
+            G["JoinedEntities"] & Record<A, G["CTEs"][C]>
+          >
+        >,
+        "relation"
       >
     ) => JoinImplArgs
   ): QueryBuilder<

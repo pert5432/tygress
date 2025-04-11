@@ -19,7 +19,7 @@ const main = async () => {
     .with("u", (qb) => qb.from("asdf", Users).select("asdf", "id", "id"))
     .with("uu", (qb) => qb.from("u").select("u", "id", "id"))
 
-    .join("asdf", "u", (j) => j.sql("asdf.id = :userId", { userId: 1 }))
+    .join("asdf", "u", (j) => j.on("asdf", "id", "<=", "pet", "userId"))
 
     .select("pet", "id")
     .select("asdf", "id");
