@@ -62,8 +62,7 @@ export class PostgresClient {
     }>(
       this,
       alias,
-      entity,
-      "entity",
+      { type: "entity", source: entity },
       { [alias]: { type: "entity", source: entity } } as any,
       paramBuilder
     );

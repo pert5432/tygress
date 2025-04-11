@@ -27,7 +27,7 @@ export type SelectSource = AnEntity | CteSelectSource;
 
 export type SelectSourceContext =
   | { type: "entity"; source: AnEntity }
-  | { type: "cte"; source: CteSelectSource };
+  | { type: "cte"; name: string; source: CteSelectSource };
 
 export type SelectSourceField<
   E extends SelectSource,
@@ -42,7 +42,7 @@ export type Stringify<T> = T extends string ? T : never;
 
 export type JoinImplArgs = {
   targetAlias: string;
-  targetEntity: AnEntity;
+  targetSelectSourceContext: SelectSourceContext;
 
   select: boolean;
 

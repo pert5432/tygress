@@ -19,9 +19,12 @@ const main = async () => {
     .with("u", (qb) => qb.from("asdf", Users).select("asdf", "id", "id"))
     .with("uu", (qb) => qb.from("u").select("u", "id", "id"))
 
-    .join("asdasd", Users, (j) => j.relation("pet", "user"));
+    .join("asdf", "u", (j) => j.sql("asdf.id = :userId", { userId: 1 }))
 
-  const a = await builder.getEntities();
+    .select("pet", "id")
+    .select("asdf", "id");
+
+  const a = await builder.getRaw();
 
   console.log(a);
 

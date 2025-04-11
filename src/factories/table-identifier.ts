@@ -74,7 +74,7 @@ export abstract class TableIdentifierSqlBuilderFactory {
         return this.createEntity(alias, source.source);
       case "cte":
         // Use the CTEs name as an alias
-        return this.createTablename(alias, alias);
+        return this.createTablename(alias, source.name);
     }
   }
 

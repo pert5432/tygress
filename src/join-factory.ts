@@ -1,30 +1,20 @@
 import { JoinStrategy, JoinType } from "./enums";
-import { AnEntity, WhereComparator } from "./types";
+import { WhereComparator } from "./types";
 import { NamedParams } from "./types/named-params";
 import {
   JoinImplArgs,
   QueryBuilderGenerics,
+  SelectSourceContext,
   SelectSourceKeys,
 } from "./types/query-builder";
 
 export class JoinFactory<G extends QueryBuilderGenerics> {
   constructor(
     private targetAlias: string,
-    private targetEntity: AnEntity,
+    private targetSelectSourceContext: SelectSourceContext,
     private type: JoinType,
     private select: boolean
   ) {}
-
-  private baseArgs() {
-    return {
-      type: this.type,
-
-      targetAlias: this.targetAlias,
-      targetEntity: this.targetEntity,
-
-      select: this.select,
-    };
-  }
 
   public relation<
     K extends keyof G["JoinedEntities"],
@@ -70,6 +60,17 @@ export class JoinFactory<G extends QueryBuilderGenerics> {
       comparator,
       rightAlias: rightAlias.toString(),
       rightField: rightField.toString(),
+    };
+  }
+
+  private baseArgs() {
+    return {
+      type: this.type,
+
+      targetAlias: this.targetAlias,
+      targetSelectSourceContext: this.targetSelectSourceContext,
+
+      select: this.select,
     };
   }
 }

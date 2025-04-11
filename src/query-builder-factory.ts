@@ -61,8 +61,7 @@ export class QueryBuilderFactory<G extends QueryBuilderGenerics> {
       return new QueryBuilder(
         this.client,
         alias,
-        entity,
-        "entity",
+        { type: "entity", source: entity },
         sourcesContext,
         this.paramBuilder
       ) as any;
@@ -82,8 +81,7 @@ export class QueryBuilderFactory<G extends QueryBuilderGenerics> {
     return new QueryBuilder(
       this.client,
       alias.toString(),
-      Object,
-      "cte",
+      { type: "cte", name: alias, source: Object },
       this.sourcesContext,
       this.paramBuilder
     ) as any;
