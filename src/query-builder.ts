@@ -27,6 +27,7 @@ import {
   TableIdentifierSqlBuilder,
 } from "./sql-builders/table-identifier";
 import {
+  FlattenSelectSources,
   QueryBuilderGenerics,
   SelectSource,
   SelectSourceContext,
@@ -43,17 +44,6 @@ import { Query } from "./types/query";
 import { QueryRunner } from "./query-runner";
 import { JoinImplArgs } from "./types/query-builder";
 import { JoinFactory } from "./join-factory";
-
-type FlattenSelectSources<
-  T extends { [key: string]: SelectSource },
-  K = keyof T
-> = K extends string
-  ? {
-      [F in SelectSourceKeys<T[K]> as F extends string
-        ? `${K}.${F}`
-        : never]: SelectSourceField<T[K], Stringify<F>>;
-    }
-  : never;
 
 export class QueryBuilder<G extends QueryBuilderGenerics> {
   private client: PostgresClient;

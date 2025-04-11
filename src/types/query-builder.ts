@@ -72,3 +72,14 @@ export type JoinImplArgs = {
       rightField: string;
     }
 );
+
+export type FlattenSelectSources<
+  T extends { [key: string]: SelectSource },
+  K = keyof T
+> = K extends string
+  ? {
+      [F in SelectSourceKeys<T[K]> as F extends string
+        ? `${K}.${F}`
+        : never]: SelectSourceField<T[K], Stringify<F>>;
+    }
+  : never;
