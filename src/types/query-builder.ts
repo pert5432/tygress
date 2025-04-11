@@ -16,12 +16,6 @@ export type SourcesContext<G extends QueryBuilderGenerics> = Record<
   SelectSourceContext
 >;
 
-export type Update<
-  Input extends QueryBuilderGenerics,
-  UpdateKey extends keyof Input,
-  UpdateValue extends Input[UpdateKey]
-> = Omit<Input, UpdateKey> & Record<UpdateKey, UpdateValue>;
-
 export type CteSelectSource = Record<string, any> & (new () => any);
 export type SelectSource = AnEntity | CteSelectSource;
 

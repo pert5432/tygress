@@ -20,9 +20,18 @@ const main = async () => {
     .with("uu", (qb) => qb.from("u").select("u", "id", "id"))
 
     .join("asdf", "u", (j) => j.on("asdf", "id", "<=", "pet", "userId"))
+    .join("asdf2", "u", (j) => j.on("asdf", "id", "<=", "pet", "userId"))
+    .join("asdf3", "u", (j) => j.on("asdf", "id", "<=", "pet", "userId"))
+    .join("asdf4", "u", (j) => j.on("asdf", "id", "<=", "pet", "userId"))
+    .join("asdf5", "u", (j) => j.on("asdf", "id", "<=", "pet", "userId"))
+    .join("asdf6", "u", (j) => j.on("asdf", "id", "<=", "pet", "userId"))
+    .join("asdf7", "u", (j) => j.on("asdf", "id", "<=", "pet", "userId"))
+    .join("asdf8", "u", (j) => j.on("asdf", "id", "<=", "pet", "userId"))
+    .join("asdf9", "u", (j) => j.on("asdf", "id", "<=", "pet", "userId"))
+    .join("asdf10", "u", (j) => j.on("asdf", "id", "<=", "pet", "userId"))
 
-    .select("pet", "id")
-    .select("asdf", "id");
+    .select("asdf", "id")
+    .select("pet", "userId");
 
   const a = await builder.getRaw();
 
