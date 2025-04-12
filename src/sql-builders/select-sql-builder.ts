@@ -122,11 +122,7 @@ export class SelectSqlBuilder<T extends AnEntity> {
 
     // Skip first node since its the root
     for (const join of this.args.joins.slice(1)) {
-      this.sqlJoins.push(
-        `INNER JOIN ${join.identifier.sql(
-          this.paramBuilder
-        )} ON ${join.comparison!.sql(this.paramBuilder)}`
-      );
+      this.sqlJoins.push(join.sql(this.paramBuilder));
 
       // Don't need to build target nodes if we aren't planning on returning entities
       if (!this.returningEntities()) {

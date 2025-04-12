@@ -2,6 +2,7 @@ import { JoinStrategy, JoinType, QueryResultType } from "./enums";
 import {
   ColumnIdentifierSqlBuilderFactory,
   ComparisonFactory,
+  JoinArgFactory,
   OrderByExpressionSqlBuilderFactory,
   SelectTargetSqlBuilderFactory,
   TableIdentifierSqlBuilderFactory,
@@ -74,7 +75,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
 
     // Set the first join to be the root entity
     this.joins = [
-      {
+      JoinArgFactory.create({
         alias,
         klass: selectSource.source,
         childType: selectSource.type,
@@ -82,7 +83,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
           alias,
           selectSource
         ),
-      },
+      }),
     ];
 
     this.paramBuilder = paramBuilder ?? new ParamBuilder();
@@ -653,20 +654,22 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
       relation
     );
 
-    this.joins.push({
-      alias: nextAlias,
-      klass: nextSource.source,
-      identifier: nextIdentifier,
+    this.joins.push(
+      JoinArgFactory.create({
+        alias: nextAlias,
+        klass: nextSource.source,
+        identifier: nextIdentifier,
 
-      type: args.type,
+        type: args.type,
 
-      parentAlias: parentAlias.toString(),
-      parentField: parentField.toString(),
-      comparison: comparison,
-      select: args.select,
+        parentAlias: parentAlias.toString(),
+        parentField: parentField.toString(),
+        comparison: comparison,
+        select: args.select,
 
-      childType: nextSource.type,
-    });
+        childType: nextSource.type,
+      })
+    );
   }
 
   private joinViaSql(
@@ -697,21 +700,23 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
       namedParams ?? {}
     );
 
-    this.joins.push({
-      alias: nextAlias,
-      klass: nextSource.source,
-      identifier: nextIdentifier,
+    this.joins.push(
+      JoinArgFactory.create({
+        alias: nextAlias,
+        klass: nextSource.source,
+        identifier: nextIdentifier,
 
-      type: args.type,
+        type: args.type,
 
-      comparison,
-      select,
+        comparison,
+        select,
 
-      parentAlias,
-      parentField,
+        parentAlias,
+        parentField,
 
-      childType: nextSource.type,
-    });
+        childType: nextSource.type,
+      })
+    );
   }
 
   private joinViaComparison(
@@ -729,23 +734,25 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     const parentIdentifier = this.getColumnIdentifier(leftAlias, leftField);
     const childIdentifier = this.getColumnIdentifier(rightAlias, rightField);
 
-    this.joins.push({
-      alias: rightAlias,
-      klass: nextSelectSource.source,
-      identifier: nextSelectSourceIdentifier,
+    this.joins.push(
+      JoinArgFactory.create({
+        alias: rightAlias,
+        klass: nextSelectSource.source,
+        identifier: nextSelectSourceIdentifier,
 
-      type: args.type,
+        type: args.type,
 
-      comparison: ComparisonFactory.createColColIdentifiers(
-        parentIdentifier,
-        comparator,
-        childIdentifier
-      ),
+        comparison: ComparisonFactory.createColColIdentifiers(
+          parentIdentifier,
+          comparator,
+          childIdentifier
+        ),
 
-      select: args.select,
+        select: args.select,
 
-      childType: nextSelectSource.type,
-    });
+        childType: nextSelectSource.type,
+      })
+    );
   }
 
   public groupBy<

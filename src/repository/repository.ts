@@ -503,18 +503,18 @@ export abstract class Repository {
         relation
       );
 
-      const nextJoinArg = JoinArgFactory.create(
-        parentNode.alias,
-        key,
-        inverseTable,
-        nextJoinArgAlias,
-        TableIdentifierSqlBuilderFactory.createEntity(
+      const nextJoinArg = JoinArgFactory.create({
+        parentAlias: parentNode.alias,
+        parentField: key,
+        klass: inverseTable,
+        alias: nextJoinArgAlias,
+        identifier: TableIdentifierSqlBuilderFactory.createEntity(
           nextJoinArgAlias,
           inverseTable
         ),
         comparison,
-        "entity"
-      );
+        childType: "entity",
+      });
 
       joinsResult.push(nextJoinArg);
 
