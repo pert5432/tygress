@@ -1,5 +1,5 @@
 import { JoinStrategy, JoinType } from "./enums";
-import { WhereComparator } from "./types";
+import { AnEntity, WhereComparator } from "./types";
 import { NamedParams } from "./types/named-params";
 import {
   JoinImplArgs,
@@ -9,12 +9,19 @@ import {
 } from "./types/query-builder";
 
 export class JoinFactory<G extends QueryBuilderGenerics> {
+  private targetSelectSourceContext: SelectSourceContext;
+
   constructor(
     private targetAlias: string,
-    private targetSelectSourceContext: SelectSourceContext,
+    targetEntityOrCTE: AnEntity | string,
     private type: JoinType,
     private select: boolean
-  ) {}
+  ) {
+    this.targetSelectSourceContext =
+      typeof targetEntityOrCTE === "string"
+        ? { type: "cte", name: targetEntityOrCTE, source: Object }
+        : { type: "entity", source: targetEntityOrCTE };
+  }
 
   public relation<
     K extends keyof G["JoinedEntities"],
