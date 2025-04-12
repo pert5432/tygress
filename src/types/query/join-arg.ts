@@ -1,3 +1,4 @@
+import { JoinType } from "../../enums";
 import {
   ComparisonSqlBuilder,
   TableIdentifierSqlBuilder,
@@ -8,7 +9,10 @@ export class JoinArg {
   klass: AnEntity;
   alias: string;
 
-  type: "entity" | "cte";
+  // Undefined for root node
+  type?: JoinType;
+
+  childType: "entity" | "cte";
 
   identifier: TableIdentifierSqlBuilder;
 

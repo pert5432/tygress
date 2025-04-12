@@ -77,7 +77,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
       {
         alias,
         klass: selectSource.source,
-        type: selectSource.type,
+        childType: selectSource.type,
         identifier: TableIdentifierSqlBuilderFactory.createSelectSourceContext(
           alias,
           selectSource
@@ -568,8 +568,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   }
 
   private joinImpl(args: JoinImplArgs): void {
-    const { type, select, strategy, targetAlias, targetSelectSourceContext } =
-      args;
+    const { strategy, targetAlias, targetSelectSourceContext } = args;
 
     if (this.sourcesContext[targetAlias]) {
       throw new Error(`Entity with alias ${targetAlias} is already joined in`);
@@ -591,111 +590,47 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     switch (strategy) {
       case JoinStrategy.RELATION:
         this.joinViaRelation(
-          args.parentAlias,
-          args.parentField,
+          args,
 
           targetAlias,
           nextSource,
-          nextIdentifier,
-
-          select
+          nextIdentifier
         );
         break;
 
       case JoinStrategy.SQL:
-        this.joinViaSql(
-          targetAlias,
-          nextSource,
-          nextIdentifier,
-
-          args.sql,
-
-          select,
-
-          args.namedParams,
-
-          args.parentAlias,
-          args.parentField
-        );
+        this.joinViaSql(args, targetAlias, nextSource, nextIdentifier);
         break;
 
       case JoinStrategy.COMPARISON:
         this.joinViaComparison(
-          args.leftAlias.toString(),
-          args.leftField.toString(),
-          args.comparator,
-          args.rightAlias.toString(),
-          args.rightField.toString(),
+          args,
 
           nextSource,
-          nextIdentifier,
-
-          false
+          nextIdentifier
         );
         break;
     }
   }
 
-  private joinViaSql(
+  private joinViaRelation(
+    args: JoinImplArgs,
+
     nextAlias: string,
     nextSource: SelectSourceContext,
-    nextIdentifier: TableIdentifierSqlBuilder,
-
-    sql: string,
-
-    select: boolean,
-
-    namedParams?: NamedParams,
-
-    parentAlias?: string,
-    parentField?: string
+    nextIdentifier: TableIdentifierSqlBuilder
   ): void {
-    if (select && !(parentAlias?.length && parentField?.length)) {
-      throw new Error(
-        `SQL join needs parent alias and parent field with select set to true`
-      );
+    if (args.strategy !== JoinStrategy.RELATION) {
+      throw new Error(`Join strategy needs to be ${JoinStrategy.RELATION}`);
     }
 
-    const targetSql = PseudoSQLReplacer.replaceIdentifiers(
-      sql,
-      this.sourcesContext
-    );
-
-    const comparison = ComparisonFactory.createSql(
-      targetSql,
-      namedParams ?? {}
-    );
-
-    this.joins.push({
-      alias: nextAlias,
-      klass: nextSource.source,
-      identifier: nextIdentifier,
-
-      comparison,
-      select,
-
-      parentAlias,
-      parentField,
-
-      type: nextSource.type,
-    });
-  }
-
-  private joinViaRelation(
-    parentAlias: string,
-    parentField: string,
-
-    nextAlias: string,
-    nextSource: SelectSourceContext,
-    nextIdentifier: TableIdentifierSqlBuilder,
-
-    select: boolean
-  ): void {
     if (nextSource.type !== "entity") {
       throw new Error(
         `Select source with alias ${nextAlias} needs to be an entity but is ${nextSource.type}`
       );
     }
+
+    const { parentAlias, parentField } = args;
 
     const parentSource = this.getSource(parentAlias);
     if (parentSource.type !== "entity") {
@@ -723,44 +658,93 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
       klass: nextSource.source,
       identifier: nextIdentifier,
 
+      type: args.type,
+
       parentAlias: parentAlias.toString(),
       parentField: parentField.toString(),
       comparison: comparison,
+      select: args.select,
+
+      childType: nextSource.type,
+    });
+  }
+
+  private joinViaSql(
+    args: JoinImplArgs,
+    nextAlias: string,
+    nextSource: SelectSourceContext,
+    nextIdentifier: TableIdentifierSqlBuilder
+  ): void {
+    if (args.strategy !== JoinStrategy.SQL) {
+      throw new Error(`Join strategy needs to be ${JoinStrategy.SQL}`);
+    }
+
+    const { sql, select, namedParams, parentAlias, parentField } = args;
+
+    if (select && !(parentAlias?.length && parentField?.length)) {
+      throw new Error(
+        `SQL join needs parent alias and parent field with select set to true`
+      );
+    }
+
+    const targetSql = PseudoSQLReplacer.replaceIdentifiers(
+      sql,
+      this.sourcesContext
+    );
+
+    const comparison = ComparisonFactory.createSql(
+      targetSql,
+      namedParams ?? {}
+    );
+
+    this.joins.push({
+      alias: nextAlias,
+      klass: nextSource.source,
+      identifier: nextIdentifier,
+
+      type: args.type,
+
+      comparison,
       select,
 
-      type: nextSource.type,
+      parentAlias,
+      parentField,
+
+      childType: nextSource.type,
     });
   }
 
   private joinViaComparison(
-    leftAlias: string,
-    leftField: string,
-    comparator: WhereComparator,
-    rightAlias: string,
-    rightField: string,
+    args: JoinImplArgs,
 
     nextSelectSource: SelectSourceContext,
-    nextSelectSourceIdentifier: TableIdentifierSqlBuilder,
-
-    select: boolean
+    nextSelectSourceIdentifier: TableIdentifierSqlBuilder
   ): void {
+    if (args.strategy !== JoinStrategy.COMPARISON) {
+      throw new Error(`Join strategy needs to be ${JoinStrategy.COMPARISON}`);
+    }
+
+    const { leftAlias, leftField, comparator, rightAlias, rightField } = args;
+
     const parentIdentifier = this.getColumnIdentifier(leftAlias, leftField);
     const childIdentifier = this.getColumnIdentifier(rightAlias, rightField);
 
     this.joins.push({
       alias: rightAlias,
       klass: nextSelectSource.source,
-
       identifier: nextSelectSourceIdentifier,
+
+      type: args.type,
 
       comparison: ComparisonFactory.createColColIdentifiers(
         parentIdentifier,
         comparator,
         childIdentifier
       ),
-      select,
 
-      type: nextSelectSource.type,
+      select: args.select,
+
+      childType: nextSelectSource.type,
     });
   }
 

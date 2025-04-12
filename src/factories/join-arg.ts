@@ -13,7 +13,7 @@ export abstract class JoinArgFactory {
     alias: string,
     identifier: TableIdentifierSqlBuilder,
     comparison: ComparisonSqlBuilder,
-    type: "entity" | "cte"
+    childType: "entity" | "cte"
   ): JoinArg {
     const e = new JoinArg();
 
@@ -26,7 +26,7 @@ export abstract class JoinArgFactory {
 
     e.comparison = comparison;
 
-    e.type = type;
+    e.childType = childType;
 
     return e;
   }
@@ -35,7 +35,7 @@ export abstract class JoinArgFactory {
     entity: T,
     alias: string,
     identifier: TableIdentifierSqlBuilder,
-    type: "entity" | "cte"
+    childType: "entity" | "cte"
   ): JoinArg {
     const e = new JoinArg();
 
@@ -43,7 +43,7 @@ export abstract class JoinArgFactory {
     e.alias = alias;
     e.identifier = identifier;
 
-    e.type = type;
+    e.childType = childType;
 
     return e;
   }
