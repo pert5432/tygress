@@ -52,6 +52,20 @@ export abstract class QueryResultEntitiesParser {
         for (const node of path) {
           const ids = node.idKeys.map((key) => row[key]);
           const fullIdPath = ids.join("-");
+          const parentsIdPath = ids.slice(0, -1).join("-");
+
+          // Ensure array of entities by parent path
+          if (
+            ids.length > 1 &&
+            !node.entitiesByParentsIdPath.get(parentsIdPath)
+          ) {
+            node.entitiesByParentsIdPath.set(parentsIdPath, []);
+          }
+
+          // Id of this node is null in this row
+          if (ids[ids.length - 1] === null) {
+            continue;
+          }
 
           // Stop processing this path if the exact entity exists in the path already
           if (node.entityByIdPath.has(fullIdPath)) {
@@ -75,15 +89,8 @@ export abstract class QueryResultEntitiesParser {
           node.entityByIdPath.set(fullIdPath, e);
 
           // Add entity to array for a parent entity
-          const parentsIdPath = ids.slice(0, -1).join("-");
-          const entitiesByParents =
-            node.entitiesByParentsIdPath.get(parentsIdPath);
-
-          if (entitiesByParents) {
-            entitiesByParents.push(e);
-          } else {
-            node.entitiesByParentsIdPath.set(parentsIdPath, [e]);
-          }
+          // Can afford to ! because the array got created before
+          node.entitiesByParentsIdPath.get(parentsIdPath)!.push(e);
         }
       }
     }
