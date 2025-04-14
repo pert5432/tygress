@@ -3,6 +3,7 @@ import { beforeAll, describe, expect, test } from "vitest";
 import { Users } from "../entities/users";
 import { TestHelper } from "../helpers";
 import { Pets } from "../entities/pets";
+import { In, Lte } from "../../api";
 
 describe("QueryBuilder", async () => {
   const user1 = {
@@ -103,8 +104,6 @@ describe("QueryBuilder", async () => {
 
       .getRaw();
 
-    console.log(res);
-
     expect(res).toHaveLength(3);
 
     expect(res).toEqual([
@@ -124,5 +123,68 @@ describe("QueryBuilder", async () => {
         birthdate: new Date("2020-01-01T00:00:00.000Z"),
       },
     ]);
+  });
+
+  describe("wheres", async () => {
+    test("simple", async () => {
+      const res = await TEST_DB.queryBuilder("u", Users)
+        .where("u", "firstName", ">", "u", "lastName")
+        .getEntities();
+
+      expect(res).toHaveLength(2);
+
+      TestHelper.validateObject(res[0]!, user1);
+      TestHelper.validateObject(res[1]!, user2);
+
+      const res2 = await TEST_DB.queryBuilder("u", Users)
+        .where("u", "firstName", "<", "u", "lastName")
+        .getEntities();
+
+      expect(res2).toHaveLength(0);
+    });
+
+    test("condition", async () => {
+      const res = await TEST_DB.queryBuilder("u", Users)
+        .where("u", "username", In(["JohnDoe", "JohnJoe", "DoeJones"]))
+        .getEntities();
+
+      expect(res).toHaveLength(1);
+
+      TestHelper.validateObject(res[0]!, user1);
+
+      const res2 = await TEST_DB.queryBuilder("u", Users)
+        .where("u", "username", Lte("B"))
+        .getEntities();
+
+      expect(res2).toHaveLength(1);
+
+      TestHelper.validateObject(res2[0]!, user2);
+    });
+
+    test("sql", async () => {
+      const res = await TEST_DB.queryBuilder("u", Users)
+        .where("LOWER(u.username) = :username", { username: "johndoe" })
+        .getEntities();
+
+      expect(res).toHaveLength(1);
+
+      TestHelper.validateObject(res[0]!, user1);
+    });
+
+    test("subquery", async () => {
+      const res = await TEST_DB.queryBuilder("u", Users)
+        .where("u", "username", ">", (qb) =>
+          qb
+            .from("a", Users)
+            .select("a", "username")
+            .orderBy("a", "username")
+            .limit(1)
+        )
+        .getEntities();
+
+      expect(res).toHaveLength(1);
+
+      TestHelper.validateObject(res[0]!, user1);
+    });
   });
 });
