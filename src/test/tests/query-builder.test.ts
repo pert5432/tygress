@@ -24,6 +24,7 @@ describe("QueryBuilder", async () => {
   };
 
   const user2 = {
+    id: "406b635b-508e-4824-855d-fb71d77bcdac",
     firstName: "Kyriakos",
     lastName: "Grizzly",
     username: "AAAAAAAAAAA",
@@ -67,5 +68,61 @@ describe("QueryBuilder", async () => {
 
     expect(res[0]!.pets).toHaveLength(0);
     expect(res[1]!.pets).toHaveLength(2);
+  });
+
+  test("explicit join", async () => {
+    const res = await TEST_DB.queryBuilder("u", Users)
+      .innerJoin("p", Pets, (j) => j.on("p", "userId", "=", "u", "id"))
+      .getEntities();
+
+    expect(res).toHaveLength(1);
+
+    TestHelper.validateObject(res[0]!, user1);
+  });
+
+  test("sql join", async () => {
+    const res = await TEST_DB.queryBuilder("u", Users)
+      .innerJoin("p", Pets, (j) => j.sql("p.userId = u.id"))
+      .getEntities();
+
+    expect(res).toHaveLength(1);
+
+    TestHelper.validateObject(res[0]!, user1);
+  });
+
+  test("explicit selects", async () => {
+    const res = await TEST_DB.queryBuilder("u", Users)
+      .leftJoin("p", Pets, (j) => j.relation("u", "pets"))
+
+      .select("p", "name", "pet_name")
+      .select("u", "id", "user_id")
+      .select("u", "birthdate", "birthdate")
+
+      .orderBy("u", "username", "ASC")
+      .orderBy("p", "name")
+
+      .getRaw();
+
+    console.log(res);
+
+    expect(res).toHaveLength(3);
+
+    expect(res).toEqual([
+      {
+        pet_name: null,
+        user_id: "406b635b-508e-4824-855d-fb71d77bcdac",
+        birthdate: null,
+      },
+      {
+        pet_name: "Moofis",
+        user_id: "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+        birthdate: new Date("2020-01-01T00:00:00.000Z"),
+      },
+      {
+        pet_name: "Pootis",
+        user_id: "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+        birthdate: new Date("2020-01-01T00:00:00.000Z"),
+      },
+    ]);
   });
 });

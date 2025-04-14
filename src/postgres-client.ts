@@ -36,6 +36,35 @@ export class PostgresClient {
     });
   }
 
+  public instantiate<T extends AnEntity>(
+    entity: T,
+    payload: Partial<InstanceType<T>>
+  ): InstanceType<T>;
+
+  public instantiate<T extends AnEntity>(
+    entity: T,
+    payload: Partial<InstanceType<T>>[]
+  ): InstanceType<T>[];
+
+  public instantiate<T extends AnEntity>(
+    entity: T,
+    payload: Partial<InstanceType<T>> | Partial<InstanceType<T>>[]
+  ): T | T[] {
+    const createMultiple = Array.isArray(payload);
+
+    const entities = (createMultiple ? payload : [payload]).map((p) => {
+      const e = new entity();
+
+      for (const [key, value] of Object.entries(p)) {
+        e[key] = value;
+      }
+
+      return e;
+    });
+
+    return createMultiple ? entities : entities[0];
+  }
+
   public async withConnection<T>(
     fn: (connection: ConnectionWrapper) => T
   ): Promise<T> {
