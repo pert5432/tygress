@@ -187,4 +187,83 @@ describe("QueryBuilder", async () => {
       TestHelper.validateObject(res[0]!, user1);
     });
   });
+
+  test("select sql", async () => {
+    const res = await TEST_DB.queryBuilder("u", Users)
+      .selectSQL("LOWER(u.username)", "username")
+      .orderBy("u", "username")
+      .getRaw();
+
+    expect(res).toEqual([
+      { username: user2.username.toLowerCase() },
+      { username: user1.username.toLowerCase() },
+    ]);
+  });
+
+  test("select *", async () => {
+    const res = await TEST_DB.queryBuilder("u", Users)
+      .select("u", "*")
+      .orderBy("u", "username")
+      .getRaw();
+
+    expect(res).toEqual([
+      {
+        "u.id": "406b635b-508e-4824-855d-fb71d77bcdac",
+        "u.firstName": "Kyriakos",
+        "u.lastName": "Grizzly",
+        "u.username": "AAAAAAAAAAA",
+        "u.birthdate": null,
+      },
+      {
+        "u.id": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+        "u.firstName": "John",
+        "u.lastName": "Doe",
+        "u.username": "JohnDoe",
+        "u.birthdate": new Date("2020-01-01T00:00:00.000Z"),
+      },
+    ]);
+  });
+
+  describe("CTEs", async () => {
+    test("where", async () => {
+      const res = await TEST_DB.queryBuilder("u", Users)
+        .with("p", (qb) => qb.from("pet", Pets).select("pet", "userId", "uid"))
+
+        .where("u", "id", "IN", (qb) => qb.from("p").select("p", "uid"))
+
+        .getEntities();
+
+      expect(res).toHaveLength(1);
+
+      TestHelper.validateObject(res[0]!, user1);
+    });
+
+    test("join", async () => {
+      const res = await TEST_DB.queryBuilder("u", Users)
+        .with("p", (qb) => qb.from("pet", Pets).select("pet", "userId", "uid"))
+
+        .innerJoin("pu", "p", (j) => j.on("pu", "uid", "=", "u", "id"))
+
+        .getRaw();
+
+      expect(res).toHaveLength(2);
+
+      expect(res).toEqual([
+        {
+          "u.id": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+          "u.firstName": "John",
+          "u.lastName": "Doe",
+          "u.username": "JohnDoe",
+          "u.birthdate": new Date("2020-01-01T00:00:00.000Z"),
+        },
+        {
+          "u.id": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+          "u.firstName": "John",
+          "u.lastName": "Doe",
+          "u.username": "JohnDoe",
+          "u.birthdate": new Date("2020-01-01T00:00:00.000Z"),
+        },
+      ]);
+    });
+  });
 });
