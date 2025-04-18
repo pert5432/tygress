@@ -74,12 +74,12 @@ export class SelectSqlBuilder<T extends AnEntity> {
       sql += ` WHERE ${this.whereConditions.join(" AND ")}`;
     }
 
-    if (this.args.orderBys?.length) {
-      sql += ` ORDER BY ${this.args.orderBys.map((e) => e.sql()).join(", ")}`;
-    }
-
     if (this.args.groupBys?.length) {
       sql += ` GROUP BY ${this.args.groupBys.map((e) => e.sql()).join(", ")}`;
+    }
+
+    if (this.args.orderBys?.length) {
+      sql += ` ORDER BY ${this.args.orderBys.map((e) => e.sql()).join(", ")}`;
     }
 
     if (this.args.limit) {
