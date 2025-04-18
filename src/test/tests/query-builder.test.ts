@@ -281,4 +281,67 @@ describe("QueryBuilder", async () => {
       { username: user1.username, count: 2 },
     ]);
   });
+
+  test("limit", async () => {
+    const res = await TEST_DB.queryBuilder("u", Users)
+      .orderBy("u", "username")
+      .limit(1)
+      .getRaw();
+
+    expect(res).toEqual([
+      {
+        "u.id": "406b635b-508e-4824-855d-fb71d77bcdac",
+        "u.firstName": "Kyriakos",
+        "u.lastName": "Grizzly",
+        "u.username": "AAAAAAAAAAA",
+        "u.birthdate": null,
+      },
+    ]);
+
+    const res2 = await TEST_DB.queryBuilder("u", Users)
+      .orderBy("u", "username")
+      .limit(20)
+      .getRaw();
+
+    expect(res2).toEqual([
+      {
+        "u.id": "406b635b-508e-4824-855d-fb71d77bcdac",
+        "u.firstName": "Kyriakos",
+        "u.lastName": "Grizzly",
+        "u.username": "AAAAAAAAAAA",
+        "u.birthdate": null,
+      },
+      {
+        "u.id": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+        "u.firstName": "John",
+        "u.lastName": "Doe",
+        "u.username": "JohnDoe",
+        "u.birthdate": new Date("2020-01-01T00:00:00.000Z"),
+      },
+    ]);
+  });
+
+  test("offset", async () => {
+    const res = await TEST_DB.queryBuilder("u", Users)
+      .orderBy("u", "username")
+      .offset(1)
+      .getRaw();
+
+    expect(res).toEqual([
+      {
+        "u.id": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+        "u.firstName": "John",
+        "u.lastName": "Doe",
+        "u.username": "JohnDoe",
+        "u.birthdate": new Date("2020-01-01T00:00:00.000Z"),
+      },
+    ]);
+
+    const res2 = await TEST_DB.queryBuilder("u", Users)
+      .orderBy("u", "username")
+      .offset(5)
+      .getRaw();
+
+    expect(res2).toEqual([]);
+  });
 });
