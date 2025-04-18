@@ -266,4 +266,19 @@ describe("QueryBuilder", async () => {
       ]);
     });
   });
+
+  test("groupBy", async () => {
+    const res = await TEST_DB.queryBuilder("u", Users)
+      .leftJoin("p", Pets, (j) => j.relation("u", "pets"))
+      .selectSQL("COUNT(p.id)::INT", "count")
+      .select("u", "username", "username")
+      .orderBy("u", "username")
+      .groupBy("u", "username")
+      .getRaw();
+
+    expect(res).toEqual([
+      { username: user2.username, count: 0 },
+      { username: user1.username, count: 2 },
+    ]);
+  });
 });
