@@ -99,7 +99,7 @@ export class PostgresClient {
   public async select<T extends AnEntity>(
     entity: T,
     args: SelectArgs<InstanceType<T>>
-  ): Promise<T[]> {
+  ): Promise<InstanceType<T>[]> {
     return this.withConnection((conn) => Repository.select(conn, entity, args));
   }
 
