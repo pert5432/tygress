@@ -639,15 +639,23 @@ export abstract class Repository {
             )
           );
         } else {
+          const nextNode = parentNode.relations[key];
+
+          if (!nextNode) {
+            throw new Error(
+              `No join node for ${parentTableMeta.klass.name}, field name ${key}`
+            );
+          }
+
           selectsResult.push(
-            ...parentTableMeta.columnsSelectableByDefault.map((column) =>
+            ...nextNode.entityMeta.columnsSelectableByDefault.map((column) =>
               SelectTargetSqlBuilderFactory.createColumnIdentifier(
                 ColumnIdentifierSqlBuilderFactory.createColumnMeta(
-                  parentNode.alias,
+                  nextNode.alias,
                   column
                 ),
-                `${parentNode.alias}.${column.fieldName}`,
-                parentNode.alias,
+                `${nextNode.alias}.${column.fieldName}`,
+                nextNode.alias,
                 column.fieldName
               )
             )
