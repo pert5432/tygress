@@ -16,7 +16,7 @@ export class Users {
   username: string;
 
   @Column("birthdate")
-  birthdate: Date;
+  birthdate: Date | null;
 
   @OneToMany(Pets, "user")
   pets: Pets[];
