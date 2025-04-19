@@ -27,7 +27,7 @@ import {
 } from "../sql-builders";
 import { JoinNodeFactory } from "../factories/repository";
 import { JoinNode } from ".";
-import { QueryResultType } from "../enums";
+import { JoinType, QueryResultType } from "../enums";
 import { OrderByExpressionSqlBuilder } from "../sql-builders/order-by-expression";
 import { ConnectionWrapper } from "../connection-wrapper";
 import { InsertSqlBuilder } from "../sql-builders/insert-sql-builder";
@@ -514,6 +514,7 @@ export abstract class Repository {
         ),
         comparison,
         childType: "entity",
+        type: JoinType.LEFT,
       });
 
       joinsResult.push(nextJoinArg);
