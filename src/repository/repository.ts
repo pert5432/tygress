@@ -593,7 +593,9 @@ export abstract class Repository {
               parentNode.alias,
               column
             ),
-            `${parentNode.alias}.${column.fieldName}`
+            `${parentNode.alias}.${column.fieldName}`,
+            parentNode.alias,
+            column.fieldName
           )
         )
       );
@@ -630,7 +632,9 @@ export abstract class Repository {
                 parentNode.alias,
                 column
               ),
-              `${parentNode.alias}.${column.fieldName}`
+              `${parentNode.alias}.${column.fieldName}`,
+              parentNode.alias,
+              column.fieldName
             )
           );
         } else {
@@ -641,7 +645,9 @@ export abstract class Repository {
                   parentNode.alias,
                   column
                 ),
-                `${parentNode.alias}.${column.fieldName}`
+                `${parentNode.alias}.${column.fieldName}`,
+                parentNode.alias,
+                column.fieldName
               )
             )
           );
