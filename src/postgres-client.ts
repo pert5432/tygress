@@ -154,6 +154,6 @@ export class PostgresClient {
     sql: string,
     params?: any[]
   ): Promise<QueryResult<T>> {
-    return this.withConnection((conn) => conn.$client.query(sql, params ?? []));
+    return this.withConnection((conn) => conn.query(sql, params ?? []));
   }
 }
