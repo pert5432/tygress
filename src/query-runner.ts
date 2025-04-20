@@ -9,9 +9,6 @@ export class QueryRunner {
   ) {}
 
   public async run(): Promise<QueryResult> {
-    console.log(this.sql);
-    console.log(this.params);
-
     return this.client.query(this.sql, this.params);
   }
 }
