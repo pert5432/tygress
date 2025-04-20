@@ -16,7 +16,6 @@ describe("connection", async () => {
   test("sets config in withConnection", async () => {
     await TEST_DB.withConnection(
       {
-        logging: { collectSql: true },
         postgresConfig: { work_mem: "512MB" },
       },
       (conn) => {

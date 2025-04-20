@@ -21,16 +21,21 @@ export type PostgresClientOptions = {
   maxConnectionPoolSize?: number;
   ssl?: ClientConfig["ssl"];
 
+  defaultConnectionOptions?: PostgresConnectionOptions;
+
   entities: AnEntity[];
 };
 
 export class PostgresClient {
   private pool: Pool;
 
+  private defaultConnectionSettings?: PostgresConnectionOptions;
+
   constructor({
     databaseUrl,
     maxConnectionPoolSize,
     ssl,
+    defaultConnectionOptions,
     entities,
   }: PostgresClientOptions) {
     this.pool = new Pool({
@@ -38,6 +43,8 @@ export class PostgresClient {
       ssl,
       max: maxConnectionPoolSize ?? 20,
     });
+
+    this.defaultConnectionSettings = defaultConnectionOptions;
   }
 
   public instantiate<T extends AnEntity>(
@@ -72,7 +79,10 @@ export class PostgresClient {
   public async getConnection(
     settings?: PostgresConnectionOptions
   ): Promise<PostgresConnection> {
-    return new PostgresConnection(await this.pool.connect(), settings);
+    return new PostgresConnection(
+      await this.pool.connect(),
+      this.connectionSettings(settings)
+    );
   }
 
   public async withConnection<T>(
@@ -180,5 +190,23 @@ export class PostgresClient {
     params?: any[]
   ): Promise<QueryResult<T>> {
     return this.withConnection((conn) => conn.query(sql, params ?? []));
+  }
+
+  //
+  // PRIVATE
+  //
+  private connectionSettings(
+    options?: PostgresConnectionOptions
+  ): PostgresConnectionOptions | undefined {
+    if (!options) {
+      return this.defaultConnectionSettings;
+    }
+
+    return {
+      logging: options.logging ?? this.defaultConnectionSettings?.logging,
+      postgresConfig:
+        options.postgresConfig ??
+        this.defaultConnectionSettings?.postgresConfig,
+    };
   }
 }
