@@ -1,6 +1,5 @@
 import { ClientConfig, Pool, QueryResult } from "pg";
 import { AnEntity, SelectArgs, Wheres } from "./types";
-import { Repository } from "./repository";
 import {
   PostgresConnection,
   PostgresConnectionOptions,
@@ -136,7 +135,7 @@ export class PostgresClient {
     entity: T,
     args: SelectArgs<InstanceType<T>>
   ): Promise<InstanceType<T>[]> {
-    return this.withConnection((conn) => Repository.select(conn, entity, args));
+    return this.withConnection((conn) => conn.select(entity, args));
   }
 
   public async insert<
@@ -150,7 +149,7 @@ export class PostgresClient {
     options?: InsertOptions<T, ReturnedFields, ConflictFields, UpdateFields>
   ): Promise<InsertResult<T>> {
     return this.withConnection((conn) =>
-      Repository.insert(conn, entity, values, options ?? {})
+      conn.insert(entity, values, options ?? {})
     );
   }
 
@@ -164,7 +163,7 @@ export class PostgresClient {
     options?: UpdateOptions<T, ReturnedFields>
   ): Promise<UpdateResult<T>> {
     return this.withConnection((conn) =>
-      Repository.update(conn, entity, values, where ?? {}, options ?? {})
+      conn.update(entity, values, where ?? {}, options ?? {})
     );
   }
 
@@ -177,7 +176,7 @@ export class PostgresClient {
     options?: DeleteOptions<T, ReturnedFields>
   ): Promise<DeleteResult<T>> {
     return this.withConnection((conn) =>
-      Repository.delete(conn, entity, where ?? {}, options ?? {})
+      conn.delete(entity, where ?? {}, options ?? {})
     );
   }
 
