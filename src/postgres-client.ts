@@ -1,7 +1,7 @@
 import { ClientConfig, Pool, QueryResult } from "pg";
 import { AnEntity, SelectArgs, Wheres } from "./types";
 import { Repository } from "./repository";
-import { ConnectionWrapper } from "./connection-wrapper";
+import { PostgresConnection } from "./postgres-connection";
 import { ParamBuilder } from "./sql-builders";
 import { QueryBuilder } from "./query-builder";
 import { InsertPayload } from "./types/insert-payload";
@@ -12,6 +12,7 @@ import { DeleteResult } from "./types/delete-result";
 import { UpdateOptions } from "./types/update-options";
 import { UpdateResult } from "./types/update-result";
 
+// TODO: move to types folder
 export type PostgresClientOptions = {
   databaseUrl: string;
   maxConnectionPoolSize?: number;
@@ -66,14 +67,14 @@ export class PostgresClient {
   }
 
   public async withConnection<T>(
-    fn: (connection: ConnectionWrapper) => T
+    fn: (connection: PostgresConnection) => T
   ): Promise<T> {
-    const connection = new ConnectionWrapper(await this.pool.connect());
+    const connection = new PostgresConnection(await this.pool.connect());
 
     try {
       return fn(connection);
     } finally {
-      connection.client.release();
+      connection.release();
     }
   }
 
@@ -149,6 +150,6 @@ export class PostgresClient {
     sql: string,
     params?: any[]
   ): Promise<QueryResult<T>> {
-    return this.withConnection((conn) => conn.client.query(sql, params ?? []));
+    return this.withConnection((conn) => conn.$client.query(sql, params ?? []));
   }
 }

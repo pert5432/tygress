@@ -29,7 +29,7 @@ import { JoinNodeFactory } from "../factories/repository";
 import { JoinNode } from ".";
 import { JoinType, QueryResultType } from "../enums";
 import { OrderByExpressionSqlBuilder } from "../sql-builders/order-by-expression";
-import { ConnectionWrapper } from "../connection-wrapper";
+import { PostgresConnection } from "../postgres-connection";
 import { InsertSqlBuilder } from "../sql-builders/insert-sql-builder";
 import { InsertPayload } from "../types/insert-payload";
 import { QueryRunner } from "../query-runner";
@@ -47,7 +47,7 @@ export abstract class Repository {
     ConflictFields extends keyof InstanceType<T>,
     UpdateFields extends keyof InstanceType<T>
   >(
-    client: ConnectionWrapper,
+    client: PostgresConnection,
     entity: T,
     values: InsertPayload<T>[],
     {
@@ -136,7 +136,7 @@ export abstract class Repository {
     T extends AnEntity,
     ReturnedFields extends keyof InstanceType<T>
   >(
-    client: ConnectionWrapper,
+    client: PostgresConnection,
     entity: T,
     values: Partial<InstanceType<T>>,
     where: Wheres<InstanceType<T>>,
@@ -196,7 +196,7 @@ export abstract class Repository {
     T extends AnEntity,
     ReturnedFields extends keyof InstanceType<T>
   >(
-    client: ConnectionWrapper,
+    client: PostgresConnection,
     entity: T,
     where: Wheres<InstanceType<T>>,
     { returning }: DeleteOptions<T, ReturnedFields>
@@ -236,7 +236,7 @@ export abstract class Repository {
   }
 
   public static async select<T extends AnEntity>(
-    client: ConnectionWrapper,
+    client: PostgresConnection,
     entity: T,
     args: SelectArgs<InstanceType<T>>
   ): Promise<InstanceType<T>[]> {

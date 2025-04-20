@@ -1,9 +1,9 @@
 import { QueryResult } from "pg";
-import { ConnectionWrapper } from "./connection-wrapper";
+import { PostgresConnection } from "./postgres-connection";
 
 export class QueryRunner {
   constructor(
-    private client: ConnectionWrapper,
+    private client: PostgresConnection,
     private sql: string,
     private params: any[]
   ) {}
@@ -12,6 +12,6 @@ export class QueryRunner {
     console.log(this.sql);
     console.log(this.params);
 
-    return this.client.client.query(this.sql, this.params);
+    return this.client.query(this.sql, this.params);
   }
 }
