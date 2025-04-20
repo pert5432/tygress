@@ -66,10 +66,14 @@ export class PostgresClient {
     return createMultiple ? entities : entities[0];
   }
 
+  public async getConnection(): Promise<PostgresConnection> {
+    return new PostgresConnection(await this.pool.connect());
+  }
+
   public async withConnection<T>(
     fn: (connection: PostgresConnection) => T
   ): Promise<T> {
-    const connection = new PostgresConnection(await this.pool.connect());
+    const connection = await this.getConnection();
 
     try {
       return fn(connection);
