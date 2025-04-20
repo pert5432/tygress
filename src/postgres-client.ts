@@ -76,7 +76,7 @@ export class PostgresClient {
     const connection = await this.getConnection();
 
     try {
-      return fn(connection);
+      return await fn(connection);
     } finally {
       connection.release();
     }
