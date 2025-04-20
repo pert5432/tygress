@@ -8,4 +8,11 @@ export const TEST_DB = new PostgresClient({
   databaseUrl: "postgres://petr@localhost:5437/tygress_test",
   ssl: false,
   entities: [Users, Pets, PetCategories, PetCategoriesPet],
+
+  defaultConnectionOptions: {
+    logging: {
+      logLevel: "ALL",
+      collectSql: true,
+    },
+  },
 });

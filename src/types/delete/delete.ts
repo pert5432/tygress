@@ -1,5 +1,5 @@
-import { AnEntity } from "./entity";
-import { TargetNode } from "./query";
+import { AnEntity } from "../entity";
+import { TargetNode } from "../query";
 
 export type Delete = {
   sql: string;

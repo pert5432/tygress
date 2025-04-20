@@ -29,15 +29,13 @@ import { JoinNodeFactory } from "../factories/repository";
 import { JoinNode } from ".";
 import { JoinType, QueryResultType } from "../enums";
 import { OrderByExpressionSqlBuilder } from "../sql-builders/order-by-expression";
-import { ConnectionWrapper } from "../connection-wrapper";
+import { PostgresConnection } from "../postgres-connection";
 import { InsertSqlBuilder } from "../sql-builders/insert-sql-builder";
-import { InsertPayload } from "../types/insert-payload";
+import { InsertPayload, InsertResult, InsertOptions } from "../types/insert";
 import { QueryRunner } from "../query-runner";
-import { InsertResult } from "../types/insert-result";
-import { InsertOptions } from "../types/insert-options";
-import { DeleteOptions } from "../types/delete-options";
+import { DeleteOptions } from "../types/delete";
 import { DeleteSqlBuilder } from "../sql-builders/delete-sql-builder";
-import { UpdateOptions } from "../types/update-options";
+import { UpdateOptions } from "../types/update";
 import { UpdateSqlBuilder } from "../sql-builders/update-sql-builder";
 
 export abstract class Repository {
@@ -47,7 +45,7 @@ export abstract class Repository {
     ConflictFields extends keyof InstanceType<T>,
     UpdateFields extends keyof InstanceType<T>
   >(
-    client: ConnectionWrapper,
+    client: PostgresConnection,
     entity: T,
     values: InsertPayload<T>[],
     {
@@ -136,7 +134,7 @@ export abstract class Repository {
     T extends AnEntity,
     ReturnedFields extends keyof InstanceType<T>
   >(
-    client: ConnectionWrapper,
+    client: PostgresConnection,
     entity: T,
     values: Partial<InstanceType<T>>,
     where: Wheres<InstanceType<T>>,
@@ -196,7 +194,7 @@ export abstract class Repository {
     T extends AnEntity,
     ReturnedFields extends keyof InstanceType<T>
   >(
-    client: ConnectionWrapper,
+    client: PostgresConnection,
     entity: T,
     where: Wheres<InstanceType<T>>,
     { returning }: DeleteOptions<T, ReturnedFields>
@@ -236,7 +234,7 @@ export abstract class Repository {
   }
 
   public static async select<T extends AnEntity>(
-    client: ConnectionWrapper,
+    client: PostgresConnection,
     entity: T,
     args: SelectArgs<InstanceType<T>>
   ): Promise<InstanceType<T>[]> {

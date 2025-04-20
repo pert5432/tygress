@@ -1,4 +1,4 @@
-import { AnEntity } from "./entity";
+import { AnEntity } from "../entity";
 
 export type InsertOptions<
   T extends AnEntity,

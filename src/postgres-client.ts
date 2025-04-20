@@ -1,32 +1,26 @@
-import { ClientConfig, Pool, QueryResult } from "pg";
+import { Pool, QueryResult } from "pg";
 import { AnEntity, SelectArgs, Wheres } from "./types";
-import { Repository } from "./repository";
-import { ConnectionWrapper } from "./connection-wrapper";
+import { PostgresConnection } from "./postgres-connection";
 import { ParamBuilder } from "./sql-builders";
 import { QueryBuilder } from "./query-builder";
-import { InsertPayload } from "./types/insert-payload";
-import { InsertResult } from "./types/insert-result";
-import { InsertOptions } from "./types/insert-options";
-import { DeleteOptions } from "./types/delete-options";
-import { DeleteResult } from "./types/delete-result";
-import { UpdateOptions } from "./types/update-options";
-import { UpdateResult } from "./types/update-result";
-
-export type PostgresClientOptions = {
-  databaseUrl: string;
-  maxConnectionPoolSize?: number;
-  ssl?: ClientConfig["ssl"];
-
-  entities: AnEntity[];
-};
+import { InsertPayload, InsertResult, InsertOptions } from "./types/insert";
+import { DeleteOptions, DeleteResult } from "./types/delete";
+import { UpdateOptions, UpdateResult } from "./types/update";
+import {
+  PostgresClientOptions,
+  PostgresConnectionOptions,
+} from "./types/connection-settings";
 
 export class PostgresClient {
   private pool: Pool;
+
+  private defaultConnectionSettings?: PostgresConnectionOptions;
 
   constructor({
     databaseUrl,
     maxConnectionPoolSize,
     ssl,
+    defaultConnectionOptions,
     entities,
   }: PostgresClientOptions) {
     this.pool = new Pool({
@@ -34,6 +28,8 @@ export class PostgresClient {
       ssl,
       max: maxConnectionPoolSize ?? 20,
     });
+
+    this.defaultConnectionSettings = defaultConnectionOptions;
   }
 
   public instantiate<T extends AnEntity>(
@@ -65,15 +61,44 @@ export class PostgresClient {
     return createMultiple ? entities : entities[0];
   }
 
+  public async getConnection(
+    settings?: PostgresConnectionOptions
+  ): Promise<PostgresConnection> {
+    return new PostgresConnection(
+      await this.pool.connect(),
+      this.connectionSettings(settings)
+    ).init();
+  }
+
   public async withConnection<T>(
-    fn: (connection: ConnectionWrapper) => T
+    settings: PostgresConnectionOptions,
+    fn: (connection: PostgresConnection) => T
+  ): Promise<T>;
+
+  public async withConnection<T>(
+    fn: (connection: PostgresConnection) => T
+  ): Promise<T>;
+
+  public async withConnection<T>(
+    settingsOrFn:
+      | PostgresConnectionOptions
+      | ((connection: PostgresConnection) => T),
+    optionalFn?: (connection: PostgresConnection) => T
   ): Promise<T> {
-    const connection = new ConnectionWrapper(await this.pool.connect());
+    const fn = typeof settingsOrFn === "function" ? settingsOrFn : optionalFn!;
+    const settings =
+      typeof settingsOrFn === "object" ? settingsOrFn : undefined;
+
+    if (!fn) {
+      throw new Error(`No function provided to withConnection`);
+    }
+
+    const connection = await this.getConnection(settings);
 
     try {
-      return fn(connection);
+      return await fn(connection);
     } finally {
-      connection.client.release();
+      connection.release();
     }
   }
 
@@ -100,7 +125,7 @@ export class PostgresClient {
     entity: T,
     args: SelectArgs<InstanceType<T>>
   ): Promise<InstanceType<T>[]> {
-    return this.withConnection((conn) => Repository.select(conn, entity, args));
+    return this.withConnection((conn) => conn.select(entity, args));
   }
 
   public async insert<
@@ -114,7 +139,7 @@ export class PostgresClient {
     options?: InsertOptions<T, ReturnedFields, ConflictFields, UpdateFields>
   ): Promise<InsertResult<T>> {
     return this.withConnection((conn) =>
-      Repository.insert(conn, entity, values, options ?? {})
+      conn.insert(entity, values, options ?? {})
     );
   }
 
@@ -128,7 +153,7 @@ export class PostgresClient {
     options?: UpdateOptions<T, ReturnedFields>
   ): Promise<UpdateResult<T>> {
     return this.withConnection((conn) =>
-      Repository.update(conn, entity, values, where ?? {}, options ?? {})
+      conn.update(entity, values, where ?? {}, options ?? {})
     );
   }
 
@@ -141,7 +166,7 @@ export class PostgresClient {
     options?: DeleteOptions<T, ReturnedFields>
   ): Promise<DeleteResult<T>> {
     return this.withConnection((conn) =>
-      Repository.delete(conn, entity, where ?? {}, options ?? {})
+      conn.delete(entity, where ?? {}, options ?? {})
     );
   }
 
@@ -149,6 +174,24 @@ export class PostgresClient {
     sql: string,
     params?: any[]
   ): Promise<QueryResult<T>> {
-    return this.withConnection((conn) => conn.client.query(sql, params ?? []));
+    return this.withConnection((conn) => conn.query(sql, params ?? []));
+  }
+
+  //
+  // PRIVATE
+  //
+  private connectionSettings(
+    options?: PostgresConnectionOptions
+  ): PostgresConnectionOptions | undefined {
+    if (!options) {
+      return this.defaultConnectionSettings;
+    }
+
+    return {
+      logging: options.logging ?? this.defaultConnectionSettings?.logging,
+      postgresConfig:
+        options.postgresConfig ??
+        this.defaultConnectionSettings?.postgresConfig,
+    };
   }
 }
