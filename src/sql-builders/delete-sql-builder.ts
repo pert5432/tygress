@@ -5,8 +5,7 @@ import {
   TargetNodeFactory,
 } from "../factories";
 import { AnEntity } from "../types";
-import { Delete } from "../types/delete";
-import { DeleteSqlArgs } from "../types/delete-sql-args";
+import { Delete, DeleteSqlArgs } from "../types/delete";
 import { TargetNode } from "../types/query";
 import { entityNameToAlias } from "../utils";
 import { ParamBuilder } from "./param-builder";

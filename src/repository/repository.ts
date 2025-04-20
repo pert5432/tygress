@@ -31,13 +31,11 @@ import { JoinType, QueryResultType } from "../enums";
 import { OrderByExpressionSqlBuilder } from "../sql-builders/order-by-expression";
 import { PostgresConnection } from "../postgres-connection";
 import { InsertSqlBuilder } from "../sql-builders/insert-sql-builder";
-import { InsertPayload } from "../types/insert-payload";
+import { InsertPayload, InsertResult, InsertOptions } from "../types/insert";
 import { QueryRunner } from "../query-runner";
-import { InsertResult } from "../types/insert-result";
-import { InsertOptions } from "../types/insert-options";
-import { DeleteOptions } from "../types/delete-options";
+import { DeleteOptions } from "../types/delete";
 import { DeleteSqlBuilder } from "../sql-builders/delete-sql-builder";
-import { UpdateOptions } from "../types/update-options";
+import { UpdateOptions } from "../types/update";
 import { UpdateSqlBuilder } from "../sql-builders/update-sql-builder";
 
 export abstract class Repository {

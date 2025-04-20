@@ -1,4 +1,9 @@
 import { PoolClient, QueryResult } from "pg";
+import { AnEntity, SelectArgs, Wheres } from "./types";
+import { Repository } from "./repository";
+import { InsertPayload, InsertOptions, InsertResult } from "./types/insert";
+import { UpdateOptions, UpdateResult } from "./types/update";
+import { DeleteOptions, DeleteResult } from "./types/delete";
 
 export type PostgresConfigSettings = {
   work_mem: string | number;
@@ -30,6 +35,49 @@ export class PostgresConnection {
     if (options?.postgresConfig) {
       this.setConfig(options.postgresConfig);
     }
+  }
+
+  public async select<T extends AnEntity>(
+    entity: T,
+    args: SelectArgs<InstanceType<T>>
+  ): Promise<InstanceType<T>[]> {
+    return Repository.select(this, entity, args);
+  }
+
+  public async insert<
+    T extends AnEntity,
+    ReturnedFields extends keyof InstanceType<T>,
+    ConflictFields extends keyof InstanceType<T>,
+    UpdateFields extends keyof InstanceType<T>
+  >(
+    entity: T,
+    values: InsertPayload<T>[],
+    options?: InsertOptions<T, ReturnedFields, ConflictFields, UpdateFields>
+  ): Promise<InsertResult<T>> {
+    return Repository.insert(this, entity, values, options ?? {});
+  }
+
+  public async update<
+    T extends AnEntity,
+    ReturnedFields extends keyof InstanceType<T>
+  >(
+    entity: T,
+    values: Partial<InstanceType<T>>,
+    where?: Wheres<InstanceType<T>>,
+    options?: UpdateOptions<T, ReturnedFields>
+  ): Promise<UpdateResult<T>> {
+    return Repository.update(this, entity, values, where ?? {}, options ?? {});
+  }
+
+  public async delete<
+    T extends AnEntity,
+    ReturnedFields extends keyof InstanceType<T>
+  >(
+    entity: T,
+    where?: Wheres<InstanceType<T>>,
+    options?: DeleteOptions<T, ReturnedFields>
+  ): Promise<DeleteResult<T>> {
+    return Repository.delete(this, entity, where ?? {}, options ?? {});
   }
 
   public async query<T extends { [key: string]: any } = any>(

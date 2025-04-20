@@ -6,8 +6,7 @@ import {
 } from "../factories";
 import { AnEntity } from "../types";
 import { TargetNode } from "../types/query";
-import { Update } from "../types/update";
-import { UpdateSqlArgs } from "../types/update-sql-args";
+import { Update, UpdateSqlArgs } from "../types/update";
 import { ParamBuilder } from "./param-builder";
 
 export class UpdateSqlBuilder {

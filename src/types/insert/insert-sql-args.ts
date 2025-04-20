@@ -1,5 +1,5 @@
-import { ColumnMetadata, TableMetadata } from "../metadata";
-import { ParamBuilder } from "../sql-builders";
+import { ColumnMetadata, TableMetadata } from "../../metadata";
+import { ParamBuilder } from "../../sql-builders";
 
 export type InsertSqlArgs = {
   paramBuilder: ParamBuilder;

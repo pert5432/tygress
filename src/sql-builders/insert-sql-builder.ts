@@ -4,8 +4,8 @@ import {
   TargetNodeFactory,
 } from "../factories";
 import { ColumnMetadata, TableMetadata } from "../metadata";
-import { AnEntity, InsertSqlArgs } from "../types";
-import { Insert } from "../types/insert";
+import { AnEntity } from "../types";
+import { Insert, InsertSqlArgs } from "../types/insert";
 import { TargetNode } from "../types/query";
 import { dQ, entityNameToAlias } from "../utils";
 import { NakedColumnIdentifierSqlBuilder } from "./column-identifier";

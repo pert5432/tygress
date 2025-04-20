@@ -7,13 +7,9 @@ import {
 } from "./postgres-connection";
 import { ParamBuilder } from "./sql-builders";
 import { QueryBuilder } from "./query-builder";
-import { InsertPayload } from "./types/insert-payload";
-import { InsertResult } from "./types/insert-result";
-import { InsertOptions } from "./types/insert-options";
-import { DeleteOptions } from "./types/delete-options";
-import { DeleteResult } from "./types/delete-result";
-import { UpdateOptions } from "./types/update-options";
-import { UpdateResult } from "./types/update-result";
+import { InsertPayload, InsertResult, InsertOptions } from "./types/insert";
+import { DeleteOptions, DeleteResult } from "./types/delete";
+import { UpdateOptions, UpdateResult } from "./types/update";
 
 // TODO: move to types folder
 export type PostgresClientOptions = {
