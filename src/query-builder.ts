@@ -147,11 +147,6 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     });
   }
 
-  public log() {
-    console.log(this.joins);
-    console.log(this.wheres);
-  }
-
   public with<A extends string, T extends Record<string, any>>(
     alias: A,
     qb: (qb: QueryBuilderFactory<G>) => QueryBuilder<{

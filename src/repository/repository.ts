@@ -27,7 +27,7 @@ import {
 } from "../sql-builders";
 import { JoinNodeFactory } from "../factories/repository";
 import { JoinNode } from ".";
-import { QueryResultType } from "../enums";
+import { JoinType, QueryResultType } from "../enums";
 import { OrderByExpressionSqlBuilder } from "../sql-builders/order-by-expression";
 import { ConnectionWrapper } from "../connection-wrapper";
 import { InsertSqlBuilder } from "../sql-builders/insert-sql-builder";
@@ -514,6 +514,7 @@ export abstract class Repository {
         ),
         comparison,
         childType: "entity",
+        type: JoinType.LEFT,
       });
 
       joinsResult.push(nextJoinArg);
@@ -593,7 +594,9 @@ export abstract class Repository {
               parentNode.alias,
               column
             ),
-            `${parentNode.alias}.${column.fieldName}`
+            `${parentNode.alias}.${column.fieldName}`,
+            parentNode.alias,
+            column.fieldName
           )
         )
       );
@@ -630,18 +633,30 @@ export abstract class Repository {
                 parentNode.alias,
                 column
               ),
-              `${parentNode.alias}.${column.fieldName}`
+              `${parentNode.alias}.${column.fieldName}`,
+              parentNode.alias,
+              column.fieldName
             )
           );
         } else {
+          const nextNode = parentNode.relations[key];
+
+          if (!nextNode) {
+            throw new Error(
+              `No join node for ${parentTableMeta.klass.name}, field name ${key}`
+            );
+          }
+
           selectsResult.push(
-            ...parentTableMeta.columnsSelectableByDefault.map((column) =>
+            ...nextNode.entityMeta.columnsSelectableByDefault.map((column) =>
               SelectTargetSqlBuilderFactory.createColumnIdentifier(
                 ColumnIdentifierSqlBuilderFactory.createColumnMeta(
-                  parentNode.alias,
+                  nextNode.alias,
                   column
                 ),
-                `${parentNode.alias}.${column.fieldName}`
+                `${nextNode.alias}.${column.fieldName}`,
+                nextNode.alias,
+                column.fieldName
               )
             )
           );

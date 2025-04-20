@@ -1,3 +1,4 @@
+import "reflect-metadata";
 import { Relation } from "../enums";
 import {
   ColumnMetadataFactory,
