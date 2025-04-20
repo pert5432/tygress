@@ -1,25 +1,15 @@
-import { ClientConfig, Pool, QueryResult } from "pg";
+import { Pool, QueryResult } from "pg";
 import { AnEntity, SelectArgs, Wheres } from "./types";
-import {
-  PostgresConnection,
-  PostgresConnectionOptions,
-} from "./postgres-connection";
+import { PostgresConnection } from "./postgres-connection";
 import { ParamBuilder } from "./sql-builders";
 import { QueryBuilder } from "./query-builder";
 import { InsertPayload, InsertResult, InsertOptions } from "./types/insert";
 import { DeleteOptions, DeleteResult } from "./types/delete";
 import { UpdateOptions, UpdateResult } from "./types/update";
-
-// TODO: move to types folder
-export type PostgresClientOptions = {
-  databaseUrl: string;
-  maxConnectionPoolSize?: number;
-  ssl?: ClientConfig["ssl"];
-
-  defaultConnectionOptions?: PostgresConnectionOptions;
-
-  entities: AnEntity[];
-};
+import {
+  PostgresClientOptions,
+  PostgresConnectionOptions,
+} from "./types/connection-settings";
 
 export class PostgresClient {
   private pool: Pool;

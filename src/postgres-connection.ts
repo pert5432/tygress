@@ -4,23 +4,10 @@ import { Repository } from "./repository";
 import { InsertPayload, InsertOptions, InsertResult } from "./types/insert";
 import { UpdateOptions, UpdateResult } from "./types/update";
 import { DeleteOptions, DeleteResult } from "./types/delete";
-
-export type PostgresConfigSettings = {
-  work_mem: string | number;
-  statement_timeout: string | number;
-  transaction_timeout: string | number;
-};
-
-export type ConnectionLoggingOptions = {
-  logLevel?: "ALL";
-  collectSql?: boolean;
-};
-
-export type PostgresConnectionOptions = {
-  logging?: ConnectionLoggingOptions;
-
-  postgresConfig?: Partial<PostgresConfigSettings>;
-};
+import {
+  PostgresConfigSettings,
+  PostgresConnectionOptions,
+} from "./types/connection-settings";
 
 export class PostgresConnection {
   public $sqlLog: { sql: string; params: any[] }[] = [];
