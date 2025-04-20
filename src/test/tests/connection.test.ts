@@ -4,7 +4,6 @@ import { TEST_DB } from "../client";
 describe("connection", async () => {
   test("sets config", async () => {
     const conn = await TEST_DB.getConnection({
-      logging: { collectSql: true },
       postgresConfig: { work_mem: "512MB" },
     });
 
@@ -23,6 +22,18 @@ describe("connection", async () => {
           { params: [], sql: `SET work_mem = '512MB'` },
         ]);
       }
+    );
+  });
+
+  test("can't run queries on a released connection", async () => {
+    const conn = await TEST_DB.getConnection();
+
+    conn.release();
+
+    await expect(conn.query("SELECT 1")).rejects.toThrowError(
+      new Error(
+        "Can't run more commands on this connection because its state is RELEASED but it needs to be READY"
+      )
     );
   });
 });

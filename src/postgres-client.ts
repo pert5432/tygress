@@ -67,7 +67,7 @@ export class PostgresClient {
     return new PostgresConnection(
       await this.pool.connect(),
       this.connectionSettings(settings)
-    );
+    ).init();
   }
 
   public async withConnection<T>(

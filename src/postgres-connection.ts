@@ -12,22 +12,38 @@ import {
 export class PostgresConnection {
   public $sqlLog: { sql: string; params: any[] }[] = [];
 
+  private state: "CONNECTED" | "INITIALIZING" | "READY" | "RELEASED" =
+    "CONNECTED";
+
   private collectSql: boolean;
   private logLevel: "ALL" | "NOTHING";
+
+  private postgresSettings: Partial<PostgresConfigSettings>;
 
   constructor(public $client: PoolClient, options?: PostgresConnectionOptions) {
     this.collectSql = options?.logging?.collectSql ?? false;
     this.logLevel = options?.logging?.logLevel ?? "ALL";
 
-    if (options?.postgresConfig) {
-      this.setConfig(options.postgresConfig);
-    }
+    this.postgresSettings = options?.postgresConfig ?? {};
+  }
+
+  // Sets the Postgres config values this connection has been created with
+  public async init(): Promise<this> {
+    this.state = "INITIALIZING";
+
+    await this.setConfig(this.postgresSettings);
+
+    this.state = "READY";
+
+    return this;
   }
 
   public async select<T extends AnEntity>(
     entity: T,
     args: SelectArgs<InstanceType<T>>
   ): Promise<InstanceType<T>[]> {
+    this.ensureReadiness();
+
     return Repository.select(this, entity, args);
   }
 
@@ -41,6 +57,8 @@ export class PostgresConnection {
     values: InsertPayload<T>[],
     options?: InsertOptions<T, ReturnedFields, ConflictFields, UpdateFields>
   ): Promise<InsertResult<T>> {
+    this.ensureReadiness();
+
     return Repository.insert(this, entity, values, options ?? {});
   }
 
@@ -53,6 +71,8 @@ export class PostgresConnection {
     where?: Wheres<InstanceType<T>>,
     options?: UpdateOptions<T, ReturnedFields>
   ): Promise<UpdateResult<T>> {
+    this.ensureReadiness();
+
     return Repository.update(this, entity, values, where ?? {}, options ?? {});
   }
 
@@ -64,6 +84,8 @@ export class PostgresConnection {
     where?: Wheres<InstanceType<T>>,
     options?: DeleteOptions<T, ReturnedFields>
   ): Promise<DeleteResult<T>> {
+    this.ensureReadiness();
+
     return Repository.delete(this, entity, where ?? {}, options ?? {});
   }
 
@@ -71,6 +93,8 @@ export class PostgresConnection {
     sql: string,
     params?: any[]
   ): Promise<QueryResult<T>> {
+    this.ensureReadiness();
+
     if (this.shouldLog()) {
       console.log("Query");
       console.log(sql);
@@ -85,14 +109,20 @@ export class PostgresConnection {
   }
 
   public async begin(): Promise<void> {
+    this.ensureReadiness();
+
     await this.query("BEGIN;");
   }
 
   public async commit(): Promise<void> {
+    this.ensureReadiness();
+
     await this.query("COMMIT;");
   }
 
   public async rollback(): Promise<void> {
+    this.ensureReadiness();
+
     await this.query("ROLLBACK");
   }
 
@@ -111,12 +141,20 @@ export class PostgresConnection {
   public async setConfig(
     settings: Partial<PostgresConfigSettings>
   ): Promise<void> {
+    if (!["READY", "CONNECTED", "INITIALIZING"].includes(this.state)) {
+      throw new Error(
+        `Can't set config of this connection because its state is ${this.state}`
+      );
+    }
+
     for (const [name, value] of Object.entries(settings)) {
       await this.query(`SET ${name} = '${value}'`);
     }
   }
 
   public release(): void {
+    this.state = "RELEASED";
+
     this.$client.release();
   }
 
@@ -129,5 +167,15 @@ export class PostgresConnection {
     }
 
     return false;
+  }
+
+  private ensureReadiness(): void {
+    if (!["READY", "INITIALIZING"].includes(this.state)) {
+      throw new Error(
+        `Can't run more commands on this connection because its state is ${
+          this.state
+        } but it needs to be ${"READY"}`
+      );
+    }
   }
 }
