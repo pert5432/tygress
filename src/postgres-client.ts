@@ -1,7 +1,10 @@
 import { ClientConfig, Pool, QueryResult } from "pg";
 import { AnEntity, SelectArgs, Wheres } from "./types";
 import { Repository } from "./repository";
-import { PostgresConnection } from "./postgres-connection";
+import {
+  PostgresConnection,
+  PostgresConnectionOptions,
+} from "./postgres-connection";
 import { ParamBuilder } from "./sql-builders";
 import { QueryBuilder } from "./query-builder";
 import { InsertPayload } from "./types/insert-payload";
@@ -66,14 +69,36 @@ export class PostgresClient {
     return createMultiple ? entities : entities[0];
   }
 
-  public async getConnection(): Promise<PostgresConnection> {
-    return new PostgresConnection(await this.pool.connect());
+  public async getConnection(
+    settings?: PostgresConnectionOptions
+  ): Promise<PostgresConnection> {
+    return new PostgresConnection(await this.pool.connect(), settings);
   }
 
   public async withConnection<T>(
+    settings: PostgresConnectionOptions,
     fn: (connection: PostgresConnection) => T
+  ): Promise<T>;
+
+  public async withConnection<T>(
+    fn: (connection: PostgresConnection) => T
+  ): Promise<T>;
+
+  public async withConnection<T>(
+    settingsOrFn:
+      | PostgresConnectionOptions
+      | ((connection: PostgresConnection) => T),
+    optionalFn?: (connection: PostgresConnection) => T
   ): Promise<T> {
-    const connection = await this.getConnection();
+    const fn = typeof settingsOrFn === "function" ? settingsOrFn : optionalFn!;
+    const settings =
+      typeof settingsOrFn === "object" ? settingsOrFn : undefined;
+
+    if (!fn) {
+      throw new Error(`No function provided to withConnection`);
+    }
+
+    const connection = await this.getConnection(settings);
 
     try {
       return await fn(connection);

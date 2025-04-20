@@ -2,6 +2,8 @@ import { PoolClient, QueryResult } from "pg";
 
 export type PostgresConfigSettings = {
   work_mem: string | number;
+  statement_timeout: string | number;
+  transaction_timeout: string | number;
 };
 
 export type ConnectionLoggingOptions = {
@@ -12,7 +14,7 @@ export type ConnectionLoggingOptions = {
 export type PostgresConnectionOptions = {
   logging?: ConnectionLoggingOptions;
 
-  postgresConfig?: PostgresConfigSettings;
+  postgresConfig?: Partial<PostgresConfigSettings>;
 };
 
 export class PostgresConnection {
@@ -24,6 +26,10 @@ export class PostgresConnection {
   constructor(public $client: PoolClient, options?: PostgresConnectionOptions) {
     this.collectSql = options?.logging?.collectSql ?? false;
     this.logLevel = options?.logging?.logLevel ?? "ALL";
+
+    if (options?.postgresConfig) {
+      this.setConfig(options.postgresConfig);
+    }
   }
 
   public async query<T extends { [key: string]: any } = any>(
@@ -65,6 +71,14 @@ export class PostgresConnection {
 
   public async rollbackTransaction(): Promise<void> {
     await this.rollback();
+  }
+
+  public async setConfig(
+    settings: Partial<PostgresConfigSettings>
+  ): Promise<void> {
+    for (const [name, value] of Object.entries(settings)) {
+      await this.query(`SET ${name} = '${value}'`);
+    }
   }
 
   public release(): void {
