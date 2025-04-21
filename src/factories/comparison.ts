@@ -9,12 +9,17 @@ import {
 import { SqlComparison } from "../sql-builders/comparison";
 import {
   ColColComparison,
+  ColIsNotNullComparison,
+  ColIsNullComparison,
   ColParamComparison,
   ColTableIdentifierComparison,
 } from "../sql-builders/comparison/comparison";
 import { AnEntity, Parametrizable, WhereComparator } from "../types";
 import { NamedParams } from "../types/named-params";
 import {
+  Condition,
+  IsNotNullCondition,
+  IsNullCondition,
   NotConditionWrapper,
   ParameterArgs,
   ParametrizedCondition,
@@ -43,6 +48,18 @@ export abstract class ComparisonFactory {
       params,
       rightCast: cast,
     });
+  }
+
+  public static createColIsNull(
+    left: ColumnIdentifierSqlBuilder
+  ): ColIsNullComparison {
+    return new ColIsNullComparison({ left });
+  }
+
+  public static createColIsNotNull(
+    left: ColumnIdentifierSqlBuilder
+  ): ColIsNotNullComparison {
+    return new ColIsNotNullComparison({ left });
   }
 
   public static colTableIdentifier(
@@ -95,7 +112,7 @@ export abstract class ComparisonFactory {
 
   public static createFromConditionIdentifier(
     columnIdentifier: ColumnIdentifierSqlBuilder,
-    condition: ParameterArgs<Parametrizable>
+    condition: Condition<Parametrizable>
   ): ComparisonSqlBuilder {
     if ((condition as Object) instanceof ParametrizedCondition) {
       // To get type safety because inference doesn't work here for some reason ¯\_(ツ)_/¯
@@ -108,9 +125,12 @@ export abstract class ComparisonFactory {
         parametrizedCondition.parameters
       );
     } else if (
+      // TODO: refactor to util function
       typeof condition === "number" ||
+      typeof condition === "bigint" ||
       typeof condition === "string" ||
-      typeof condition === "boolean"
+      typeof condition === "boolean" ||
+      condition instanceof Date
     ) {
       return this.createColParamIdentifier(columnIdentifier, "=", [condition]);
     } else if ((condition as Object) instanceof ParametrizedConditionWrapper) {
@@ -139,6 +159,10 @@ export abstract class ComparisonFactory {
           notConditionWrapper.condition
         )
       );
+    } else if ((condition as Object) instanceof IsNullCondition) {
+      return this.createColIsNull(columnIdentifier);
+    } else if ((condition as Object) instanceof IsNotNullCondition) {
+      return this.createColIsNotNull(columnIdentifier);
     } else {
       throw new Error(`bogus condition ${condition}`);
     }

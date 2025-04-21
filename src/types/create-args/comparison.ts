@@ -22,3 +22,7 @@ export type ColParamComparisonArgs = ComparisonArgs & {
 export type ColTableIdentifierComparisonArgs = ComparisonArgs & {
   tableIdentifier: TableIdentifierSqlBuilder;
 };
+
+export type ColIsNullComparisonArgs = {
+  left: ColumnIdentifierSqlBuilder;
+};
