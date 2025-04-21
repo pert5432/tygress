@@ -20,7 +20,7 @@ import {
 import { AnEntity, Parametrizable, WhereComparator } from "./types";
 import { NamedParams } from "./types/named-params";
 import { JoinArg } from "./types/query/join-arg";
-import { ParameterArgs } from "./types/where-args";
+import { Condition, ParameterArgs } from "./types/where-args";
 import { RawQueryResultParser } from "./raw-query-result-parser";
 import { UnionToIntersection } from "./types/helpers";
 import {
@@ -249,11 +249,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   public where<
     K extends keyof G["JoinedEntities"],
     F extends SelectSourceKeys<G["JoinedEntities"][K]>
-  >(
-    alias: K,
-    field: F,
-    condition: ParameterArgs<Parametrizable>
-  ): QueryBuilder<G>;
+  >(alias: K, field: F, condition: Condition<Parametrizable>): QueryBuilder<G>;
 
   public where(sql: string, namedParams?: NamedParams): QueryBuilder<G>;
 
@@ -263,7 +259,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   >(
     leftAliasOrSql: K | string,
     leftFieldOrParams: F | NamedParams | undefined,
-    conditionOrComparator?: ParameterArgs<Parametrizable> | WhereComparator,
+    conditionOrComparator?: Condition<Parametrizable> | WhereComparator,
     rightAliasOrSubQuery?:
       | K
       | ((qb: QueryBuilderFactory<G>) => QueryBuilder<any>),

@@ -17,6 +17,7 @@ import {
 import { AnEntity, Parametrizable, WhereComparator } from "../types";
 import { NamedParams } from "../types/named-params";
 import {
+  Condition,
   IsNotNullCondition,
   IsNullCondition,
   NotConditionWrapper,
@@ -111,7 +112,7 @@ export abstract class ComparisonFactory {
 
   public static createFromConditionIdentifier(
     columnIdentifier: ColumnIdentifierSqlBuilder,
-    condition: ParameterArgs<Parametrizable>
+    condition: Condition<Parametrizable>
   ): ComparisonSqlBuilder {
     if ((condition as Object) instanceof ParametrizedCondition) {
       // To get type safety because inference doesn't work here for some reason ¯\_(ツ)_/¯

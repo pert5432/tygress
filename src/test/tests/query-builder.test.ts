@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, test } from "vitest";
 import { Users } from "../entities/users";
 import { TestHelper } from "../helpers";
 import { Pets } from "../entities/pets";
-import { In, Lte } from "../../api";
+import { In, IsNotNull, IsNull, Lte } from "../../api";
 
 describe("QueryBuilder", async () => {
   const user1 = {
@@ -159,6 +159,22 @@ describe("QueryBuilder", async () => {
       expect(res2).toHaveLength(1);
 
       TestHelper.validateObject(res2[0]!, user2);
+    });
+
+    test("isNull", async () => {
+      const res = await TEST_DB.queryBuilder("u", Users)
+        .where("u", "birthdate", IsNull())
+        .getEntities();
+
+      TestHelper.validateObject(res[0]!, user2);
+    });
+
+    test("isNotNull", async () => {
+      const res = await TEST_DB.queryBuilder("u", Users)
+        .where("u", "birthdate", IsNotNull())
+        .getEntities();
+
+      TestHelper.validateObject(res[0]!, user1);
     });
 
     test("sql", async () => {

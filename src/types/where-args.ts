@@ -35,13 +35,19 @@ export type ParameterArgs<Property extends Parametrizable> =
   | ParametrizedConditionWrapper<Property>
   | NotConditionWrapper<Property>;
 
+export type NullCondition = IsNullCondition | IsNotNullCondition;
+
+export type Condition<Property> = Property extends Parametrizable
+  ? ParameterArgs<Property> | NullCondition
+  : NullCondition;
+
 export type Where<Property> = Property extends Parametrizable
-  ? ParameterArgs<Property> | Property | IsNullCondition | IsNotNullCondition
+  ? Condition<Property> | Property
   : Property extends Array<infer I>
   ? Wheres<I>
   : Property extends AnEntity | InstanceType<AnEntity>
   ? Wheres<Property>
-  : IsNullCondition | IsNotNullCondition | never;
+  : NullCondition | never;
 
 export type Wheres<E extends InstanceType<AnEntity>> = {
   [K in keyof E]?: Where<E[K]>;
