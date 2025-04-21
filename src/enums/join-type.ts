@@ -3,4 +3,5 @@ export enum JoinType {
   LEFT = "LEFT",
   RIGHT = "RIGHT",
   FULL = "FULL",
+  CROSS = "CROSS",
 }

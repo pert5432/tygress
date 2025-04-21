@@ -65,6 +65,7 @@ export type JoinImplArgs = {
       rightAlias: string;
       rightField: string;
     }
+  | { strategy: JoinStrategy.CROSS; type: JoinType.CROSS }
 );
 
 export type FlattenSelectSources<
