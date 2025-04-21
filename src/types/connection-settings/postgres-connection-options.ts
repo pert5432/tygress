@@ -1,7 +1,8 @@
 import { PostgresConfigSettings } from ".";
+import { QueryLogLevel } from "../../enums";
 
 export type ConnectionLoggingOptions = {
-  logLevel?: "ALL";
+  logLevel?: QueryLogLevel;
   collectSql?: boolean;
 };
 
