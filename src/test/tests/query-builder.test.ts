@@ -105,8 +105,6 @@ describe("QueryBuilder", async () => {
         .orderBy("u", "id", "ASC")
         .getRaw();
 
-      console.log(res);
-
       expect(res).toStrictEqual([
         {
           user_id: "406b635b-508e-4824-855d-fb71d77bcdac",
