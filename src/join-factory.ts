@@ -8,7 +8,11 @@ import {
   SelectSourceKeys,
 } from "./types/query-builder";
 
-export class JoinFactory<G extends QueryBuilderGenerics> {
+export class JoinFactory<
+  G extends QueryBuilderGenerics,
+  A extends string,
+  E extends AnEntity
+> {
   private targetSelectSourceContext: SelectSourceContext;
 
   constructor(
@@ -47,10 +51,11 @@ export class JoinFactory<G extends QueryBuilderGenerics> {
   }
 
   public on<
-    K extends keyof G["JoinedEntities"],
-    F extends SelectSourceKeys<G["JoinedEntities"][K]>,
-    K2 extends keyof G["JoinedEntities"],
-    F2 extends SelectSourceKeys<G["JoinedEntities"][K2]>
+    J extends G["JoinedEntities"] & Record<A, E>,
+    K extends keyof J,
+    F extends SelectSourceKeys<J[K]>,
+    K2 extends keyof J,
+    F2 extends SelectSourceKeys<J[K2]>
   >(
     leftAlias: K,
     leftField: F,

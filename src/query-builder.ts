@@ -515,13 +515,17 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     targetAlias: A,
     targetEntity: E,
     conditionFn: (
-      j: JoinFactory<{
-        RootEntity: G["RootEntity"];
-        JoinedEntities: G["JoinedEntities"] & Record<A, E>;
-        CTEs: G["CTEs"];
-        SelectedEntities: G["SelectedEntities"];
-        ExplicitSelects: G["ExplicitSelects"];
-      }>
+      j: JoinFactory<
+        {
+          RootEntity: G["RootEntity"];
+          JoinedEntities: G["JoinedEntities"];
+          CTEs: G["CTEs"];
+          SelectedEntities: G["SelectedEntities"];
+          ExplicitSelects: G["ExplicitSelects"];
+        },
+        A,
+        E
+      >
     ) => JoinImplArgs
   ): QueryBuilder<{
     RootEntity: G["RootEntity"];
@@ -534,7 +538,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   public innerJoinAndSelect<A extends string, E extends AnEntity>(
     targetAlias: A,
     targetEntityOrCTE: E | string,
-    conditionFn: (j: JoinFactory<any>) => JoinImplArgs
+    conditionFn: (j: JoinFactory<any, A, E>) => JoinImplArgs
   ) {
     this.joinImpl(
       conditionFn(
@@ -549,13 +553,17 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     targetAlias: A,
     targetEntity: E,
     conditionFn: (
-      j: JoinFactory<{
-        RootEntity: G["RootEntity"];
-        JoinedEntities: G["JoinedEntities"] & Record<A, E>;
-        CTEs: G["CTEs"];
-        SelectedEntities: G["SelectedEntities"];
-        ExplicitSelects: G["ExplicitSelects"];
-      }>
+      j: JoinFactory<
+        {
+          RootEntity: G["RootEntity"];
+          JoinedEntities: G["JoinedEntities"];
+          CTEs: G["CTEs"];
+          SelectedEntities: G["SelectedEntities"];
+          ExplicitSelects: G["ExplicitSelects"];
+        },
+        A,
+        E
+      >
     ) => JoinImplArgs
   ): QueryBuilder<{
     RootEntity: G["RootEntity"];
@@ -570,13 +578,17 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     CTEName: C,
     conditionFn: (
       j: Omit<
-        JoinFactory<{
-          RootEntity: G["RootEntity"];
-          JoinedEntities: G["JoinedEntities"] & Record<A, G["CTEs"][C]>;
-          CTEs: G["CTEs"];
-          SelectedEntities: G["SelectedEntities"];
-          ExplicitSelects: G["ExplicitSelects"];
-        }>,
+        JoinFactory<
+          {
+            RootEntity: G["RootEntity"];
+            JoinedEntities: G["JoinedEntities"];
+            CTEs: G["CTEs"];
+            SelectedEntities: G["SelectedEntities"];
+            ExplicitSelects: G["ExplicitSelects"];
+          },
+          A,
+          G["CTEs"][C]
+        >,
         "relation"
       >
     ) => JoinImplArgs
@@ -591,7 +603,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   public innerJoin<A extends string, E extends AnEntity>(
     targetAlias: A,
     targetEntityOrCTE: E | string,
-    conditionFn: (j: JoinFactory<any>) => JoinImplArgs
+    conditionFn: (j: JoinFactory<any, A, E>) => JoinImplArgs
   ) {
     this.joinImpl(
       conditionFn(
@@ -608,13 +620,17 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     targetAlias: A,
     targetEntity: E,
     conditionFn: (
-      j: JoinFactory<{
-        RootEntity: G["RootEntity"];
-        JoinedEntities: G["JoinedEntities"] & Record<A, E>;
-        CTEs: G["CTEs"];
-        SelectedEntities: G["SelectedEntities"];
-        ExplicitSelects: G["ExplicitSelects"];
-      }>
+      j: JoinFactory<
+        {
+          RootEntity: G["RootEntity"];
+          JoinedEntities: G["JoinedEntities"];
+          CTEs: G["CTEs"];
+          SelectedEntities: G["SelectedEntities"];
+          ExplicitSelects: G["ExplicitSelects"];
+        },
+        A,
+        E
+      >
     ) => JoinImplArgs
   ): QueryBuilder<{
     RootEntity: G["RootEntity"];
@@ -629,13 +645,17 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     CTEName: C,
     conditionFn: (
       j: Omit<
-        JoinFactory<{
-          RootEntity: G["RootEntity"];
-          JoinedEntities: G["JoinedEntities"] & Record<A, G["CTEs"][C]>;
-          CTEs: G["CTEs"];
-          SelectedEntities: G["SelectedEntities"];
-          ExplicitSelects: G["ExplicitSelects"];
-        }>,
+        JoinFactory<
+          {
+            RootEntity: G["RootEntity"];
+            JoinedEntities: G["JoinedEntities"];
+            CTEs: G["CTEs"];
+            SelectedEntities: G["SelectedEntities"];
+            ExplicitSelects: G["ExplicitSelects"];
+          },
+          A,
+          G["CTEs"][C]
+        >,
         "relation"
       >
     ) => JoinImplArgs
@@ -650,7 +670,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   public leftJoin<A extends string, E extends AnEntity>(
     targetAlias: A,
     targetEntityOrCTE: E | string,
-    conditionFn: (j: JoinFactory<any>) => JoinImplArgs
+    conditionFn: (j: JoinFactory<any, A, E>) => JoinImplArgs
   ) {
     this.joinImpl(
       conditionFn(
@@ -665,13 +685,17 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     targetAlias: A,
     targetEntity: E,
     conditionFn: (
-      j: JoinFactory<{
-        RootEntity: G["RootEntity"];
-        JoinedEntities: G["JoinedEntities"] & Record<A, E>;
-        CTEs: G["CTEs"];
-        SelectedEntities: G["SelectedEntities"];
-        ExplicitSelects: G["ExplicitSelects"];
-      }>
+      j: JoinFactory<
+        {
+          RootEntity: G["RootEntity"];
+          JoinedEntities: G["JoinedEntities"];
+          CTEs: G["CTEs"];
+          SelectedEntities: G["SelectedEntities"];
+          ExplicitSelects: G["ExplicitSelects"];
+        },
+        A,
+        E
+      >
     ) => JoinImplArgs
   ): QueryBuilder<{
     RootEntity: G["RootEntity"];
@@ -684,7 +708,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   public leftJoinAndSelect<A extends string, E extends AnEntity>(
     targetAlias: A,
     targetEntityOrCTE: E | string,
-    conditionFn: (j: JoinFactory<any>) => JoinImplArgs
+    conditionFn: (j: JoinFactory<any, A, E>) => JoinImplArgs
   ) {
     this.joinImpl(
       conditionFn(
@@ -701,13 +725,17 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     targetAlias: A,
     targetEntity: E,
     conditionFn: (
-      j: JoinFactory<{
-        RootEntity: G["RootEntity"];
-        JoinedEntities: G["JoinedEntities"] & Record<A, E>;
-        CTEs: G["CTEs"];
-        SelectedEntities: G["SelectedEntities"];
-        ExplicitSelects: G["ExplicitSelects"];
-      }>
+      j: JoinFactory<
+        {
+          RootEntity: G["RootEntity"];
+          JoinedEntities: G["JoinedEntities"];
+          CTEs: G["CTEs"];
+          SelectedEntities: G["SelectedEntities"];
+          ExplicitSelects: G["ExplicitSelects"];
+        },
+        A,
+        E
+      >
     ) => JoinImplArgs
   ): QueryBuilder<{
     RootEntity: G["RootEntity"];
@@ -722,13 +750,17 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     CTEName: C,
     conditionFn: (
       j: Omit<
-        JoinFactory<{
-          RootEntity: G["RootEntity"];
-          JoinedEntities: G["JoinedEntities"] & Record<A, G["CTEs"][C]>;
-          CTEs: G["CTEs"];
-          SelectedEntities: G["SelectedEntities"];
-          ExplicitSelects: G["ExplicitSelects"];
-        }>,
+        JoinFactory<
+          {
+            RootEntity: G["RootEntity"];
+            JoinedEntities: G["JoinedEntities"];
+            CTEs: G["CTEs"];
+            SelectedEntities: G["SelectedEntities"];
+            ExplicitSelects: G["ExplicitSelects"];
+          },
+          A,
+          G["CTEs"][C]
+        >,
         "relation"
       >
     ) => JoinImplArgs
@@ -743,7 +775,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   public rightJoin<A extends string, E extends AnEntity>(
     targetAlias: A,
     targetEntityOrCTE: E | string,
-    conditionFn: (j: JoinFactory<any>) => JoinImplArgs
+    conditionFn: (j: JoinFactory<any, A, E>) => JoinImplArgs
   ) {
     this.joinImpl(
       conditionFn(
@@ -758,13 +790,17 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     targetAlias: A,
     targetEntity: E,
     conditionFn: (
-      j: JoinFactory<{
-        RootEntity: G["RootEntity"];
-        JoinedEntities: G["JoinedEntities"] & Record<A, E>;
-        CTEs: G["CTEs"];
-        SelectedEntities: G["SelectedEntities"];
-        ExplicitSelects: G["ExplicitSelects"];
-      }>
+      j: JoinFactory<
+        {
+          RootEntity: G["RootEntity"];
+          JoinedEntities: G["JoinedEntities"];
+          CTEs: G["CTEs"];
+          SelectedEntities: G["SelectedEntities"];
+          ExplicitSelects: G["ExplicitSelects"];
+        },
+        A,
+        E
+      >
     ) => JoinImplArgs
   ): QueryBuilder<{
     RootEntity: G["RootEntity"];
@@ -777,7 +813,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   public rightJoinAndSelect<A extends string, E extends AnEntity>(
     targetAlias: A,
     targetEntityOrCTE: E | string,
-    conditionFn: (j: JoinFactory<any>) => JoinImplArgs
+    conditionFn: (j: JoinFactory<any, A, E>) => JoinImplArgs
   ) {
     this.joinImpl(
       conditionFn(
