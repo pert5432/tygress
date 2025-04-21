@@ -149,8 +149,16 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
 
   public with<A extends string, T extends Record<string, any>>(
     alias: A,
-    qb: (qb: QueryBuilderFactory<G>) => QueryBuilder<{
-      RootEntity: any;
+    qb: (
+      qb: QueryBuilderFactory<{
+        RootEntity: G["RootEntity"];
+        JoinedEntities: {};
+        CTEs: G["CTEs"];
+        SelectedEntities: {};
+        ExplicitSelects: {};
+      }>
+    ) => QueryBuilder<{
+      RootEntity: AnEntity;
       JoinedEntities: any;
       CTEs: any;
       SelectedEntities: any;
