@@ -15,11 +15,13 @@ describe("QueryBuilder", async () => {
   };
 
   const pet1 = {
+    id: "bec37141-f990-4960-a03c-d78b43bc4c8e",
     userId: "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
     name: "Pootis",
   };
 
   const pet2 = {
+    id: "388a73d0-1dbb-45cb-b7d2-0cefea41f92b",
     userId: "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
     name: "Moofis",
   };
@@ -47,48 +49,103 @@ describe("QueryBuilder", async () => {
     TestHelper.validateObject(res[1]!, user2);
   });
 
-  test("inner join", async () => {
-    const res = await TEST_DB.queryBuilder("u", Users)
-      .innerJoinAndSelect("p", Pets, (j) => j.relation("u", "pets"))
-      .getEntities();
+  describe("joins", async () => {
+    test("inner", async () => {
+      const res = await TEST_DB.queryBuilder("u", Users)
+        .innerJoinAndSelect("p", Pets, (j) => j.relation("u", "pets"))
+        .getEntities();
 
-    expect(res).toHaveLength(1);
+      expect(res).toHaveLength(1);
 
-    const user = res[0]!;
+      const user = res[0]!;
 
-    expect(user.pets).toHaveLength(2);
-  });
+      expect(user.pets).toHaveLength(2);
+    });
 
-  test("left join", async () => {
-    const res = await TEST_DB.queryBuilder("u", Users)
-      .leftJoinAndSelect("p", Pets, (j) => j.relation("u", "pets"))
-      .orderBy("u", "username", "ASC")
-      .getEntities();
+    test("left", async () => {
+      const res = await TEST_DB.queryBuilder("u", Users)
+        .leftJoinAndSelect("p", Pets, (j) => j.relation("u", "pets"))
+        .orderBy("u", "username", "ASC")
+        .getEntities();
 
-    expect(res).toHaveLength(2);
+      expect(res).toHaveLength(2);
 
-    expect(res[0]!.pets).toHaveLength(0);
-    expect(res[1]!.pets).toHaveLength(2);
-  });
+      expect(res[0]!.pets).toHaveLength(0);
+      expect(res[1]!.pets).toHaveLength(2);
+    });
 
-  test("explicit join", async () => {
-    const res = await TEST_DB.queryBuilder("u", Users)
-      .innerJoin("p", Pets, (j) => j.on("p", "userId", "=", "u", "id"))
-      .getEntities();
+    test("full", async () => {
+      const res = await TEST_DB.queryBuilder("u", Users)
+        .fullJoin("p", Pets, (j) => j.relation("u", "pets"))
+        .select("u", "id", "user_id")
+        .select("p", "id", "pet_id")
+        .orderBy("p", "id", "ASC")
+        .orderBy("u", "id", "ASC")
+        .getRaw();
 
-    expect(res).toHaveLength(1);
+      expect(res).toStrictEqual([
+        {
+          user_id: "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+          pet_id: "388a73d0-1dbb-45cb-b7d2-0cefea41f92b",
+        },
+        {
+          user_id: "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+          pet_id: "bec37141-f990-4960-a03c-d78b43bc4c8e",
+        },
+        { user_id: "406b635b-508e-4824-855d-fb71d77bcdac", pet_id: null },
+      ]);
+    });
 
-    TestHelper.validateObject(res[0]!, user1);
-  });
+    test("cross", async () => {
+      const res = await TEST_DB.queryBuilder("u", Users)
+        .crossJoin("p", Pets)
+        .select("u", "id", "user_id")
+        .select("p", "id", "pet_id")
+        .orderBy("p", "id", "ASC")
+        .orderBy("u", "id", "ASC")
+        .getRaw();
 
-  test("sql join", async () => {
-    const res = await TEST_DB.queryBuilder("u", Users)
-      .innerJoin("p", Pets, (j) => j.sql("p.userId = u.id"))
-      .getEntities();
+      console.log(res);
 
-    expect(res).toHaveLength(1);
+      expect(res).toStrictEqual([
+        {
+          user_id: "406b635b-508e-4824-855d-fb71d77bcdac",
+          pet_id: "388a73d0-1dbb-45cb-b7d2-0cefea41f92b",
+        },
+        {
+          user_id: "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+          pet_id: "388a73d0-1dbb-45cb-b7d2-0cefea41f92b",
+        },
+        {
+          user_id: "406b635b-508e-4824-855d-fb71d77bcdac",
+          pet_id: "bec37141-f990-4960-a03c-d78b43bc4c8e",
+        },
+        {
+          user_id: "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+          pet_id: "bec37141-f990-4960-a03c-d78b43bc4c8e",
+        },
+      ]);
+    });
 
-    TestHelper.validateObject(res[0]!, user1);
+    test("explicit", async () => {
+      const res = await TEST_DB.queryBuilder("u", Users)
+        .innerJoin("p", Pets, (j) => j.on("p", "userId", "=", "u", "id"))
+        .getEntities();
+
+      expect(res).toHaveLength(1);
+
+      TestHelper.validateObject(res[0]!, user1);
+    });
+
+    test("sql", async () => {
+      const res = await TEST_DB.queryBuilder("u", Users)
+        .innerJoin("p", Pets, (j) => j.sql("p.userId = u.id"))
+        .getEntities();
+
+      expect(res).toHaveLength(1);
+
+      TestHelper.validateObject(res[0]!, user1);
+    });
   });
 
   test("explicit selects", async () => {

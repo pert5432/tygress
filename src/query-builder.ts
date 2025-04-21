@@ -820,6 +820,121 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     return this as any;
   }
 
+  // FULL JOIN
+
+  public fullJoin<A extends string, E extends AnEntity>(
+    targetAlias: A,
+    targetEntity: E,
+    conditionFn: (
+      j: JoinFactory<
+        {
+          RootEntity: G["RootEntity"];
+          JoinedEntities: G["JoinedEntities"];
+          CTEs: G["CTEs"];
+          SelectedEntities: G["SelectedEntities"];
+          ExplicitSelects: G["ExplicitSelects"];
+        },
+        A,
+        E
+      >
+    ) => JoinImplArgs
+  ): QueryBuilder<{
+    RootEntity: G["RootEntity"];
+    JoinedEntities: G["JoinedEntities"] & Record<A, E>;
+    CTEs: G["CTEs"];
+    SelectedEntities: G["SelectedEntities"];
+    ExplicitSelects: G["ExplicitSelects"];
+  }>;
+
+  public fullJoin<A extends string, C extends keyof G["CTEs"]>(
+    targetAlias: A,
+    CTEName: C,
+    conditionFn: (
+      j: Omit<
+        JoinFactory<
+          {
+            RootEntity: G["RootEntity"];
+            JoinedEntities: G["JoinedEntities"];
+            CTEs: G["CTEs"];
+            SelectedEntities: G["SelectedEntities"];
+            ExplicitSelects: G["ExplicitSelects"];
+          },
+          A,
+          G["CTEs"][C]
+        >,
+        "relation"
+      >
+    ) => JoinImplArgs
+  ): QueryBuilder<{
+    RootEntity: G["RootEntity"];
+    JoinedEntities: G["JoinedEntities"] & Record<A, G["CTEs"][C]>;
+    CTEs: G["CTEs"];
+    SelectedEntities: G["SelectedEntities"];
+    ExplicitSelects: G["ExplicitSelects"];
+  }>;
+
+  public fullJoin<A extends string, E extends AnEntity>(
+    targetAlias: A,
+    targetEntityOrCTE: E | string,
+    conditionFn: (j: JoinFactory<any, A, E>) => JoinImplArgs
+  ) {
+    this.joinImpl(
+      conditionFn(
+        new JoinFactory(targetAlias, targetEntityOrCTE, JoinType.FULL, false)
+      )
+    );
+
+    return this as any;
+  }
+
+  // CROSS JOIN
+
+  public crossJoin<A extends string, E extends AnEntity>(
+    targetAlias: A,
+    targetEntity: E
+  ): QueryBuilder<{
+    RootEntity: G["RootEntity"];
+    JoinedEntities: G["JoinedEntities"] & Record<A, E>;
+    CTEs: G["CTEs"];
+    SelectedEntities: G["SelectedEntities"];
+    ExplicitSelects: G["ExplicitSelects"];
+  }>;
+
+  public crossJoin<A extends string, C extends keyof G["CTEs"]>(
+    targetAlias: A,
+    CTEName: C
+  ): QueryBuilder<{
+    RootEntity: G["RootEntity"];
+    JoinedEntities: G["JoinedEntities"] & Record<A, G["CTEs"][C]>;
+    CTEs: G["CTEs"];
+    SelectedEntities: G["SelectedEntities"];
+    ExplicitSelects: G["ExplicitSelects"];
+  }>;
+
+  public crossJoin<A extends string, E extends AnEntity>(
+    targetAlias: A,
+    targetEntityOrCTE: E | string
+  ) {
+    const targetSelectSourceContext: SelectSourceContext =
+      typeof targetEntityOrCTE === "string"
+        ? { type: "cte", name: targetEntityOrCTE, source: Object }
+        : { type: "entity", source: targetEntityOrCTE };
+
+    const joinArgs: JoinImplArgs = {
+      targetAlias,
+      targetSelectSourceContext,
+
+      select: false,
+
+      type: JoinType.CROSS,
+      strategy: JoinStrategy.CROSS,
+    };
+
+    this.joinImpl(joinArgs);
+
+    return this as any;
+  }
+
   // PRIVATE join impl
 
   private joinImpl(args: JoinImplArgs): void {
@@ -865,6 +980,13 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
           nextIdentifier
         );
         break;
+
+      case JoinStrategy.CROSS:
+        this.joinCross(args, nextSource, nextIdentifier);
+        break;
+
+      default:
+        throw new Error(`Invalid join strategy ${strategy}`);
     }
   }
 
@@ -1001,6 +1123,36 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
           comparator,
           childIdentifier
         ),
+
+        select: args.select,
+
+        childType: nextSelectSource.type,
+      })
+    );
+  }
+
+  private joinCross(
+    args: JoinImplArgs,
+    nextSelectSource: SelectSourceContext,
+    nextSelectSourceIdentifier: TableIdentifierSqlBuilder
+  ): void {
+    if (args.strategy !== JoinStrategy.CROSS) {
+      throw new Error(`Join strategy needs to be ${JoinStrategy.CROSS}`);
+    }
+
+    if (args.type !== JoinType.CROSS) {
+      throw new Error(
+        `Join type needs to be ${JoinType.CROSS} to use ${JoinStrategy.CROSS} strategy`
+      );
+    }
+
+    this.joins.push(
+      JoinArgFactory.create({
+        alias: args.targetAlias,
+        klass: nextSelectSource.source,
+        identifier: nextSelectSourceIdentifier,
+
+        type: args.type,
 
         select: args.select,
 
