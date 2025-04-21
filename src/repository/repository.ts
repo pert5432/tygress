@@ -32,7 +32,6 @@ import { OrderByExpressionSqlBuilder } from "../sql-builders/order-by-expression
 import { PostgresConnection } from "../postgres-connection";
 import { InsertSqlBuilder } from "../sql-builders/insert-sql-builder";
 import { InsertPayload, InsertResult, InsertOptions } from "../types/insert";
-import { QueryRunner } from "../query-runner";
 import { DeleteOptions } from "../types/delete";
 import { DeleteSqlBuilder } from "../sql-builders/delete-sql-builder";
 import { UpdateOptions } from "../types/update";
@@ -122,7 +121,7 @@ export abstract class Repository {
       );
     }
 
-    const res = await new QueryRunner(client, insert.sql, insert.params).run();
+    const res = await client.query(insert.sql, insert.params, "DML");
 
     return {
       affectedRows: res.rowCount!,
@@ -182,7 +181,7 @@ export abstract class Repository {
       );
     }
 
-    const res = await new QueryRunner(client, update.sql, update.params).run();
+    const res = await client.query(update.sql, update.params, "DML");
 
     return {
       affectedRows: res.rowCount!,
@@ -225,7 +224,7 @@ export abstract class Repository {
       );
     }
 
-    const res = await new QueryRunner(client, del.sql, del.params).run();
+    const res = await client.query(del.sql, del.params, "DML");
 
     return {
       affectedRows: res.rowCount!,
@@ -261,7 +260,7 @@ export abstract class Repository {
     // Run query and return entities
     return await QueryResultEntitiesParser.parse<T>(
       (
-        await new QueryRunner(client, query.sql, query.params).run()
+        await client.query(query.sql, query.params)
       ).rows,
       query.joinNodes
     );

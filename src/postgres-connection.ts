@@ -94,7 +94,7 @@ export class PostgresConnection {
   public async query<T extends { [key: string]: any } = any>(
     sql: string,
     params?: any[],
-    type: "query" | "dml" = "query"
+    type: "QUERY" | "DML" = "QUERY"
   ): Promise<QueryResult<T>> {
     this.ensureReadiness();
 
@@ -102,7 +102,7 @@ export class PostgresConnection {
       this.$sqlLog.push({ sql, params: params ?? [] });
     }
 
-    if (type === "dml") {
+    if (type === "DML") {
       this.logger.logDML(sql, params);
     } else {
       this.logger.logQuery(sql, params);

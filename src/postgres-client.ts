@@ -181,9 +181,10 @@ export class PostgresClient {
 
   public async query<T extends { [key: string]: any } = any>(
     sql: string,
-    params?: any[]
+    params?: any[],
+    type: "QUERY" | "DML" = "QUERY"
   ): Promise<QueryResult<T>> {
-    return this.withConnection((conn) => conn.query(sql, params ?? []));
+    return this.withConnection((conn) => conn.query(sql, params ?? [], type));
   }
 
   //
