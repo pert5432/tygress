@@ -8,6 +8,7 @@ import {
   PostgresConfigSettings,
   PostgresConnectionOptions,
 } from "./types/connection-settings";
+import { Logger } from "./logger";
 
 export class PostgresConnection {
   public $sqlLog: { sql: string; params: any[] }[] = [];
@@ -16,14 +17,15 @@ export class PostgresConnection {
     "CONNECTED";
 
   private collectSql: boolean;
-  private logLevel: "ALL" | "NOTHING";
 
   private postgresSettings: Partial<PostgresConfigSettings>;
 
-  constructor(public $client: PoolClient, options?: PostgresConnectionOptions) {
+  constructor(
+    public $client: PoolClient,
+    private logger: Logger,
+    options?: PostgresConnectionOptions
+  ) {
     this.collectSql = options?.logging?.collectSql ?? false;
-    this.logLevel = options?.logging?.logLevel ?? "ALL";
-
     this.postgresSettings = options?.postgresConfig ?? {};
   }
 
@@ -91,21 +93,28 @@ export class PostgresConnection {
 
   public async query<T extends { [key: string]: any } = any>(
     sql: string,
-    params?: any[]
+    params?: any[],
+    type: "query" | "dml" = "query"
   ): Promise<QueryResult<T>> {
     this.ensureReadiness();
-
-    if (this.shouldLog()) {
-      console.log("Query");
-      console.log(sql);
-      console.log(params ?? []);
-    }
 
     if (this.collectSql) {
       this.$sqlLog.push({ sql, params: params ?? [] });
     }
 
-    return this.$client.query(sql, params ?? []);
+    if (type === "dml") {
+      this.logger.logDML(sql, params);
+    } else {
+      this.logger.logQuery(sql, params);
+    }
+
+    try {
+      return await this.$client.query(sql, params ?? []);
+    } catch (e) {
+      this.logger.logQueryError(e as Error, sql, params);
+
+      throw e;
+    }
   }
 
   public async begin(): Promise<void> {
@@ -123,7 +132,7 @@ export class PostgresConnection {
   public async rollback(): Promise<void> {
     this.ensureReadiness();
 
-    await this.query("ROLLBACK");
+    await this.query("ROLLBACK;");
   }
 
   public async startTransaction(): Promise<void> {
@@ -161,14 +170,6 @@ export class PostgresConnection {
   //
   // PRIVATE
   //
-  private shouldLog(): boolean {
-    if (this.logLevel === "ALL") {
-      return true;
-    }
-
-    return false;
-  }
-
   private ensureReadiness(): void {
     if (!["READY", "INITIALIZING"].includes(this.state)) {
       throw new Error(

@@ -10,11 +10,15 @@ import {
   PostgresClientOptions,
   PostgresConnectionOptions,
 } from "./types/connection-settings";
+import { Logger } from "./logger";
+import { QueryLogLevel } from "./enums";
 
 export class PostgresClient {
   private pool: Pool;
 
   private defaultConnectionSettings?: PostgresConnectionOptions;
+
+  private logger: Logger;
 
   constructor({
     databaseUrl,
@@ -30,6 +34,10 @@ export class PostgresClient {
     });
 
     this.defaultConnectionSettings = defaultConnectionOptions;
+
+    this.logger = new Logger(
+      defaultConnectionOptions?.logging?.logLevel ?? QueryLogLevel.ALL
+    );
   }
 
   public instantiate<T extends AnEntity>(
@@ -66,6 +74,7 @@ export class PostgresClient {
   ): Promise<PostgresConnection> {
     return new PostgresConnection(
       await this.pool.connect(),
+      this.logger,
       this.connectionSettings(settings)
     ).init();
   }
