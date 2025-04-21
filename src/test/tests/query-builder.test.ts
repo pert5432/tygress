@@ -15,11 +15,13 @@ describe("QueryBuilder", async () => {
   };
 
   const pet1 = {
+    id: "bec37141-f990-4960-a03c-d78b43bc4c8e",
     userId: "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
     name: "Pootis",
   };
 
   const pet2 = {
+    id: "388a73d0-1dbb-45cb-b7d2-0cefea41f92b",
     userId: "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
     name: "Moofis",
   };
@@ -72,6 +74,28 @@ describe("QueryBuilder", async () => {
       expect(res[1]!.pets).toHaveLength(2);
     });
 
+    test("full", async () => {
+      const res = await TEST_DB.queryBuilder("u", Users)
+        .fullJoin("p", Pets, (j) => j.relation("u", "pets"))
+        .select("u", "id", "user_id")
+        .select("p", "id", "pet_id")
+        .orderBy("p", "id", "ASC")
+        .orderBy("u", "id", "ASC")
+        .getRaw();
+
+      expect(res).toStrictEqual([
+        {
+          user_id: "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+          pet_id: "388a73d0-1dbb-45cb-b7d2-0cefea41f92b",
+        },
+        {
+          user_id: "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+          pet_id: "bec37141-f990-4960-a03c-d78b43bc4c8e",
+        },
+        { user_id: "406b635b-508e-4824-855d-fb71d77bcdac", pet_id: null },
+      ]);
+    });
+
     test("cross", async () => {
       const res = await TEST_DB.queryBuilder("u", Users)
         .crossJoin("p", Pets)
@@ -81,22 +105,24 @@ describe("QueryBuilder", async () => {
         .orderBy("u", "id", "ASC")
         .getRaw();
 
+      console.log(res);
+
       expect(res).toStrictEqual([
         {
           user_id: "406b635b-508e-4824-855d-fb71d77bcdac",
-          pet_id: "80ebcf3f-160a-4f0c-93e0-ed44d9582161",
+          pet_id: "388a73d0-1dbb-45cb-b7d2-0cefea41f92b",
         },
         {
           user_id: "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
-          pet_id: "80ebcf3f-160a-4f0c-93e0-ed44d9582161",
+          pet_id: "388a73d0-1dbb-45cb-b7d2-0cefea41f92b",
         },
         {
           user_id: "406b635b-508e-4824-855d-fb71d77bcdac",
-          pet_id: "96fae7b6-ba6f-41e8-bbb9-378622ff1568",
+          pet_id: "bec37141-f990-4960-a03c-d78b43bc4c8e",
         },
         {
           user_id: "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
-          pet_id: "96fae7b6-ba6f-41e8-bbb9-378622ff1568",
+          pet_id: "bec37141-f990-4960-a03c-d78b43bc4c8e",
         },
       ]);
     });
