@@ -1,6 +1,7 @@
 import { ClientConfig } from "pg";
 import { AnEntity } from "..";
 import { PostgresConnectionOptions } from ".";
+import { QueryLogLevel } from "../../enums";
 
 export type PostgresClientOptions = {
   databaseUrl: string;
@@ -8,6 +9,8 @@ export type PostgresClientOptions = {
   ssl?: ClientConfig["ssl"];
 
   defaultConnectionOptions?: PostgresConnectionOptions;
+
+  queryLogLevel?: QueryLogLevel;
 
   entities: AnEntity[];
 };

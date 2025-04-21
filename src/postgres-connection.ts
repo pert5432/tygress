@@ -25,7 +25,7 @@ export class PostgresConnection {
     private logger: Logger,
     options?: PostgresConnectionOptions
   ) {
-    this.collectSql = options?.logging?.collectSql ?? false;
+    this.collectSql = options?.collectSql ?? false;
     this.postgresSettings = options?.postgresConfig ?? {};
   }
 
@@ -165,6 +165,18 @@ export class PostgresConnection {
     this.state = "RELEASED";
 
     this.$client.release();
+  }
+
+  public close(): void {
+    if (this.state === "RELEASED") {
+      throw new Error(
+        `Can't close connection as its already released back to the pool`
+      );
+    }
+
+    this.state = "RELEASED";
+
+    this.$client.release(true);
   }
 
   //

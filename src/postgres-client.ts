@@ -9,6 +9,7 @@ import { UpdateOptions, UpdateResult } from "./types/update";
 import {
   PostgresClientOptions,
   PostgresConnectionOptions,
+  WithConnectionOptions,
 } from "./types/connection-settings";
 import { Logger } from "./logger";
 import { QueryLogLevel } from "./enums";
@@ -25,6 +26,7 @@ export class PostgresClient {
     maxConnectionPoolSize,
     ssl,
     defaultConnectionOptions,
+    queryLogLevel,
     entities,
   }: PostgresClientOptions) {
     this.pool = new Pool({
@@ -35,9 +37,7 @@ export class PostgresClient {
 
     this.defaultConnectionSettings = defaultConnectionOptions;
 
-    this.logger = new Logger(
-      defaultConnectionOptions?.logging?.logLevel ?? QueryLogLevel.ALL
-    );
+    this.logger = new Logger(queryLogLevel ?? QueryLogLevel.ALL);
   }
 
   public instantiate<T extends AnEntity>(
@@ -80,7 +80,7 @@ export class PostgresClient {
   }
 
   public async withConnection<T>(
-    settings: PostgresConnectionOptions,
+    settings: WithConnectionOptions,
     fn: (connection: PostgresConnection) => T
   ): Promise<T>;
 
@@ -90,7 +90,7 @@ export class PostgresClient {
 
   public async withConnection<T>(
     settingsOrFn:
-      | PostgresConnectionOptions
+      | WithConnectionOptions
       | ((connection: PostgresConnection) => T),
     optionalFn?: (connection: PostgresConnection) => T
   ): Promise<T> {
@@ -107,7 +107,11 @@ export class PostgresClient {
     try {
       return await fn(connection);
     } finally {
-      connection.release();
+      if (settings?.closeConnection) {
+        connection.close();
+      } else {
+        connection.release();
+      }
     }
   }
 
@@ -198,7 +202,8 @@ export class PostgresClient {
     }
 
     return {
-      logging: options.logging ?? this.defaultConnectionSettings?.logging,
+      collectSql:
+        options.collectSql ?? this.defaultConnectionSettings?.collectSql,
       postgresConfig:
         options.postgresConfig ??
         this.defaultConnectionSettings?.postgresConfig,

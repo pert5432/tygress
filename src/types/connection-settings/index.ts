@@ -1,6 +1,6 @@
 export { PostgresClientOptions } from "./postgres-client-options";
 export {
   PostgresConnectionOptions,
-  ConnectionLoggingOptions,
+  WithConnectionOptions,
 } from "./postgres-connection-options";
 export { PostgresConfigSettings } from "./postgres-config-settings";
