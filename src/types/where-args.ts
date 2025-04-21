@@ -1,5 +1,5 @@
 import { WhereComparator } from ".";
-import { AnEntity, Entity } from "./entity";
+import { AnEntity } from "./entity";
 import { Parametrizable } from "./parametrizable";
 
 export class ParametrizedCondition<V> {
@@ -22,18 +22,26 @@ export class NotConditionWrapper<V> {
   condition: ParametrizedConditionWrapper<V>;
 }
 
+export class IsNullCondition {
+  readonly "@instanceof" = Symbol.for("IsNullCondition");
+}
+
+export class IsNotNullCondition {
+  readonly "@instanceof" = Symbol.for("IsNotNullCondition");
+}
+
 export type ParameterArgs<Property extends Parametrizable> =
   | ParametrizedCondition<Property>
   | ParametrizedConditionWrapper<Property>
   | NotConditionWrapper<Property>;
 
 export type Where<Property> = Property extends Parametrizable
-  ? ParameterArgs<Property> | Property
+  ? ParameterArgs<Property> | Property | IsNullCondition | IsNotNullCondition
   : Property extends Array<infer I>
   ? Wheres<I>
   : Property extends AnEntity | InstanceType<AnEntity>
   ? Wheres<Property>
-  : never;
+  : IsNullCondition | IsNotNullCondition | never;
 
 export type Wheres<E extends InstanceType<AnEntity>> = {
   [K in keyof E]?: Where<E[K]>;

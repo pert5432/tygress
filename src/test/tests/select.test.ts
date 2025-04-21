@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, test } from "vitest";
 import { Users } from "../entities/users";
 import { TestHelper } from "../helpers";
 import { Pets } from "../entities/pets";
-import { Gt, In, Lte } from "../../api";
+import { Gt, In, IsNotNull, IsNull } from "../../api";
 
 describe("select", async () => {
   const user1 = TEST_DB.instantiate(Users, {
@@ -154,6 +154,22 @@ describe("select", async () => {
       });
 
       expect(res).toStrictEqual([user2, user1]);
+    });
+
+    test("isNull", async () => {
+      const res = await TEST_DB.select(Users, {
+        where: { birthdate: IsNull() },
+      });
+
+      expect(res).toStrictEqual([user2]);
+    });
+
+    test("isNotNull", async () => {
+      const res = await TEST_DB.select(Users, {
+        where: { birthdate: IsNotNull() },
+      });
+
+      expect(res).toStrictEqual([user1]);
     });
   });
 

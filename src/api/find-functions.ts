@@ -1,9 +1,12 @@
 import {
   ParametrizedConditionFactory,
   ConditionWrapperFactory,
+  ConditionFactory,
 } from "../factories";
 import { ParametrizedCondition } from "../types";
 import {
+  IsNotNullCondition,
+  IsNullCondition,
   NotConditionWrapper,
   ParametrizedConditionWrapper,
 } from "../types/where-args";
@@ -53,3 +56,8 @@ export const Not = <T>(
 ): NotConditionWrapper<T> => {
   return ConditionWrapperFactory.createNot(condition);
 };
+
+export const IsNull = (): IsNullCondition => ConditionFactory.createIsNull();
+
+export const IsNotNull = (): IsNotNullCondition =>
+  ConditionFactory.createIsNotNull();

@@ -1,6 +1,7 @@
 import { WHERE_COMPARATORS } from "../../where-comparators";
 import {
   ColColComparisonArgs,
+  ColIsNullComparisonArgs,
   ColParamComparisonArgs,
   ColTableIdentifierComparisonArgs,
 } from "../../types/create-args/comparison";
@@ -56,6 +57,30 @@ export class ColParamComparison extends Comparison {
       .map((pNum) => `$${pNum}${this.rightCast ? `::${this.rightCast}` : ""}`);
 
     return `${this.left.sql()} ${this.comparatorF(right)}`;
+  }
+}
+
+export class ColIsNullComparison extends Comparison {
+  constructor({ left }: ColIsNullComparisonArgs) {
+    super();
+
+    this.left = left;
+  }
+
+  public sql(): string {
+    return `${this.left.sql()} IS NULL`;
+  }
+}
+
+export class ColIsNotNullComparison extends Comparison {
+  constructor({ left }: ColIsNullComparisonArgs) {
+    super();
+
+    this.left = left;
+  }
+
+  public sql(): string {
+    return `${this.left.sql()} IS NOT NULL`;
   }
 }
 
