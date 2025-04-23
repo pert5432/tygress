@@ -44,6 +44,10 @@ export class SelectSqlBuilder<T extends AnEntity> {
   private targetNodesByAlias = new Map<string, TargetNode<AnEntity>>();
 
   public buildSelect(): Query {
+    if (this.args.distinct && this.args.distinctOn?.length) {
+      throw new Error(`Can't use DISTINCT and DISTINCT ON in one query`);
+    }
+
     this.buildJoins();
     this.buildWhereConditions();
     this.selectDesiredFields();
@@ -60,7 +64,17 @@ export class SelectSqlBuilder<T extends AnEntity> {
         .join(", ")} `;
     }
 
-    sql += `SELECT ${this.selectTargetSqlBuilders
+    sql += `SELECT `;
+
+    if (this.args.distinct) {
+      sql += `DISTINCT `;
+    } else if (this.args.distinctOn?.length) {
+      sql += `DISTINCT ON (${this.args.distinctOn
+        .map((e) => e.sql())
+        .join(", ")}) `;
+    }
+
+    sql += `${this.selectTargetSqlBuilders
       .map((e) => e.sql(this.paramBuilder))
       .join(", ")}`;
 
