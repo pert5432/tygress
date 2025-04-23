@@ -54,6 +54,8 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   private selects: SelectTargetSqlBuilder[] = [];
   private orderBys: OrderByExpressionSqlBuilder[] = [];
   private groupBys: ColumnIdentifierSqlBuilder[] = [];
+  private _distinct: boolean = false;
+  private _distinctOn: ColumnIdentifierSqlBuilder[] = [];
   private CTEs: CteTableIdentifierSqlBuilder[] = [];
 
   private _limit?: number;
@@ -1189,6 +1191,23 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     return this;
   }
 
+  public distinct(value: boolean = true): this {
+    this._distinct = value;
+
+    return this;
+  }
+
+  public distinctOn<
+    K extends keyof G["JoinedEntities"],
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>
+  >(alias: K, field: F): this {
+    this._distinctOn.push(
+      this.getColumnIdentifier(alias.toString(), field.toString())
+    );
+
+    return this;
+  }
+
   public removeOffset(): this {
     this._offset = undefined;
 
@@ -1230,6 +1249,9 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
 
         limit: this._limit,
         offset: this._offset,
+
+        distinct: this._distinct,
+        distinctOn: this._distinctOn,
       },
       paramBuilder ?? this.paramBuilder
     ).buildSelect();

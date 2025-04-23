@@ -353,6 +353,55 @@ describe("QueryBuilder", async () => {
     ]);
   });
 
+  describe("distinct", async () => {
+    test("distinct", async () => {
+      const res = await TEST_DB.queryBuilder("u", Users)
+        .crossJoin("p", Pets)
+        .crossJoin("p2", Pets)
+        .select("u", "id")
+        .distinct()
+        .orderBy("u", "id")
+        .getRaw();
+
+      expect(res).toStrictEqual([
+        { "u.id": "406b635b-508e-4824-855d-fb71d77bcdac" },
+        { "u.id": "5c15d031-000b-4a87-8bb5-2e7b00679ed7" },
+      ]);
+    });
+
+    test("distinctOn", async () => {
+      const res = await TEST_DB.queryBuilder("u", Users)
+        .crossJoin("p", Pets)
+        .crossJoin("p2", Pets)
+        .select("u", "id")
+        .select("p", "id")
+        .distinctOn("u", "id")
+        .distinctOn("p", "id")
+        .orderBy("u", "id")
+        .orderBy("p", "id")
+        .getRaw();
+
+      expect(res).toStrictEqual([
+        {
+          "u.id": "406b635b-508e-4824-855d-fb71d77bcdac",
+          "p.id": "388a73d0-1dbb-45cb-b7d2-0cefea41f92b",
+        },
+        {
+          "u.id": "406b635b-508e-4824-855d-fb71d77bcdac",
+          "p.id": "bec37141-f990-4960-a03c-d78b43bc4c8e",
+        },
+        {
+          "u.id": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+          "p.id": "388a73d0-1dbb-45cb-b7d2-0cefea41f92b",
+        },
+        {
+          "u.id": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+          "p.id": "bec37141-f990-4960-a03c-d78b43bc4c8e",
+        },
+      ]);
+    });
+  });
+
   test("limit", async () => {
     const res = await TEST_DB.queryBuilder("u", Users)
       .orderBy("u", "username")

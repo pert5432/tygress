@@ -26,4 +26,8 @@ export type SelectQueryArgs = {
   limit?: number;
 
   offset?: number;
+
+  distinct?: boolean;
+
+  distinctOn?: ColumnIdentifierSqlBuilder[];
 };
