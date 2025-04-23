@@ -41,7 +41,6 @@ import { OrderByExpressionSqlBuilder } from "./sql-builders/order-by-expression"
 import { QueryBuilderFactory } from "./query-builder-factory";
 import { PostgresClient } from "./postgres-client";
 import { Query } from "./types/query";
-import { QueryRunner } from "./query-runner";
 import { JoinImplArgs } from "./types/query-builder";
 import { JoinFactory } from "./join-factory";
 
@@ -1241,7 +1240,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
 
     return this.client.withConnection(async (conn) =>
       QueryResultEntitiesParser.parse<G["RootEntity"]>(
-        (await new QueryRunner(conn, query.sql, query.params).run()).rows,
+        (await conn.query(query.sql, query.params)).rows,
         query.joinNodes!
       )
     );
@@ -1257,7 +1256,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     return this.client.withConnection(
       async (conn) =>
         RawQueryResultParser.parse(
-          (await new QueryRunner(conn, query.sql, query.params).run()).rows
+          (await conn.query(query.sql, query.params)).rows
         ) as any
     );
   }
