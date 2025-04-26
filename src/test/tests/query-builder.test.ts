@@ -52,7 +52,7 @@ describe("QueryBuilder", async () => {
   describe("joins", async () => {
     test("inner", async () => {
       const res = await TEST_DB.queryBuilder("u", Users)
-        .innerJoinAndSelect("p", Pets, (j) => j.relation("u", "pets"))
+        .innerJoinAndMap("p", Pets, "u", "pets")
         .getEntities();
 
       expect(res).toHaveLength(1);
@@ -64,7 +64,7 @@ describe("QueryBuilder", async () => {
 
     test("left", async () => {
       const res = await TEST_DB.queryBuilder("u", Users)
-        .leftJoinAndSelect("p", Pets, (j) => j.relation("u", "pets"))
+        .leftJoinAndMap("p", Pets, "u", "pets")
         .orderBy("u", "username", "ASC")
         .getEntities();
 
