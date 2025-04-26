@@ -42,31 +42,33 @@ export type JoinImplArgs = {
 
   type: JoinType;
 } & (
-  | {
-      strategy: JoinStrategy.RELATION;
+  | { map: true; mapToAlias: string; mapToField: string }
+  | { map?: false; mapToAlias?: string; mapToField?: string }
+) &
+  (
+    | {
+        strategy: JoinStrategy.RELATION;
 
-      parentAlias: string;
-      parentField: string;
-    }
-  | {
-      strategy: JoinStrategy.SQL;
+        parentAlias: string;
+        parentField: string;
+      }
+    | {
+        strategy: JoinStrategy.SQL;
 
-      sql: string;
-      namedParams?: NamedParams;
-      parentAlias?: string;
-      parentField?: string;
-    }
-  | {
-      strategy: JoinStrategy.COMPARISON;
+        sql: string;
+        namedParams?: NamedParams;
+      }
+    | {
+        strategy: JoinStrategy.COMPARISON;
 
-      leftAlias: string;
-      leftField: string;
-      comparator: WhereComparator;
-      rightAlias: string;
-      rightField: string;
-    }
-  | { strategy: JoinStrategy.CROSS; type: JoinType.CROSS }
-);
+        leftAlias: string;
+        leftField: string;
+        comparator: WhereComparator;
+        rightAlias: string;
+        rightField: string;
+      }
+    | { strategy: JoinStrategy.CROSS; type: JoinType.CROSS }
+  );
 
 export type FlattenSelectSources<
   T extends { [key: string]: SelectSource },

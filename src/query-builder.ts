@@ -539,7 +539,13 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   ) {
     this.joinImpl(
       conditionFn(
-        new JoinFactory(targetAlias, targetEntityOrCTE, JoinType.INNER, true)
+        new JoinFactory(
+          targetAlias,
+          targetEntityOrCTE,
+          JoinType.INNER,
+          true,
+          true
+        )
       )
     );
 
@@ -604,7 +610,13 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   ) {
     this.joinImpl(
       conditionFn(
-        new JoinFactory(targetAlias, targetEntityOrCTE, JoinType.INNER, false)
+        new JoinFactory(
+          targetAlias,
+          targetEntityOrCTE,
+          JoinType.INNER,
+          false,
+          false
+        )
       )
     );
 
@@ -671,7 +683,13 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   ) {
     this.joinImpl(
       conditionFn(
-        new JoinFactory(targetAlias, targetEntityOrCTE, JoinType.LEFT, false)
+        new JoinFactory(
+          targetAlias,
+          targetEntityOrCTE,
+          JoinType.LEFT,
+          false,
+          false
+        )
       )
     );
 
@@ -709,7 +727,13 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   ) {
     this.joinImpl(
       conditionFn(
-        new JoinFactory(targetAlias, targetEntityOrCTE, JoinType.LEFT, true)
+        new JoinFactory(
+          targetAlias,
+          targetEntityOrCTE,
+          JoinType.LEFT,
+          true,
+          true
+        )
       )
     );
 
@@ -776,7 +800,13 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   ) {
     this.joinImpl(
       conditionFn(
-        new JoinFactory(targetAlias, targetEntityOrCTE, JoinType.RIGHT, false)
+        new JoinFactory(
+          targetAlias,
+          targetEntityOrCTE,
+          JoinType.RIGHT,
+          false,
+          false
+        )
       )
     );
 
@@ -814,7 +844,13 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   ) {
     this.joinImpl(
       conditionFn(
-        new JoinFactory(targetAlias, targetEntityOrCTE, JoinType.RIGHT, true)
+        new JoinFactory(
+          targetAlias,
+          targetEntityOrCTE,
+          JoinType.RIGHT,
+          true,
+          true
+        )
       )
     );
 
@@ -881,7 +917,13 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   ) {
     this.joinImpl(
       conditionFn(
-        new JoinFactory(targetAlias, targetEntityOrCTE, JoinType.FULL, false)
+        new JoinFactory(
+          targetAlias,
+          targetEntityOrCTE,
+          JoinType.FULL,
+          false,
+          false
+        )
       )
     );
 
@@ -1008,7 +1050,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
       );
     }
 
-    const { parentAlias, parentField } = args;
+    const { parentAlias, parentField, map, select } = args;
 
     const parentSource = this.getSource(parentAlias);
     if (parentSource.type !== "entity") {
@@ -1042,7 +1084,9 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
         parentAlias: parentAlias.toString(),
         parentField: parentField.toString(),
         comparison: comparison,
-        select: args.select,
+
+        select,
+        map,
 
         childType: nextSource.type,
       })
@@ -1059,9 +1103,9 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
       throw new Error(`Join strategy needs to be ${JoinStrategy.SQL}`);
     }
 
-    const { sql, select, namedParams, parentAlias, parentField } = args;
+    const { sql, select, namedParams, map, mapToAlias, mapToField } = args;
 
-    if (select && !(parentAlias?.length && parentField?.length)) {
+    if (map && !(mapToAlias?.length && mapToField?.length)) {
       throw new Error(
         `SQL join needs parent alias and parent field with select set to true`
       );
@@ -1086,10 +1130,12 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
         type: args.type,
 
         comparison,
-        select,
 
-        parentAlias,
-        parentField,
+        select,
+        map,
+
+        parentAlias: mapToAlias,
+        parentField: mapToField,
 
         childType: nextSource.type,
       })
@@ -1106,7 +1152,15 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
       throw new Error(`Join strategy needs to be ${JoinStrategy.COMPARISON}`);
     }
 
-    const { leftAlias, leftField, comparator, rightAlias, rightField } = args;
+    const {
+      leftAlias,
+      leftField,
+      comparator,
+      rightAlias,
+      rightField,
+      select,
+      map,
+    } = args;
 
     const parentIdentifier = this.getColumnIdentifier(leftAlias, leftField);
     const childIdentifier = this.getColumnIdentifier(rightAlias, rightField);
@@ -1125,7 +1179,8 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
           childIdentifier
         ),
 
-        select: args.select,
+        select,
+        map,
 
         childType: nextSelectSource.type,
       })

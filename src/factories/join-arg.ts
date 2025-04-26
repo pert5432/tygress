@@ -13,6 +13,7 @@ export abstract class JoinArgFactory {
     parentAlias,
     parentField,
     select,
+    map,
   }: ClassArg<JoinArg>): JoinArg {
     const e = new JoinArg();
 
@@ -25,6 +26,7 @@ export abstract class JoinArgFactory {
     e.parentAlias = parentAlias;
     e.parentField = parentField;
     e.select = select;
+    e.map = map;
 
     return e;
   }

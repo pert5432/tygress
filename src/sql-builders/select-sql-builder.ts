@@ -147,8 +147,10 @@ export class SelectSqlBuilder<T extends AnEntity> {
 
       if (join.childType === "cte") {
         nextTargetNode = TargetNodeFactory.createCTE(join.alias);
-      } else if (join.parentAlias) {
-        const parentTargetNode = this.targetNodesByAlias.get(join.parentAlias)!;
+      } else if (join.map) {
+        const parentTargetNode = this.targetNodesByAlias.get(
+          join.parentAlias!
+        )!;
 
         nextTargetNode = TargetNodeFactory.create(
           join.alias,

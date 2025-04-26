@@ -19,7 +19,8 @@ export class JoinFactory<
     private targetAlias: string,
     targetEntityOrCTE: AnEntity | string,
     private type: JoinType,
-    private select: boolean
+    private select: boolean,
+    private map: boolean
   ) {
     this.targetSelectSourceContext =
       typeof targetEntityOrCTE === "string"
@@ -37,6 +38,14 @@ export class JoinFactory<
 
       parentAlias: parentAlias.toString(),
       parentField: parentField.toString(),
+
+      ...(this.map
+        ? {
+            mapToAlias: parentAlias.toString(),
+            mapToField: parentField.toString(),
+            map: true,
+          }
+        : { map: false }),
     };
   }
 

@@ -25,6 +25,7 @@ export class JoinArg {
   parentField?: string;
 
   select?: boolean;
+  map?: boolean;
 
   sql(paramBuilder: ParamBuilder): string {
     if (!this.type) {
