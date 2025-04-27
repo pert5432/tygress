@@ -251,6 +251,27 @@ describe("QueryBuilder", async () => {
       ]);
     });
 
+    test("cross and map", async () => {
+      const res = await TEST_DB.queryBuilder("u", Users)
+        .crossJoinAndMap("p", Pets, "u", "pets")
+        .orderBy("p", "id", "ASC")
+        .orderBy("u", "id", "ASC")
+        .getEntities();
+
+      expect(res).toHaveLength(2);
+      expect(res[0]!.id).toBe(user2.id);
+      TestHelper.validateObject(
+        res[0]!.pets,
+        TEST_DB.instantiate(Pets, [pet2, pet1])
+      );
+
+      expect(res[1]!.id).toBe(user1.id);
+      TestHelper.validateObject(
+        res[1]!.pets,
+        TEST_DB.instantiate(Pets, [pet2, pet1])
+      );
+    });
+
     test("explicit", async () => {
       const res = await TEST_DB.queryBuilder("u", Users)
         .innerJoin("p", Pets, (j) => j.on("p", "userId", "=", "u", "id"))

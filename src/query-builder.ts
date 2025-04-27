@@ -1465,6 +1465,49 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   }
 
   //
+  // CROSS JOIN AND MAP
+  //
+  public crossJoinAndMap<
+    A extends string,
+    E extends AnEntity,
+    K extends keyof G["JoinedEntities"],
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>
+  >(
+    targetAlias: A,
+    targetEntityOrCTE: E | string,
+    parentAlias: K,
+    parentField: F
+  ): QueryBuilder<{
+    RootEntity: G["RootEntity"];
+    JoinedEntities: G["JoinedEntities"] & Record<A, E>;
+    CTEs: G["CTEs"];
+    SelectedEntities: G["SelectedEntities"];
+    ExplicitSelects: G["ExplicitSelects"];
+  }> {
+    const targetSelectSourceContext: SelectSourceContext =
+      typeof targetEntityOrCTE === "string"
+        ? { type: "cte", name: targetEntityOrCTE, source: Object }
+        : { type: "entity", source: targetEntityOrCTE };
+
+    const joinArgs: JoinImplArgs = {
+      targetAlias,
+      targetSelectSourceContext,
+
+      mapToAlias: parentAlias.toString(),
+      mapToField: parentField.toString(),
+      select: true,
+      map: true,
+
+      type: JoinType.CROSS,
+      strategy: JoinStrategy.CROSS,
+    };
+
+    this.joinImpl(joinArgs);
+
+    return this as any;
+  }
+
+  //
   // PRIVATE JOIN IMPL
   //
   private joinImpl(args: JoinImplArgs): void {
@@ -1697,7 +1740,10 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
 
         type: args.type,
 
+        parentAlias: args.mapToAlias,
+        parentField: args.mapToField,
         select: args.select,
+        map: args.map,
 
         childType: nextSelectSource.type,
       })
