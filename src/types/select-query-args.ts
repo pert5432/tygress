@@ -13,7 +13,7 @@ export type SelectQueryArgs = {
 
   joins: JoinArg[];
 
-  selects?: SelectTargetSqlBuilder[];
+  selects: SelectTargetSqlBuilder[];
 
   wheres?: ComparisonSqlBuilder[];
 

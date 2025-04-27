@@ -20,7 +20,7 @@ import {
 import { AnEntity, Parametrizable, WhereComparator } from "./types";
 import { NamedParams } from "./types/named-params";
 import { JoinArg } from "./types/query/join-arg";
-import { Condition, ParameterArgs } from "./types/where-args";
+import { Condition } from "./types/where-args";
 import { RawQueryResultParser } from "./raw-query-result-parser";
 import { UnionToIntersection } from "./types/helpers";
 import {
@@ -88,6 +88,23 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     ];
 
     this.paramBuilder = paramBuilder ?? new ParamBuilder();
+
+    // Ensure the source entity is selected
+    const tableMeta = METADATA_STORE.getTable_(selectSource.source);
+    if (!tableMeta) {
+      return;
+    }
+
+    for (const column of tableMeta.columnsSelectableByDefault) {
+      this.selects.push(
+        SelectTargetSqlBuilderFactory.createColumnIdentifier(
+          ColumnIdentifierSqlBuilderFactory.createColumnMeta(alias, column),
+          `${alias}.${column.fieldName}`,
+          alias,
+          column.fieldName
+        )
+      );
+    }
   }
 
   private addSource(
@@ -486,6 +503,133 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
         )
       );
     }
+
+    return this as any;
+  }
+
+  public setSelect<
+    K extends keyof G["JoinedEntities"],
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>,
+    A extends undefined
+  >(
+    alias: K,
+    field: F,
+    as?: A
+  ): QueryBuilder<{
+    RootEntity: G["RootEntity"];
+    JoinedEntities: G["JoinedEntities"];
+    CTEs: G["CTEs"];
+    SelectedEntities: G["SelectedEntities"];
+    ExplicitSelects: K extends string
+      ? F extends string
+        ? Record<`${K}.${F}`, SelectSourceField<G["JoinedEntities"][K], F>>
+        : {}
+      : {};
+  }>;
+
+  public setSelect<
+    K extends keyof G["JoinedEntities"],
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>,
+    A extends string
+  >(
+    alias: K,
+    field: F,
+    as: A
+  ): QueryBuilder<{
+    RootEntity: G["RootEntity"];
+    JoinedEntities: G["JoinedEntities"];
+    CTEs: G["CTEs"];
+    SelectedEntities: G["SelectedEntities"];
+    ExplicitSelects: Record<
+      A,
+      SelectSourceField<G["JoinedEntities"][K], Stringify<F>>
+    >;
+  }>;
+
+  public setSelect<
+    K extends keyof G["JoinedEntities"],
+    F extends "*",
+    A extends undefined
+  >(
+    alias: K,
+    field: F,
+    as?: A
+  ): QueryBuilder<{
+    RootEntity: G["RootEntity"];
+    JoinedEntities: G["JoinedEntities"];
+    CTEs: G["CTEs"];
+    SelectedEntities: G["SelectedEntities"];
+    ExplicitSelects: K extends string
+      ? FlattenSelectSources<Record<K, G["JoinedEntities"][K]>>
+      : {};
+  }>;
+
+  public setSelect<
+    K extends keyof G["JoinedEntities"],
+    F extends SelectSourceKeys<G["JoinedEntities"][K]> | "*",
+    A extends string | undefined
+  >(alias: K, field: F, as: A) {
+    const source = this.getSource(alias.toString());
+    const klass = source.source;
+
+    if (field === "*" && source.type !== "entity") {
+      throw new Error(`SELECT * FROM CTE is not supported yet`);
+    }
+
+    // TODO: this won't work for CTEs because they don't have an entity
+    // TODO: proposed solution is to extract the SelectTargetSqlBuilders from the CTEs query builder and use them here
+    // TODO: not sure how exactly to do it at this point, making the select targets a public attribute seems kinda unlucky
+    const fieldNames: string[] =
+      field === "*"
+        ? METADATA_STORE.getTable(klass as AnEntity).columns.map(
+            (e) => e.fieldName
+          )
+        : [field.toString()];
+
+    const columnIdentifiers = fieldNames.map((f) => ({
+      fieldName: f,
+      identifier: this.getColumnIdentifier(alias.toString(), f),
+    }));
+
+    this.selects = columnIdentifiers.map(({ identifier, fieldName }) =>
+      SelectTargetSqlBuilderFactory.createColumnIdentifier(
+        identifier,
+        as ?? `${alias.toString()}.${fieldName}`,
+        alias.toString(),
+        fieldName
+      )
+    );
+
+    return this as any;
+  }
+
+  public setSelectSQL<T extends any, Alias extends string>(
+    sql: string,
+    as: Alias,
+    params?: NamedParams
+  ): QueryBuilder<{
+    RootEntity: G["RootEntity"];
+    JoinedEntities: G["JoinedEntities"];
+    CTEs: G["CTEs"];
+    SelectedEntities: G["SelectedEntities"];
+    ExplicitSelects: Record<Alias, T>;
+  }>;
+
+  public setSelectSQL<T extends any, Alias extends string>(
+    sql: string,
+    as: Alias,
+    fOrParams?: NamedParams | (() => T),
+    _f?: () => T
+  ) {
+    const params = fOrParams && Object.keys(fOrParams).length ? fOrParams : {};
+
+    this.selects = [
+      SelectTargetSqlBuilderFactory.createSql(
+        PseudoSQLReplacer.replaceIdentifiers(sql, this.sourcesContext),
+        as,
+        params
+      ),
+    ];
 
     return this as any;
   }
@@ -1535,14 +1679,13 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
         this.joinViaRelation(
           args,
 
-          targetAlias,
           nextSource,
           nextIdentifier
         );
         break;
 
       case JoinStrategy.SQL:
-        this.joinViaSql(args, targetAlias, nextSource, nextIdentifier);
+        this.joinViaSql(args, nextSource, nextIdentifier);
         break;
 
       case JoinStrategy.COMPARISON:
@@ -1561,12 +1704,35 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
       default:
         throw new Error(`Invalid join strategy ${strategy}`);
     }
+
+    // Select all columns from the newly joined entity
+    if (args.select) {
+      if (nextSource.type !== "entity") {
+        throw new Error(
+          `Can't automatically select all columns from a source that isn't an entity`
+        );
+      }
+
+      const tableMeta = METADATA_STORE.getTable(nextSource.source);
+      for (const column of tableMeta.columnsSelectableByDefault) {
+        this.selects.push(
+          SelectTargetSqlBuilderFactory.createColumnIdentifier(
+            ColumnIdentifierSqlBuilderFactory.createColumnMeta(
+              targetAlias,
+              column
+            ),
+            `${targetAlias}.${column.fieldName}`,
+            targetAlias,
+            column.fieldName
+          )
+        );
+      }
+    }
   }
 
   private joinViaRelation(
     args: JoinImplArgs,
 
-    nextAlias: string,
     nextSource: SelectSourceContext,
     nextIdentifier: TableIdentifierSqlBuilder
   ): void {
@@ -1574,9 +1740,11 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
       throw new Error(`Join strategy needs to be ${JoinStrategy.RELATION}`);
     }
 
+    const { targetAlias } = args;
+
     if (nextSource.type !== "entity") {
       throw new Error(
-        `Select source with alias ${nextAlias} needs to be an entity but is ${nextSource.type}`
+        `Select source with alias ${targetAlias} needs to be an entity but is ${nextSource.type}`
       );
     }
 
@@ -1599,13 +1767,13 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     const comparison = ComparisonFactory.createJoin(
       parentAlias.toString(),
       parentEntity,
-      nextAlias,
+      targetAlias,
       relation
     );
 
     this.joins.push(
       JoinArgFactory.create({
-        alias: nextAlias,
+        alias: targetAlias,
         klass: nextSource.source,
         identifier: nextIdentifier,
 
@@ -1625,7 +1793,6 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
 
   private joinViaSql(
     args: JoinImplArgs,
-    nextAlias: string,
     nextSource: SelectSourceContext,
     nextIdentifier: TableIdentifierSqlBuilder
   ): void {
@@ -1633,7 +1800,15 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
       throw new Error(`Join strategy needs to be ${JoinStrategy.SQL}`);
     }
 
-    const { sql, select, namedParams, map, mapToAlias, mapToField } = args;
+    const {
+      targetAlias,
+      sql,
+      select,
+      namedParams,
+      map,
+      mapToAlias,
+      mapToField,
+    } = args;
 
     if (map && !(mapToAlias?.length && mapToField?.length)) {
       throw new Error(
@@ -1653,7 +1828,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
 
     this.joins.push(
       JoinArgFactory.create({
-        alias: nextAlias,
+        alias: targetAlias,
         klass: nextSource.source,
         identifier: nextIdentifier,
 
@@ -1683,6 +1858,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     }
 
     const {
+      targetAlias,
       leftAlias,
       leftField,
       comparator,
@@ -1697,7 +1873,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
 
     this.joins.push(
       JoinArgFactory.create({
-        alias: rightAlias,
+        alias: targetAlias,
         klass: nextSelectSource.source,
         identifier: nextSelectSourceIdentifier,
 

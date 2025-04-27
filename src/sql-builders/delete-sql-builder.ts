@@ -55,7 +55,7 @@ export class DeleteSqlBuilder {
         alias
       );
 
-      targets.forEach((e) => this.targetNode.selectField(e.fieldName!, e.as));
+      targets.forEach((e) => this.targetNode.selectField(e.fieldName, e.as));
     }
 
     return {

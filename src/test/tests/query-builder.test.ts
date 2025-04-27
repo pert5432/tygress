@@ -164,7 +164,7 @@ describe("QueryBuilder", async () => {
     test("full", async () => {
       const res = await TEST_DB.queryBuilder("u", Users)
         .fullJoin("p", Pets, (j) => j.relation("u", "pets"))
-        .select("u", "id", "user_id")
+        .setSelect("u", "id", "user_id")
         .select("p", "id", "pet_id")
         .orderBy("p", "id", "ASC")
         .orderBy("u", "id", "ASC")
@@ -186,7 +186,7 @@ describe("QueryBuilder", async () => {
     test("cross", async () => {
       const res = await TEST_DB.queryBuilder("u", Users)
         .crossJoin("p", Pets)
-        .select("u", "id", "user_id")
+        .setSelect("u", "id", "user_id")
         .select("p", "id", "pet_id")
         .orderBy("p", "id", "ASC")
         .orderBy("u", "id", "ASC")
@@ -219,6 +219,8 @@ describe("QueryBuilder", async () => {
         .orderBy("u", "id", "ASC")
         .getRaw();
 
+      console.log(res);
+
       expect(res).toStrictEqual([
         {
           "u.id": "406b635b-508e-4824-855d-fb71d77bcdac",
@@ -226,6 +228,9 @@ describe("QueryBuilder", async () => {
           "u.lastName": "Grizzly",
           "u.username": "AAAAAAAAAAA",
           "u.birthdate": null,
+          "p.id": "388a73d0-1dbb-45cb-b7d2-0cefea41f92b",
+          "p.userId": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+          "p.name": "Moofis",
         },
         {
           "u.id": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
@@ -233,6 +238,9 @@ describe("QueryBuilder", async () => {
           "u.lastName": "Doe",
           "u.username": "JohnDoe",
           "u.birthdate": new Date("2020-01-01T00:00:00.000Z"),
+          "p.id": "388a73d0-1dbb-45cb-b7d2-0cefea41f92b",
+          "p.userId": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+          "p.name": "Moofis",
         },
         {
           "u.id": "406b635b-508e-4824-855d-fb71d77bcdac",
@@ -240,6 +248,9 @@ describe("QueryBuilder", async () => {
           "u.lastName": "Grizzly",
           "u.username": "AAAAAAAAAAA",
           "u.birthdate": null,
+          "p.id": "bec37141-f990-4960-a03c-d78b43bc4c8e",
+          "p.userId": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+          "p.name": "Pootis",
         },
         {
           "u.id": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
@@ -247,6 +258,9 @@ describe("QueryBuilder", async () => {
           "u.lastName": "Doe",
           "u.username": "JohnDoe",
           "u.birthdate": new Date("2020-01-01T00:00:00.000Z"),
+          "p.id": "bec37141-f990-4960-a03c-d78b43bc4c8e",
+          "p.userId": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+          "p.name": "Pootis",
         },
       ]);
     });
@@ -297,7 +311,7 @@ describe("QueryBuilder", async () => {
     const res = await TEST_DB.queryBuilder("u", Users)
       .leftJoin("p", Pets, (j) => j.relation("u", "pets"))
 
-      .select("p", "name", "pet_name")
+      .setSelect("p", "name", "pet_name")
       .select("u", "id", "user_id")
       .select("u", "birthdate", "birthdate")
 
@@ -394,7 +408,7 @@ describe("QueryBuilder", async () => {
         .where("u", "username", ">", (qb) =>
           qb
             .from("a", Users)
-            .select("a", "username")
+            .setSelect("a", "username")
             .orderBy("a", "username")
             .limit(1)
         )
@@ -408,7 +422,7 @@ describe("QueryBuilder", async () => {
 
   test("select sql", async () => {
     const res = await TEST_DB.queryBuilder("u", Users)
-      .selectSQL("LOWER(u.username)", "username")
+      .setSelectSQL("LOWER(u.username)", "username")
       .orderBy("u", "username")
       .getRaw();
 
@@ -420,7 +434,7 @@ describe("QueryBuilder", async () => {
 
   test("select *", async () => {
     const res = await TEST_DB.queryBuilder("u", Users)
-      .select("u", "*")
+      .setSelect("u", "*")
       .orderBy("u", "username")
       .getRaw();
 
@@ -488,8 +502,9 @@ describe("QueryBuilder", async () => {
   test("groupBy", async () => {
     const res = await TEST_DB.queryBuilder("u", Users)
       .leftJoin("p", Pets, (j) => j.relation("u", "pets"))
+      .setSelect("u", "username", "username")
       .selectSQL("COUNT(p.id)::INT", "count")
-      .select("u", "username", "username")
+
       .orderBy("u", "username")
       .groupBy("u", "username")
       .getRaw();
@@ -505,7 +520,7 @@ describe("QueryBuilder", async () => {
       const res = await TEST_DB.queryBuilder("u", Users)
         .crossJoin("p", Pets)
         .crossJoin("p2", Pets)
-        .select("u", "id")
+        .setSelect("u", "id")
         .distinct()
         .orderBy("u", "id")
         .getRaw();
@@ -520,7 +535,7 @@ describe("QueryBuilder", async () => {
       const res = await TEST_DB.queryBuilder("u", Users)
         .crossJoin("p", Pets)
         .crossJoin("p2", Pets)
-        .select("u", "id")
+        .setSelect("u", "id")
         .select("p", "id")
         .distinctOn("u", "id")
         .distinctOn("p", "id")
