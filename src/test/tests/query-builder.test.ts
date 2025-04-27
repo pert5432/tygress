@@ -113,6 +113,54 @@ describe("QueryBuilder", async () => {
       expect(res[1]!.pets).toBeUndefined();
     });
 
+    test("right", async () => {
+      const res = await TEST_DB.queryBuilder("p", Pets)
+        .rightJoin("u", Users, "p", "user")
+        .orderBy("u", "id")
+        .orderBy("p", "id")
+        .getRaw();
+
+      expect(res).toStrictEqual([
+        { "p.id": null, "p.userId": null, "p.name": null },
+        {
+          "p.id": "388a73d0-1dbb-45cb-b7d2-0cefea41f92b",
+          "p.userId": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+          "p.name": "Moofis",
+        },
+        {
+          "p.id": "bec37141-f990-4960-a03c-d78b43bc4c8e",
+          "p.userId": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+          "p.name": "Pootis",
+        },
+      ]);
+    });
+
+    // This currently passes but shouldn't
+    // Need to move selecting fields await from SelectSqlBuilder to fix
+    // test("right and select", async () => {
+    //   const res = await TEST_DB.queryBuilder("p", Pets)
+    //     .rightJoinAndSelect("u", Users, "p", "user")
+    //     .orderBy("u", "id")
+    //     .orderBy("p", "id")
+    //     .getRaw();
+
+    //   console.log(res);
+
+    //   expect(res).toStrictEqual([
+    //     { "p.id": null, "p.userId": null, "p.name": null },
+    //     {
+    //       "p.id": "388a73d0-1dbb-45cb-b7d2-0cefea41f92b",
+    //       "p.userId": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+    //       "p.name": "Moofis",
+    //     },
+    //     {
+    //       "p.id": "bec37141-f990-4960-a03c-d78b43bc4c8e",
+    //       "p.userId": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+    //       "p.name": "Pootis",
+    //     },
+    //   ]);
+    // });
+
     test("full", async () => {
       const res = await TEST_DB.queryBuilder("u", Users)
         .fullJoin("p", Pets, (j) => j.relation("u", "pets"))
