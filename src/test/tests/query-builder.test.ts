@@ -50,19 +50,34 @@ describe("QueryBuilder", async () => {
   });
 
   describe("joins", async () => {
-    test("inner", async () => {
+    test("inner and map", async () => {
       const res = await TEST_DB.queryBuilder("u", Users)
         .innerJoinAndMap("p", Pets, "u", "pets")
         .getEntities();
 
       expect(res).toHaveLength(1);
-
-      const user = res[0]!;
-
-      expect(user.pets).toHaveLength(2);
+      expect(res[0]!.pets).toHaveLength(2);
     });
 
-    test("left", async () => {
+    test("inner and select", async () => {
+      const res = await TEST_DB.queryBuilder("u", Users)
+        .innerJoinAndSelect("p", Pets, "u", "pets")
+        .getEntities();
+
+      expect(res).toHaveLength(1);
+      expect(res[0]!.pets).toBe(undefined);
+    });
+
+    test("inner", async () => {
+      const res = await TEST_DB.queryBuilder("u", Users)
+        .innerJoin("p", Pets, "u", "pets")
+        .getEntities();
+
+      expect(res).toHaveLength(1);
+      expect(res[0]!.pets).toBeUndefined();
+    });
+
+    test("left and map", async () => {
       const res = await TEST_DB.queryBuilder("u", Users)
         .leftJoinAndMap("p", Pets, "u", "pets")
         .orderBy("u", "username", "ASC")
@@ -72,6 +87,30 @@ describe("QueryBuilder", async () => {
 
       expect(res[0]!.pets).toHaveLength(0);
       expect(res[1]!.pets).toHaveLength(2);
+    });
+
+    test("left and select", async () => {
+      const res = await TEST_DB.queryBuilder("u", Users)
+        .leftJoinAndSelect("p", Pets, "u", "pets")
+        .orderBy("u", "username", "ASC")
+        .getEntities();
+
+      expect(res).toHaveLength(2);
+
+      expect(res[0]!.pets).toBeUndefined();
+      expect(res[1]!.pets).toBeUndefined();
+    });
+
+    test("left", async () => {
+      const res = await TEST_DB.queryBuilder("u", Users)
+        .leftJoin("p", Pets, "u", "pets")
+        .orderBy("u", "username", "ASC")
+        .getEntities();
+
+      expect(res).toHaveLength(2);
+
+      expect(res[0]!.pets).toBeUndefined();
+      expect(res[1]!.pets).toBeUndefined();
     });
 
     test("full", async () => {
@@ -121,6 +160,45 @@ describe("QueryBuilder", async () => {
         {
           user_id: "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
           pet_id: "bec37141-f990-4960-a03c-d78b43bc4c8e",
+        },
+      ]);
+    });
+
+    test("cross and select", async () => {
+      const res = await TEST_DB.queryBuilder("u", Users)
+        .crossJoinAndSelect("p", Pets)
+        .orderBy("p", "id", "ASC")
+        .orderBy("u", "id", "ASC")
+        .getRaw();
+
+      expect(res).toStrictEqual([
+        {
+          "u.id": "406b635b-508e-4824-855d-fb71d77bcdac",
+          "u.firstName": "Kyriakos",
+          "u.lastName": "Grizzly",
+          "u.username": "AAAAAAAAAAA",
+          "u.birthdate": null,
+        },
+        {
+          "u.id": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+          "u.firstName": "John",
+          "u.lastName": "Doe",
+          "u.username": "JohnDoe",
+          "u.birthdate": new Date("2020-01-01T00:00:00.000Z"),
+        },
+        {
+          "u.id": "406b635b-508e-4824-855d-fb71d77bcdac",
+          "u.firstName": "Kyriakos",
+          "u.lastName": "Grizzly",
+          "u.username": "AAAAAAAAAAA",
+          "u.birthdate": null,
+        },
+        {
+          "u.id": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+          "u.firstName": "John",
+          "u.lastName": "Doe",
+          "u.username": "JohnDoe",
+          "u.birthdate": new Date("2020-01-01T00:00:00.000Z"),
         },
       ]);
     });
