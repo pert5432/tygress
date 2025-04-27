@@ -50,7 +50,9 @@ export class SelectSqlBuilder<T extends AnEntity> {
 
     this.buildJoins();
     this.buildWhereConditions();
-    this.selectDesiredFields();
+    this.registerSelectedFieldsToNodes(this.args.selects);
+    // Important to call this after registering selected fields into target nodes
+    this.ensurePrimaryKeySelection(this.targetNodes);
 
     //
     // Build the actual SQL
@@ -177,60 +179,6 @@ export class SelectSqlBuilder<T extends AnEntity> {
   // SELECTING AND TRACKING FIELDS
   //
 
-  // Either select exactly the fields the user wants selected
-  // Or select all by-default-selectable fields from all nodes the user wants
-  //
-  // Ensure primary keys are selected for the nodes that require it
-  //
-  // Register selected fields that are supposed to be mapped into entity fields in target nodes
-  private selectDesiredFields(): void {
-    // Set which fields should be selected and track them in target nodes
-    if (this.args.selects?.length) {
-      this.registerSelectedFieldsToNodes(this.args.selects);
-    } else {
-      this.selectFieldsFromJoinNode(this.targetNodes);
-    }
-
-    // Make sure to select primary keys
-    // Important to call this after registering selected fields into target nodes
-    this.ensurePrimaryKeySelection(this.targetNodes);
-  }
-
-  // Select all fields that are selectable by default on all join nodes
-  // TODO: decide whether this should even be the responsibility of this class
-  private selectFieldsFromJoinNode = <E extends AnEntity>(
-    node?: TargetNode<E>
-  ): void => {
-    if (!node) {
-      return;
-    }
-
-    if (node.select) {
-      for (const column of METADATA_STORE.getTable(node.klass)
-        .columnsSelectableByDefault) {
-        const selectTarget = `${node.alias}.${column.fieldName}`;
-
-        // Select the colum
-        this.selectTargetSqlBuilders.push(
-          SelectTargetSqlBuilderFactory.createColumnIdentifier(
-            ColumnIdentifierSqlBuilderFactory.createColumnMeta(
-              node.alias,
-              column
-            ),
-            selectTarget
-          )
-        );
-
-        // Register the column as selected on the node
-        node.selectField(column.fieldName, selectTarget);
-      }
-    }
-
-    for (const key in node.joins) {
-      this.selectFieldsFromJoinNode(node.joins[key]!);
-    }
-  };
-
   // Register data about which fields are selected and supposed to be mapped to nodes
   private registerSelectedFieldsToNodes(
     targets: SelectTargetSqlBuilder[]
@@ -270,21 +218,19 @@ export class SelectSqlBuilder<T extends AnEntity> {
 
     // Skip nodes we are not selecting from
     if (node.select || node.selectedFields.length) {
+      const selectTarget = `${node.alias}.${node.primaryKeyColumn.fieldName}`;
+
       // Add a select target for the primary key of the node if its not selected already
-      if (
-        !node.selectedFields.find(
-          (e) =>
-            e.selectTarget ===
-            `${node.alias}.${node.primaryKeyColumn.fieldName}`
-        )
-      ) {
+      if (!node.selectedFields.find((e) => e.selectTarget === selectTarget)) {
         this.selectTargetSqlBuilders.push(
           SelectTargetSqlBuilderFactory.createColumnIdentifier(
             ColumnIdentifierSqlBuilderFactory.createColumnMeta(
               node.alias,
               node.primaryKeyColumn
             ),
-            `${node.alias}.${node.primaryKeyColumn.fieldName}`
+            selectTarget,
+            node.alias,
+            node.primaryKeyColumn.fieldName
           )
         );
       }

@@ -9,8 +9,8 @@ export abstract class SelectTargetSqlBuilderFactory {
   static createColumnIdentifier(
     columnIdentifier: ColumnIdentifierSqlBuilder,
     as: string,
-    nodeAlias?: string,
-    fieldName?: string
+    nodeAlias: string,
+    fieldName: string
   ): ColumnSelectTargetSqlBuilder {
     const e = new ColumnSelectTargetSqlBuilder();
 
