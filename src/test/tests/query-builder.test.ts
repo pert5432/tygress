@@ -422,7 +422,7 @@ describe("QueryBuilder", async () => {
 
   test("select sql", async () => {
     const res = await TEST_DB.queryBuilder("u", Users)
-      .setSelectSQL("LOWER(u.username)", "username")
+      .setSelect("LOWER(u.username)", "username")
       .orderBy("u", "username")
       .getRaw();
 
@@ -503,7 +503,7 @@ describe("QueryBuilder", async () => {
     const res = await TEST_DB.queryBuilder("u", Users)
       .leftJoin("p", Pets, (j) => j.relation("u", "pets"))
       .setSelect("u", "username", "username")
-      .selectSQL("COUNT(p.id)::INT", "count")
+      .select("COUNT(p.id)::INT", "count")
 
       .orderBy("u", "username")
       .groupBy("u", "username")
