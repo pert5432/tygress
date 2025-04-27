@@ -361,54 +361,6 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     return this;
   }
 
-  public selectSQL<T extends any, Alias extends string>(
-    sql: string,
-    as: Alias,
-    f: () => T,
-    params?: NamedParams
-  ): QueryBuilder<{
-    RootEntity: G["RootEntity"];
-    JoinedEntities: G["JoinedEntities"];
-    CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
-    ExplicitSelects: G["ExplicitSelects"] &
-      Record<
-        Alias,
-        T extends abstract new (...args: any) => any ? InstanceType<T> : T
-      >;
-  }>;
-
-  public selectSQL<T extends any, Alias extends string>(
-    sql: string,
-    as: Alias,
-    params?: NamedParams
-  ): QueryBuilder<{
-    RootEntity: G["RootEntity"];
-    JoinedEntities: G["JoinedEntities"];
-    CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
-    ExplicitSelects: G["ExplicitSelects"] & Record<Alias, T>;
-  }>;
-
-  public selectSQL<T extends any, Alias extends string>(
-    sql: string,
-    as: Alias,
-    fOrParams?: NamedParams | (() => T),
-    _f?: () => T
-  ) {
-    const params = fOrParams && Object.keys(fOrParams).length ? fOrParams : {};
-
-    this.selects.push(
-      SelectTargetSqlBuilderFactory.createSql(
-        PseudoSQLReplacer.replaceIdentifiers(sql, this.sourcesContext),
-        as,
-        params
-      )
-    );
-
-    return this as any;
-  }
-
   public select<
     K extends keyof G["JoinedEntities"],
     F extends SelectSourceKeys<G["JoinedEntities"][K]>,
@@ -466,15 +418,51 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
         : {});
   }>;
 
+  // SQL
+  public select<A extends string, T extends any = () => any>(
+    sql: string,
+    alias: A,
+    params?: NamedParams
+  ): QueryBuilder<{
+    RootEntity: G["RootEntity"];
+    JoinedEntities: G["JoinedEntities"];
+    CTEs: G["CTEs"];
+    SelectedEntities: G["SelectedEntities"];
+    ExplicitSelects: G["ExplicitSelects"] &
+      Record<A, T extends (...args: any) => infer I ? I : T>;
+  }>;
+
   public select<
     K extends keyof G["JoinedEntities"],
     F extends SelectSourceKeys<G["JoinedEntities"][K]> | "*",
-    A extends string | undefined
-  >(alias: K, field: F, as: A) {
-    const source = this.getSource(alias.toString());
+    A extends string
+  >(
+    aliasOrSql: K | string,
+    fieldOrAs: F | string,
+    asOrParams?: A | NamedParams
+  ) {
+    // SQL select
+    if (aliasOrSql !== "*" && !this.sourcesContext[aliasOrSql]) {
+      this.selects.push(
+        SelectTargetSqlBuilderFactory.createSql(
+          PseudoSQLReplacer.replaceIdentifiers(
+            aliasOrSql.toString(),
+            this.sourcesContext
+          ),
+          fieldOrAs.toString(),
+          asOrParams
+        )
+      );
+
+      return this as any;
+    }
+
+    // Field or * select
+
+    const source = this.getSource(aliasOrSql.toString());
     const klass = source.source;
 
-    if (field === "*" && source.type !== "entity") {
+    if (fieldOrAs === "*" && source.type !== "entity") {
       throw new Error(`SELECT * FROM CTE is not supported yet`);
     }
 
@@ -482,23 +470,25 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     // TODO: proposed solution is to extract the SelectTargetSqlBuilders from the CTEs query builder and use them here
     // TODO: not sure how exactly to do it at this point, making the select targets a public attribute seems kinda unlucky
     const fieldNames: string[] =
-      field === "*"
+      fieldOrAs === "*"
         ? METADATA_STORE.getTable(klass as AnEntity).columns.map(
             (e) => e.fieldName
           )
-        : [field.toString()];
+        : [fieldOrAs.toString()];
 
     const columnIdentifiers = fieldNames.map((f) => ({
       fieldName: f,
-      identifier: this.getColumnIdentifier(alias.toString(), f),
+      identifier: this.getColumnIdentifier(aliasOrSql.toString(), f),
     }));
 
     for (const { identifier, fieldName } of columnIdentifiers) {
       this.selects.push(
         SelectTargetSqlBuilderFactory.createColumnIdentifier(
           identifier,
-          as ?? `${alias.toString()}.${fieldName}`,
-          alias.toString(),
+          typeof asOrParams === "string"
+            ? asOrParams
+            : `${aliasOrSql.toString()}.${fieldName}`,
+          aliasOrSql.toString(),
           fieldName
         )
       );
@@ -564,15 +554,50 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
       : {};
   }>;
 
+  // SQL
+  public setSelect<A extends string, T extends any = () => any>(
+    sql: string,
+    alias: A,
+    params?: NamedParams
+  ): QueryBuilder<{
+    RootEntity: G["RootEntity"];
+    JoinedEntities: G["JoinedEntities"];
+    CTEs: G["CTEs"];
+    SelectedEntities: G["SelectedEntities"];
+    ExplicitSelects: Record<A, T extends (...args: any) => infer I ? I : T>;
+  }>;
+
   public setSelect<
     K extends keyof G["JoinedEntities"],
     F extends SelectSourceKeys<G["JoinedEntities"][K]> | "*",
-    A extends string | undefined
-  >(alias: K, field: F, as: A) {
-    const source = this.getSource(alias.toString());
+    A extends string
+  >(
+    aliasOrSql: K | string,
+    fieldOrAs: F | string,
+    asOrParams?: A | NamedParams
+  ) {
+    // SQL select
+    if (aliasOrSql !== "*" && !this.sourcesContext[aliasOrSql]) {
+      this.selects = [
+        SelectTargetSqlBuilderFactory.createSql(
+          PseudoSQLReplacer.replaceIdentifiers(
+            aliasOrSql.toString(),
+            this.sourcesContext
+          ),
+          fieldOrAs.toString(),
+          asOrParams
+        ),
+      ];
+
+      return this as any;
+    }
+
+    // Field or * select
+
+    const source = this.getSource(aliasOrSql.toString());
     const klass = source.source;
 
-    if (field === "*" && source.type !== "entity") {
+    if (fieldOrAs === "*" && source.type !== "entity") {
       throw new Error(`SELECT * FROM CTE is not supported yet`);
     }
 
@@ -580,56 +605,27 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     // TODO: proposed solution is to extract the SelectTargetSqlBuilders from the CTEs query builder and use them here
     // TODO: not sure how exactly to do it at this point, making the select targets a public attribute seems kinda unlucky
     const fieldNames: string[] =
-      field === "*"
+      fieldOrAs === "*"
         ? METADATA_STORE.getTable(klass as AnEntity).columns.map(
             (e) => e.fieldName
           )
-        : [field.toString()];
+        : [fieldOrAs.toString()];
 
     const columnIdentifiers = fieldNames.map((f) => ({
       fieldName: f,
-      identifier: this.getColumnIdentifier(alias.toString(), f),
+      identifier: this.getColumnIdentifier(aliasOrSql.toString(), f),
     }));
 
     this.selects = columnIdentifiers.map(({ identifier, fieldName }) =>
       SelectTargetSqlBuilderFactory.createColumnIdentifier(
         identifier,
-        as ?? `${alias.toString()}.${fieldName}`,
-        alias.toString(),
+        typeof asOrParams === "string"
+          ? asOrParams
+          : `${aliasOrSql.toString()}.${fieldName}`,
+        aliasOrSql.toString(),
         fieldName
       )
     );
-
-    return this as any;
-  }
-
-  public setSelectSQL<T extends any, Alias extends string>(
-    sql: string,
-    as: Alias,
-    params?: NamedParams
-  ): QueryBuilder<{
-    RootEntity: G["RootEntity"];
-    JoinedEntities: G["JoinedEntities"];
-    CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
-    ExplicitSelects: Record<Alias, T>;
-  }>;
-
-  public setSelectSQL<T extends any, Alias extends string>(
-    sql: string,
-    as: Alias,
-    fOrParams?: NamedParams | (() => T),
-    _f?: () => T
-  ) {
-    const params = fOrParams && Object.keys(fOrParams).length ? fOrParams : {};
-
-    this.selects = [
-      SelectTargetSqlBuilderFactory.createSql(
-        PseudoSQLReplacer.replaceIdentifiers(sql, this.sourcesContext),
-        as,
-        params
-      ),
-    ];
 
     return this as any;
   }
