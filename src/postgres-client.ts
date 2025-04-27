@@ -115,12 +115,18 @@ export class PostgresClient {
     }
   }
 
-  public queryBuilder = <A extends string, E extends AnEntity>(
+  public queryBuilder<A extends string, E extends AnEntity>(
     alias: A,
     entity: E,
     paramBuilder?: ParamBuilder
-  ) =>
-    new QueryBuilder<{
+  ): QueryBuilder<{
+    RootEntity: E;
+    JoinedEntities: Record<A, E>;
+    CTEs: {};
+    SelectedEntities: Record<A, E>;
+    ExplicitSelects: {};
+  }> {
+    return new QueryBuilder<{
       RootEntity: E;
       JoinedEntities: Record<A, E>;
       CTEs: {};
@@ -133,6 +139,7 @@ export class PostgresClient {
       { [alias]: { type: "entity", source: entity } } as any,
       paramBuilder
     );
+  }
 
   public async select<T extends AnEntity>(
     entity: T,
