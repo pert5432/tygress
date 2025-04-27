@@ -190,10 +190,6 @@ export class SelectSqlBuilder<T extends AnEntity> {
         continue;
       }
 
-      if (!builder.nodeAlias || !builder.fieldName) {
-        continue;
-      }
-
       if (!this.returningEntities()) {
         continue;
       }

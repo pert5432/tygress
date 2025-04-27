@@ -109,7 +109,7 @@ export class InsertSqlBuilder {
 
       this.targetNode = TargetNodeFactory.createRoot(this.entity.klass, alias);
 
-      targets.forEach((e) => this.targetNode.selectField(e.fieldName!, e.as));
+      targets.forEach((e) => this.targetNode.selectField(e.fieldName, e.as));
     }
 
     return {

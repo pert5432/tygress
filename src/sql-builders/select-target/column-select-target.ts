@@ -8,8 +8,8 @@ export class ColumnSelectTargetSqlBuilder extends SelectTargetSqlBuilder {
   as: string;
 
   // Needed to match this selected column to query nodes
-  nodeAlias?: string;
-  fieldName?: string;
+  nodeAlias: string;
+  fieldName: string;
 
   public override sql(_paramBuilder: ParamBuilder): string {
     return `${this.columnIdentifier.sql()} AS ${dQ(this.as)}`;
