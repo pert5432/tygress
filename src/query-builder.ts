@@ -1143,40 +1143,6 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   }
 
   //
-  // RIGHT JOIN AND MAP
-  //
-
-  public rightJoinAndMap<
-    A extends string,
-    E extends AnEntity,
-    K extends keyof G["JoinedEntities"],
-    F extends SelectSourceKeys<G["JoinedEntities"][K]>
-  >(
-    targetAlias: A,
-    targetEntityOrCTE: E | string,
-    parentAlias: K,
-    parentField: F
-  ): QueryBuilder<{
-    RootEntity: G["RootEntity"];
-    JoinedEntities: G["JoinedEntities"] & Record<A, E>;
-    CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
-    ExplicitSelects: G["ExplicitSelects"];
-  }> {
-    this.joinImpl(
-      new JoinFactory(
-        targetAlias,
-        targetEntityOrCTE,
-        JoinType.RIGHT,
-        true,
-        true
-      ).relation(parentAlias.toString(), parentField)
-    );
-
-    return this as any;
-  }
-
-  //
   // FULL JOIN AND SELECT
   //
 
