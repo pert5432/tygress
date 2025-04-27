@@ -50,21 +50,36 @@ describe("QueryBuilder", async () => {
   });
 
   describe("joins", async () => {
-    test("inner", async () => {
+    test("inner and map", async () => {
       const res = await TEST_DB.queryBuilder("u", Users)
-        .innerJoinAndSelect("p", Pets, (j) => j.relation("u", "pets"))
+        .innerJoinAndMap("p", Pets, "u", "pets")
         .getEntities();
 
       expect(res).toHaveLength(1);
-
-      const user = res[0]!;
-
-      expect(user.pets).toHaveLength(2);
+      expect(res[0]!.pets).toHaveLength(2);
     });
 
-    test("left", async () => {
+    test("inner and select", async () => {
       const res = await TEST_DB.queryBuilder("u", Users)
-        .leftJoinAndSelect("p", Pets, (j) => j.relation("u", "pets"))
+        .innerJoinAndSelect("p", Pets, "u", "pets")
+        .getEntities();
+
+      expect(res).toHaveLength(1);
+      expect(res[0]!.pets).toBe(undefined);
+    });
+
+    test("inner", async () => {
+      const res = await TEST_DB.queryBuilder("u", Users)
+        .innerJoin("p", Pets, "u", "pets")
+        .getEntities();
+
+      expect(res).toHaveLength(1);
+      expect(res[0]!.pets).toBeUndefined();
+    });
+
+    test("left and map", async () => {
+      const res = await TEST_DB.queryBuilder("u", Users)
+        .leftJoinAndMap("p", Pets, "u", "pets")
         .orderBy("u", "username", "ASC")
         .getEntities();
 
@@ -73,6 +88,78 @@ describe("QueryBuilder", async () => {
       expect(res[0]!.pets).toHaveLength(0);
       expect(res[1]!.pets).toHaveLength(2);
     });
+
+    test("left and select", async () => {
+      const res = await TEST_DB.queryBuilder("u", Users)
+        .leftJoinAndSelect("p", Pets, "u", "pets")
+        .orderBy("u", "username", "ASC")
+        .getEntities();
+
+      expect(res).toHaveLength(2);
+
+      expect(res[0]!.pets).toBeUndefined();
+      expect(res[1]!.pets).toBeUndefined();
+    });
+
+    test("left", async () => {
+      const res = await TEST_DB.queryBuilder("u", Users)
+        .leftJoin("p", Pets, "u", "pets")
+        .orderBy("u", "username", "ASC")
+        .getEntities();
+
+      expect(res).toHaveLength(2);
+
+      expect(res[0]!.pets).toBeUndefined();
+      expect(res[1]!.pets).toBeUndefined();
+    });
+
+    test("right", async () => {
+      const res = await TEST_DB.queryBuilder("p", Pets)
+        .rightJoin("u", Users, "p", "user")
+        .orderBy("u", "id")
+        .orderBy("p", "id")
+        .getRaw();
+
+      expect(res).toStrictEqual([
+        { "p.id": null, "p.userId": null, "p.name": null },
+        {
+          "p.id": "388a73d0-1dbb-45cb-b7d2-0cefea41f92b",
+          "p.userId": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+          "p.name": "Moofis",
+        },
+        {
+          "p.id": "bec37141-f990-4960-a03c-d78b43bc4c8e",
+          "p.userId": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+          "p.name": "Pootis",
+        },
+      ]);
+    });
+
+    // This currently passes but shouldn't
+    // Need to move selecting fields await from SelectSqlBuilder to fix
+    // test("right and select", async () => {
+    //   const res = await TEST_DB.queryBuilder("p", Pets)
+    //     .rightJoinAndSelect("u", Users, "p", "user")
+    //     .orderBy("u", "id")
+    //     .orderBy("p", "id")
+    //     .getRaw();
+
+    //   console.log(res);
+
+    //   expect(res).toStrictEqual([
+    //     { "p.id": null, "p.userId": null, "p.name": null },
+    //     {
+    //       "p.id": "388a73d0-1dbb-45cb-b7d2-0cefea41f92b",
+    //       "p.userId": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+    //       "p.name": "Moofis",
+    //     },
+    //     {
+    //       "p.id": "bec37141-f990-4960-a03c-d78b43bc4c8e",
+    //       "p.userId": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+    //       "p.name": "Pootis",
+    //     },
+    //   ]);
+    // });
 
     test("full", async () => {
       const res = await TEST_DB.queryBuilder("u", Users)
@@ -123,6 +210,66 @@ describe("QueryBuilder", async () => {
           pet_id: "bec37141-f990-4960-a03c-d78b43bc4c8e",
         },
       ]);
+    });
+
+    test("cross and select", async () => {
+      const res = await TEST_DB.queryBuilder("u", Users)
+        .crossJoinAndSelect("p", Pets)
+        .orderBy("p", "id", "ASC")
+        .orderBy("u", "id", "ASC")
+        .getRaw();
+
+      expect(res).toStrictEqual([
+        {
+          "u.id": "406b635b-508e-4824-855d-fb71d77bcdac",
+          "u.firstName": "Kyriakos",
+          "u.lastName": "Grizzly",
+          "u.username": "AAAAAAAAAAA",
+          "u.birthdate": null,
+        },
+        {
+          "u.id": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+          "u.firstName": "John",
+          "u.lastName": "Doe",
+          "u.username": "JohnDoe",
+          "u.birthdate": new Date("2020-01-01T00:00:00.000Z"),
+        },
+        {
+          "u.id": "406b635b-508e-4824-855d-fb71d77bcdac",
+          "u.firstName": "Kyriakos",
+          "u.lastName": "Grizzly",
+          "u.username": "AAAAAAAAAAA",
+          "u.birthdate": null,
+        },
+        {
+          "u.id": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+          "u.firstName": "John",
+          "u.lastName": "Doe",
+          "u.username": "JohnDoe",
+          "u.birthdate": new Date("2020-01-01T00:00:00.000Z"),
+        },
+      ]);
+    });
+
+    test("cross and map", async () => {
+      const res = await TEST_DB.queryBuilder("u", Users)
+        .crossJoinAndMap("p", Pets, "u", "pets")
+        .orderBy("p", "id", "ASC")
+        .orderBy("u", "id", "ASC")
+        .getEntities();
+
+      expect(res).toHaveLength(2);
+      expect(res[0]!.id).toBe(user2.id);
+      TestHelper.validateObject(
+        res[0]!.pets,
+        TEST_DB.instantiate(Pets, [pet2, pet1])
+      );
+
+      expect(res[1]!.id).toBe(user1.id);
+      TestHelper.validateObject(
+        res[1]!.pets,
+        TEST_DB.instantiate(Pets, [pet2, pet1])
+      );
     });
 
     test("explicit", async () => {

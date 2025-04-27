@@ -512,6 +512,7 @@ export abstract class Repository {
         comparison,
         childType: "entity",
         type: JoinType.LEFT,
+        map: true,
       });
 
       joinsResult.push(nextJoinArg);

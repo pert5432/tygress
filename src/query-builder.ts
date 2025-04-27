@@ -506,8 +506,11 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     return this;
   }
 
-  // INNER JOIN
+  //
+  // INNER JOIN AND SELECT
+  //
 
+  // Entity
   public innerJoinAndSelect<A extends string, E extends AnEntity>(
     targetAlias: A,
     targetEntity: E,
@@ -532,20 +535,63 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
-  public innerJoinAndSelect<A extends string, E extends AnEntity>(
+  // RELATION
+  public innerJoinAndSelect<
+    A extends string,
+    E extends AnEntity,
+    K extends keyof G["JoinedEntities"],
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>
+  >(
+    targetAlias: A,
+    targetEntity: E,
+    parentAlias: K,
+    parentField: F
+  ): QueryBuilder<{
+    RootEntity: G["RootEntity"];
+    JoinedEntities: G["JoinedEntities"] & Record<A, E>;
+    CTEs: G["CTEs"];
+    SelectedEntities: G["SelectedEntities"];
+    ExplicitSelects: G["ExplicitSelects"];
+  }>;
+
+  public innerJoinAndSelect<
+    A extends string,
+    E extends AnEntity,
+    K extends keyof G["JoinedEntities"],
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>
+  >(
     targetAlias: A,
     targetEntityOrCTE: E | string,
-    conditionFn: (j: JoinFactory<any, A, E>) => JoinImplArgs
+    conditionFnOrParentAlias: ((j: JoinFactory<any, A, E>) => JoinImplArgs) | K,
+    optionalParentField?: F
   ) {
-    this.joinImpl(
-      conditionFn(
-        new JoinFactory(targetAlias, targetEntityOrCTE, JoinType.INNER, true)
-      )
+    const joinFactory = new JoinFactory(
+      targetAlias,
+      targetEntityOrCTE,
+      JoinType.INNER,
+      true,
+      false
     );
+
+    if (typeof conditionFnOrParentAlias === "function") {
+      this.joinImpl(conditionFnOrParentAlias(joinFactory));
+    } else {
+      this.joinImpl(
+        joinFactory.relation(
+          conditionFnOrParentAlias.toString(),
+          optionalParentField!
+        )
+      );
+    }
 
     return this as any;
   }
 
+  //
+  // INNER JOIN
+  //
+
+  // ENTITY
   public innerJoin<A extends string, E extends AnEntity>(
     targetAlias: A,
     targetEntity: E,
@@ -570,6 +616,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
+  // CTE
   public innerJoin<A extends string, C extends keyof G["CTEs"]>(
     targetAlias: A,
     CTEName: C,
@@ -597,22 +644,96 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
-  public innerJoin<A extends string, E extends AnEntity>(
+  // RELATION
+  public innerJoin<
+    A extends string,
+    E extends AnEntity,
+    K extends keyof G["JoinedEntities"],
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>
+  >(
+    targetAlias: A,
+    targetEntity: E,
+    parentAlias: K,
+    parentField: F
+  ): QueryBuilder<{
+    RootEntity: G["RootEntity"];
+    JoinedEntities: G["JoinedEntities"] & Record<A, E>;
+    CTEs: G["CTEs"];
+    SelectedEntities: G["SelectedEntities"];
+    ExplicitSelects: G["ExplicitSelects"];
+  }>;
+
+  public innerJoin<
+    A extends string,
+    E extends AnEntity,
+    K extends keyof G["JoinedEntities"],
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>
+  >(
     targetAlias: A,
     targetEntityOrCTE: E | string,
-    conditionFn: (j: JoinFactory<any, A, E>) => JoinImplArgs
+    conditionFnOrParentAlias: ((j: JoinFactory<any, A, E>) => JoinImplArgs) | K,
+    optionalParentField?: F
   ) {
+    const joinFactory = new JoinFactory(
+      targetAlias,
+      targetEntityOrCTE,
+      JoinType.INNER,
+      false,
+      false
+    );
+
+    if (typeof conditionFnOrParentAlias === "function") {
+      this.joinImpl(conditionFnOrParentAlias(joinFactory));
+    } else {
+      this.joinImpl(
+        joinFactory.relation(
+          conditionFnOrParentAlias.toString(),
+          optionalParentField!
+        )
+      );
+    }
+
+    return this as any;
+  }
+
+  //
+  // INNER JOIN AND MAP
+  //
+  public innerJoinAndMap<
+    A extends string,
+    E extends AnEntity,
+    K extends keyof G["JoinedEntities"],
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>
+  >(
+    targetAlias: A,
+    targetEntityOrCTE: E | string,
+    parentAlias: K,
+    parentField: F
+  ): QueryBuilder<{
+    RootEntity: G["RootEntity"];
+    JoinedEntities: G["JoinedEntities"] & Record<A, E>;
+    CTEs: G["CTEs"];
+    SelectedEntities: G["SelectedEntities"];
+    ExplicitSelects: G["ExplicitSelects"];
+  }> {
     this.joinImpl(
-      conditionFn(
-        new JoinFactory(targetAlias, targetEntityOrCTE, JoinType.INNER, false)
-      )
+      new JoinFactory(
+        targetAlias,
+        targetEntityOrCTE,
+        JoinType.INNER,
+        true,
+        true
+      ).relation(parentAlias.toString(), parentField)
     );
 
     return this as any;
   }
 
+  //
   // LEFT JOIN
+  //
 
+  // ENTITY
   public leftJoin<A extends string, E extends AnEntity>(
     targetAlias: A,
     targetEntity: E,
@@ -637,6 +758,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
+  // CTE
   public leftJoin<A extends string, C extends keyof G["CTEs"]>(
     targetAlias: A,
     CTEName: C,
@@ -664,20 +786,63 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
-  public leftJoin<A extends string, E extends AnEntity>(
+  // RELATION
+  public leftJoin<
+    A extends string,
+    E extends AnEntity,
+    K extends keyof G["JoinedEntities"],
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>
+  >(
+    targetAlias: A,
+    targetEntity: E,
+    parentAlias: K,
+    parentField: F
+  ): QueryBuilder<{
+    RootEntity: G["RootEntity"];
+    JoinedEntities: G["JoinedEntities"] & Record<A, E>;
+    CTEs: G["CTEs"];
+    SelectedEntities: G["SelectedEntities"];
+    ExplicitSelects: G["ExplicitSelects"];
+  }>;
+
+  public leftJoin<
+    A extends string,
+    E extends AnEntity,
+    K extends keyof G["JoinedEntities"],
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>
+  >(
     targetAlias: A,
     targetEntityOrCTE: E | string,
-    conditionFn: (j: JoinFactory<any, A, E>) => JoinImplArgs
+    conditionFnOrParentAlias: ((j: JoinFactory<any, A, E>) => JoinImplArgs) | K,
+    optionalParentField?: F
   ) {
-    this.joinImpl(
-      conditionFn(
-        new JoinFactory(targetAlias, targetEntityOrCTE, JoinType.LEFT, false)
-      )
+    const joinFactory = new JoinFactory(
+      targetAlias,
+      targetEntityOrCTE,
+      JoinType.LEFT,
+      false,
+      false
     );
+
+    if (typeof conditionFnOrParentAlias === "function") {
+      this.joinImpl(conditionFnOrParentAlias(joinFactory));
+    } else {
+      this.joinImpl(
+        joinFactory.relation(
+          conditionFnOrParentAlias.toString(),
+          optionalParentField!
+        )
+      );
+    }
 
     return this as any;
   }
 
+  //
+  // LEFT JOIN AND SELECT
+  //
+
+  // ENTITY
   public leftJoinAndSelect<A extends string, E extends AnEntity>(
     targetAlias: A,
     targetEntity: E,
@@ -702,22 +867,96 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
-  public leftJoinAndSelect<A extends string, E extends AnEntity>(
+  // RELATION
+  public leftJoinAndSelect<
+    A extends string,
+    E extends AnEntity,
+    K extends keyof G["JoinedEntities"],
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>
+  >(
+    targetAlias: A,
+    targetEntity: E,
+    parentAlias: K,
+    parentField: F
+  ): QueryBuilder<{
+    RootEntity: G["RootEntity"];
+    JoinedEntities: G["JoinedEntities"] & Record<A, E>;
+    CTEs: G["CTEs"];
+    SelectedEntities: G["SelectedEntities"];
+    ExplicitSelects: G["ExplicitSelects"];
+  }>;
+
+  public leftJoinAndSelect<
+    A extends string,
+    E extends AnEntity,
+    K extends keyof G["JoinedEntities"],
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>
+  >(
     targetAlias: A,
     targetEntityOrCTE: E | string,
-    conditionFn: (j: JoinFactory<any, A, E>) => JoinImplArgs
+    conditionFnOrParentAlias: ((j: JoinFactory<any, A, E>) => JoinImplArgs) | K,
+    optionalParentField?: F
   ) {
+    const joinFactory = new JoinFactory(
+      targetAlias,
+      targetEntityOrCTE,
+      JoinType.LEFT,
+      true,
+      false
+    );
+
+    if (typeof conditionFnOrParentAlias === "function") {
+      this.joinImpl(conditionFnOrParentAlias(joinFactory));
+    } else {
+      this.joinImpl(
+        joinFactory.relation(
+          conditionFnOrParentAlias.toString(),
+          optionalParentField!
+        )
+      );
+    }
+
+    return this as any;
+  }
+
+  //
+  // LEFT JOIN AND MAP
+  //
+  public leftJoinAndMap<
+    A extends string,
+    E extends AnEntity,
+    K extends keyof G["JoinedEntities"],
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>
+  >(
+    targetAlias: A,
+    targetEntityOrCTE: E | string,
+    parentAlias: K,
+    parentField: F
+  ): QueryBuilder<{
+    RootEntity: G["RootEntity"];
+    JoinedEntities: G["JoinedEntities"] & Record<A, E>;
+    CTEs: G["CTEs"];
+    SelectedEntities: G["SelectedEntities"];
+    ExplicitSelects: G["ExplicitSelects"];
+  }> {
     this.joinImpl(
-      conditionFn(
-        new JoinFactory(targetAlias, targetEntityOrCTE, JoinType.LEFT, true)
-      )
+      new JoinFactory(
+        targetAlias,
+        targetEntityOrCTE,
+        JoinType.LEFT,
+        true,
+        true
+      ).relation(parentAlias.toString(), parentField)
     );
 
     return this as any;
   }
 
+  //
   // RIGHT JOIN
+  //
 
+  // ENTITY
   public rightJoin<A extends string, E extends AnEntity>(
     targetAlias: A,
     targetEntity: E,
@@ -742,6 +981,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
+  // CTE
   public rightJoin<A extends string, C extends keyof G["CTEs"]>(
     targetAlias: A,
     CTEName: C,
@@ -769,20 +1009,63 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
-  public rightJoin<A extends string, E extends AnEntity>(
+  // RELATION
+  public rightJoin<
+    A extends string,
+    E extends AnEntity,
+    K extends keyof G["JoinedEntities"],
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>
+  >(
+    targetAlias: A,
+    targetEntity: E,
+    parentAlias: K,
+    parentField: F
+  ): QueryBuilder<{
+    RootEntity: G["RootEntity"];
+    JoinedEntities: G["JoinedEntities"] & Record<A, E>;
+    CTEs: G["CTEs"];
+    SelectedEntities: G["SelectedEntities"];
+    ExplicitSelects: G["ExplicitSelects"];
+  }>;
+
+  public rightJoin<
+    A extends string,
+    E extends AnEntity,
+    K extends keyof G["JoinedEntities"],
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>
+  >(
     targetAlias: A,
     targetEntityOrCTE: E | string,
-    conditionFn: (j: JoinFactory<any, A, E>) => JoinImplArgs
+    conditionFnOrParentAlias: ((j: JoinFactory<any, A, E>) => JoinImplArgs) | K,
+    optionalParentField?: F
   ) {
-    this.joinImpl(
-      conditionFn(
-        new JoinFactory(targetAlias, targetEntityOrCTE, JoinType.RIGHT, false)
-      )
+    const joinFactory = new JoinFactory(
+      targetAlias,
+      targetEntityOrCTE,
+      JoinType.RIGHT,
+      false,
+      false
     );
+
+    if (typeof conditionFnOrParentAlias === "function") {
+      this.joinImpl(conditionFnOrParentAlias(joinFactory));
+    } else {
+      this.joinImpl(
+        joinFactory.relation(
+          conditionFnOrParentAlias.toString(),
+          optionalParentField!
+        )
+      );
+    }
 
     return this as any;
   }
 
+  //
+  // RIGHT JOIN AND SELECT
+  //
+
+  // ENTITY
   public rightJoinAndSelect<A extends string, E extends AnEntity>(
     targetAlias: A,
     targetEntity: E,
@@ -807,22 +1090,172 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
-  public rightJoinAndSelect<A extends string, E extends AnEntity>(
+  // RELATION
+  public rightJoinAndSelect<
+    A extends string,
+    E extends AnEntity,
+    K extends keyof G["JoinedEntities"],
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>
+  >(
+    targetAlias: A,
+    targetEntity: E,
+    parentAlias: K,
+    parentField: F
+  ): QueryBuilder<{
+    RootEntity: G["RootEntity"];
+    JoinedEntities: G["JoinedEntities"] & Record<A, E>;
+    CTEs: G["CTEs"];
+    SelectedEntities: G["SelectedEntities"];
+    ExplicitSelects: G["ExplicitSelects"];
+  }>;
+
+  public rightJoinAndSelect<
+    A extends string,
+    E extends AnEntity,
+    K extends keyof G["JoinedEntities"],
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>
+  >(
     targetAlias: A,
     targetEntityOrCTE: E | string,
-    conditionFn: (j: JoinFactory<any, A, E>) => JoinImplArgs
+    conditionFnOrParentAlias: ((j: JoinFactory<any, A, E>) => JoinImplArgs) | K,
+    optionalParentField?: F
   ) {
-    this.joinImpl(
-      conditionFn(
-        new JoinFactory(targetAlias, targetEntityOrCTE, JoinType.RIGHT, true)
-      )
+    const joinFactory = new JoinFactory(
+      targetAlias,
+      targetEntityOrCTE,
+      JoinType.RIGHT,
+      true,
+      false
     );
+
+    if (typeof conditionFnOrParentAlias === "function") {
+      this.joinImpl(conditionFnOrParentAlias(joinFactory));
+    } else {
+      this.joinImpl(
+        joinFactory.relation(
+          conditionFnOrParentAlias.toString(),
+          optionalParentField!
+        )
+      );
+    }
 
     return this as any;
   }
 
-  // FULL JOIN
+  //
+  // FULL JOIN AND SELECT
+  //
 
+  // ENTITY
+  public fullJoinAndSelect<A extends string, E extends AnEntity>(
+    targetAlias: A,
+    targetEntity: E,
+    conditionFn: (
+      j: JoinFactory<
+        {
+          RootEntity: G["RootEntity"];
+          JoinedEntities: G["JoinedEntities"];
+          CTEs: G["CTEs"];
+          SelectedEntities: G["SelectedEntities"];
+          ExplicitSelects: G["ExplicitSelects"];
+        },
+        A,
+        E
+      >
+    ) => JoinImplArgs
+  ): QueryBuilder<{
+    RootEntity: G["RootEntity"];
+    JoinedEntities: G["JoinedEntities"] & Record<A, E>;
+    CTEs: G["CTEs"];
+    SelectedEntities: G["SelectedEntities"];
+    ExplicitSelects: G["ExplicitSelects"];
+  }>;
+
+  // CTE
+  public fullJoinAndSelect<A extends string, C extends keyof G["CTEs"]>(
+    targetAlias: A,
+    CTEName: C,
+    conditionFn: (
+      j: Omit<
+        JoinFactory<
+          {
+            RootEntity: G["RootEntity"];
+            JoinedEntities: G["JoinedEntities"];
+            CTEs: G["CTEs"];
+            SelectedEntities: G["SelectedEntities"];
+            ExplicitSelects: G["ExplicitSelects"];
+          },
+          A,
+          G["CTEs"][C]
+        >,
+        "relation"
+      >
+    ) => JoinImplArgs
+  ): QueryBuilder<{
+    RootEntity: G["RootEntity"];
+    JoinedEntities: G["JoinedEntities"] & Record<A, G["CTEs"][C]>;
+    CTEs: G["CTEs"];
+    SelectedEntities: G["SelectedEntities"];
+    ExplicitSelects: G["ExplicitSelects"];
+  }>;
+
+  // RELATION
+  public fullJoinAndSelect<
+    A extends string,
+    E extends AnEntity,
+    K extends keyof G["JoinedEntities"],
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>
+  >(
+    targetAlias: A,
+    targetEntity: E,
+    parentAlias: K,
+    parentField: F
+  ): QueryBuilder<{
+    RootEntity: G["RootEntity"];
+    JoinedEntities: G["JoinedEntities"] & Record<A, E>;
+    CTEs: G["CTEs"];
+    SelectedEntities: G["SelectedEntities"];
+    ExplicitSelects: G["ExplicitSelects"];
+  }>;
+
+  public fullJoinAndSelect<
+    A extends string,
+    E extends AnEntity,
+    K extends keyof G["JoinedEntities"],
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>
+  >(
+    targetAlias: A,
+    targetEntityOrCTE: E | string,
+    conditionFnOrParentAlias: ((j: JoinFactory<any, A, E>) => JoinImplArgs) | K,
+    optionalParentField?: F
+  ) {
+    const joinFactory = new JoinFactory(
+      targetAlias,
+      targetEntityOrCTE,
+      JoinType.FULL,
+      true,
+      false
+    );
+
+    if (typeof conditionFnOrParentAlias === "function") {
+      this.joinImpl(conditionFnOrParentAlias(joinFactory));
+    } else {
+      this.joinImpl(
+        joinFactory.relation(
+          conditionFnOrParentAlias.toString(),
+          optionalParentField!
+        )
+      );
+    }
+
+    return this as any;
+  }
+
+  //
+  // FULL JOIN
+  //
+
+  // ENTITY
   public fullJoin<A extends string, E extends AnEntity>(
     targetAlias: A,
     targetEntity: E,
@@ -847,6 +1280,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
+  // CTE
   public fullJoin<A extends string, C extends keyof G["CTEs"]>(
     targetAlias: A,
     CTEName: C,
@@ -874,22 +1308,115 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
-  public fullJoin<A extends string, E extends AnEntity>(
+  // RELATION
+  public fullJoin<
+    A extends string,
+    E extends AnEntity,
+    K extends keyof G["JoinedEntities"],
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>
+  >(
+    targetAlias: A,
+    targetEntity: E,
+    parentAlias: K,
+    parentField: F
+  ): QueryBuilder<{
+    RootEntity: G["RootEntity"];
+    JoinedEntities: G["JoinedEntities"] & Record<A, E>;
+    CTEs: G["CTEs"];
+    SelectedEntities: G["SelectedEntities"];
+    ExplicitSelects: G["ExplicitSelects"];
+  }>;
+
+  public fullJoin<
+    A extends string,
+    E extends AnEntity,
+    K extends keyof G["JoinedEntities"],
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>
+  >(
     targetAlias: A,
     targetEntityOrCTE: E | string,
-    conditionFn: (j: JoinFactory<any, A, E>) => JoinImplArgs
+    conditionFnOrParentAlias: ((j: JoinFactory<any, A, E>) => JoinImplArgs) | K,
+    optionalParentField?: F
   ) {
-    this.joinImpl(
-      conditionFn(
-        new JoinFactory(targetAlias, targetEntityOrCTE, JoinType.FULL, false)
-      )
+    const joinFactory = new JoinFactory(
+      targetAlias,
+      targetEntityOrCTE,
+      JoinType.FULL,
+      false,
+      false
     );
+
+    if (typeof conditionFnOrParentAlias === "function") {
+      this.joinImpl(conditionFnOrParentAlias(joinFactory));
+    } else {
+      this.joinImpl(
+        joinFactory.relation(
+          conditionFnOrParentAlias.toString(),
+          optionalParentField!
+        )
+      );
+    }
 
     return this as any;
   }
 
-  // CROSS JOIN
+  //
+  // CROSS JOIN AND SELECT
+  //
 
+  // ENTITY
+  public crossJoinAndSelect<A extends string, E extends AnEntity>(
+    targetAlias: A,
+    targetEntity: E
+  ): QueryBuilder<{
+    RootEntity: G["RootEntity"];
+    JoinedEntities: G["JoinedEntities"] & Record<A, E>;
+    CTEs: G["CTEs"];
+    SelectedEntities: G["SelectedEntities"];
+    ExplicitSelects: G["ExplicitSelects"];
+  }>;
+
+  // CTE
+  public crossJoinAndSelect<A extends string, C extends keyof G["CTEs"]>(
+    targetAlias: A,
+    CTEName: C
+  ): QueryBuilder<{
+    RootEntity: G["RootEntity"];
+    JoinedEntities: G["JoinedEntities"] & Record<A, G["CTEs"][C]>;
+    CTEs: G["CTEs"];
+    SelectedEntities: G["SelectedEntities"];
+    ExplicitSelects: G["ExplicitSelects"];
+  }>;
+
+  public crossJoinAndSelect<A extends string, E extends AnEntity>(
+    targetAlias: A,
+    targetEntityOrCTE: E | string
+  ) {
+    const targetSelectSourceContext: SelectSourceContext =
+      typeof targetEntityOrCTE === "string"
+        ? { type: "cte", name: targetEntityOrCTE, source: Object }
+        : { type: "entity", source: targetEntityOrCTE };
+
+    const joinArgs: JoinImplArgs = {
+      targetAlias,
+      targetSelectSourceContext,
+
+      select: true,
+
+      type: JoinType.CROSS,
+      strategy: JoinStrategy.CROSS,
+    };
+
+    this.joinImpl(joinArgs);
+
+    return this as any;
+  }
+
+  //
+  // CROSS JOIN
+  //
+
+  // ENTITY
   public crossJoin<A extends string, E extends AnEntity>(
     targetAlias: A,
     targetEntity: E
@@ -901,6 +1428,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
+  // CTE
   public crossJoin<A extends string, C extends keyof G["CTEs"]>(
     targetAlias: A,
     CTEName: C
@@ -936,8 +1464,52 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     return this as any;
   }
 
-  // PRIVATE join impl
+  //
+  // CROSS JOIN AND MAP
+  //
+  public crossJoinAndMap<
+    A extends string,
+    E extends AnEntity,
+    K extends keyof G["JoinedEntities"],
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>
+  >(
+    targetAlias: A,
+    targetEntityOrCTE: E | string,
+    parentAlias: K,
+    parentField: F
+  ): QueryBuilder<{
+    RootEntity: G["RootEntity"];
+    JoinedEntities: G["JoinedEntities"] & Record<A, E>;
+    CTEs: G["CTEs"];
+    SelectedEntities: G["SelectedEntities"];
+    ExplicitSelects: G["ExplicitSelects"];
+  }> {
+    const targetSelectSourceContext: SelectSourceContext =
+      typeof targetEntityOrCTE === "string"
+        ? { type: "cte", name: targetEntityOrCTE, source: Object }
+        : { type: "entity", source: targetEntityOrCTE };
 
+    const joinArgs: JoinImplArgs = {
+      targetAlias,
+      targetSelectSourceContext,
+
+      mapToAlias: parentAlias.toString(),
+      mapToField: parentField.toString(),
+      select: true,
+      map: true,
+
+      type: JoinType.CROSS,
+      strategy: JoinStrategy.CROSS,
+    };
+
+    this.joinImpl(joinArgs);
+
+    return this as any;
+  }
+
+  //
+  // PRIVATE JOIN IMPL
+  //
   private joinImpl(args: JoinImplArgs): void {
     const { strategy, targetAlias, targetSelectSourceContext } = args;
 
@@ -1008,7 +1580,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
       );
     }
 
-    const { parentAlias, parentField } = args;
+    const { parentAlias, parentField, map, select } = args;
 
     const parentSource = this.getSource(parentAlias);
     if (parentSource.type !== "entity") {
@@ -1042,7 +1614,9 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
         parentAlias: parentAlias.toString(),
         parentField: parentField.toString(),
         comparison: comparison,
-        select: args.select,
+
+        select,
+        map,
 
         childType: nextSource.type,
       })
@@ -1059,9 +1633,9 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
       throw new Error(`Join strategy needs to be ${JoinStrategy.SQL}`);
     }
 
-    const { sql, select, namedParams, parentAlias, parentField } = args;
+    const { sql, select, namedParams, map, mapToAlias, mapToField } = args;
 
-    if (select && !(parentAlias?.length && parentField?.length)) {
+    if (map && !(mapToAlias?.length && mapToField?.length)) {
       throw new Error(
         `SQL join needs parent alias and parent field with select set to true`
       );
@@ -1086,10 +1660,12 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
         type: args.type,
 
         comparison,
-        select,
 
-        parentAlias,
-        parentField,
+        select,
+        map,
+
+        parentAlias: mapToAlias,
+        parentField: mapToField,
 
         childType: nextSource.type,
       })
@@ -1106,7 +1682,15 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
       throw new Error(`Join strategy needs to be ${JoinStrategy.COMPARISON}`);
     }
 
-    const { leftAlias, leftField, comparator, rightAlias, rightField } = args;
+    const {
+      leftAlias,
+      leftField,
+      comparator,
+      rightAlias,
+      rightField,
+      select,
+      map,
+    } = args;
 
     const parentIdentifier = this.getColumnIdentifier(leftAlias, leftField);
     const childIdentifier = this.getColumnIdentifier(rightAlias, rightField);
@@ -1125,7 +1709,8 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
           childIdentifier
         ),
 
-        select: args.select,
+        select,
+        map,
 
         childType: nextSelectSource.type,
       })
@@ -1155,7 +1740,10 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
 
         type: args.type,
 
+        parentAlias: args.mapToAlias,
+        parentField: args.mapToField,
         select: args.select,
+        map: args.map,
 
         childType: nextSelectSource.type,
       })
