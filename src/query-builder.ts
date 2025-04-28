@@ -22,7 +22,6 @@ import { NamedParams } from "./types/named-params";
 import { JoinArg } from "./types/query/join-arg";
 import { Condition } from "./types/where-args";
 import { RawQueryResultParser } from "./raw-query-result-parser";
-import { UnionToIntersection } from "./types/helpers";
 import {
   CteTableIdentifierSqlBuilder,
   TableIdentifierSqlBuilder,
@@ -172,21 +171,18 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
         RootEntity: G["RootEntity"];
         JoinedEntities: {};
         CTEs: G["CTEs"];
-        SelectedEntities: {};
         ExplicitSelects: {};
       }>
     ) => QueryBuilder<{
       RootEntity: AnEntity;
       JoinedEntities: any;
       CTEs: any;
-      SelectedEntities: any;
       ExplicitSelects: T;
     }>
   ): QueryBuilder<{
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"];
     CTEs: G["CTEs"] & Record<A, T>;
-    SelectedEntities: G["SelectedEntities"];
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
@@ -196,14 +192,12 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
       RootEntity: any;
       JoinedEntities: any;
       CTEs: any;
-      SelectedEntities: any;
       ExplicitSelects: T;
     }>
   ): QueryBuilder<{
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"];
     CTEs: G["CTEs"] & Record<A, T>;
-    SelectedEntities: G["SelectedEntities"];
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
@@ -214,21 +208,18 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
           RootEntity: any;
           JoinedEntities: any;
           CTEs: any;
-          SelectedEntities: any;
           ExplicitSelects: T;
         }>
       | ((qb: QueryBuilderFactory<G>) => QueryBuilder<{
           RootEntity: any;
           JoinedEntities: any;
           CTEs: any;
-          SelectedEntities: any;
           ExplicitSelects: T;
         }>)
   ): QueryBuilder<{
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"];
     CTEs: G["CTEs"] & Record<A, T>;
-    SelectedEntities: G["SelectedEntities"];
     ExplicitSelects: G["ExplicitSelects"];
   }> {
     this.addSource(alias, Object, "cte");
@@ -373,7 +364,6 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"];
     CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
     ExplicitSelects: G["ExplicitSelects"] &
       (K extends string
         ? F extends string
@@ -394,7 +384,6 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"];
     CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
     ExplicitSelects: G["ExplicitSelects"] &
       Record<A, SelectSourceField<G["JoinedEntities"][K], Stringify<F>>>;
   }>;
@@ -411,7 +400,6 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"];
     CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
     ExplicitSelects: G["ExplicitSelects"] &
       (K extends string
         ? FlattenSelectSources<Record<K, G["JoinedEntities"][K]>>
@@ -427,7 +415,6 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"];
     CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
     ExplicitSelects: G["ExplicitSelects"] &
       Record<A, T extends (...args: any) => infer I ? I : T>;
   }>;
@@ -509,7 +496,6 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"];
     CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
     ExplicitSelects: K extends string
       ? F extends string
         ? Record<`${K}.${F}`, SelectSourceField<G["JoinedEntities"][K], F>>
@@ -529,7 +515,6 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"];
     CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
     ExplicitSelects: Record<
       A,
       SelectSourceField<G["JoinedEntities"][K], Stringify<F>>
@@ -548,7 +533,6 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"];
     CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
     ExplicitSelects: K extends string
       ? FlattenSelectSources<Record<K, G["JoinedEntities"][K]>>
       : {};
@@ -563,7 +547,6 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"];
     CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
     ExplicitSelects: Record<A, T extends (...args: any) => infer I ? I : T>;
   }>;
 
@@ -660,7 +643,6 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
           RootEntity: G["RootEntity"];
           JoinedEntities: G["JoinedEntities"];
           CTEs: G["CTEs"];
-          SelectedEntities: G["SelectedEntities"];
           ExplicitSelects: G["ExplicitSelects"];
         },
         A,
@@ -671,8 +653,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"] & Record<A, E>;
     CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
-    ExplicitSelects: G["ExplicitSelects"];
+    ExplicitSelects: G["ExplicitSelects"] & FlattenSelectSources<Record<A, E>>;
   }>;
 
   // RELATION
@@ -690,8 +671,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"] & Record<A, E>;
     CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
-    ExplicitSelects: G["ExplicitSelects"];
+    ExplicitSelects: G["ExplicitSelects"] & FlattenSelectSources<Record<A, E>>;
   }>;
 
   public innerJoinAndSelect<
@@ -741,7 +721,6 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
           RootEntity: G["RootEntity"];
           JoinedEntities: G["JoinedEntities"];
           CTEs: G["CTEs"];
-          SelectedEntities: G["SelectedEntities"];
           ExplicitSelects: G["ExplicitSelects"];
         },
         A,
@@ -752,7 +731,6 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"] & Record<A, E>;
     CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
@@ -767,7 +745,6 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
             RootEntity: G["RootEntity"];
             JoinedEntities: G["JoinedEntities"];
             CTEs: G["CTEs"];
-            SelectedEntities: G["SelectedEntities"];
             ExplicitSelects: G["ExplicitSelects"];
           },
           A,
@@ -780,7 +757,6 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"] & Record<A, G["CTEs"][C]>;
     CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
@@ -799,7 +775,6 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"] & Record<A, E>;
     CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
@@ -853,8 +828,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"] & Record<A, E>;
     CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
-    ExplicitSelects: G["ExplicitSelects"];
+    ExplicitSelects: G["ExplicitSelects"] & FlattenSelectSources<Record<A, E>>;
   }> {
     this.joinImpl(
       new JoinFactory(
@@ -883,7 +857,6 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
           RootEntity: G["RootEntity"];
           JoinedEntities: G["JoinedEntities"];
           CTEs: G["CTEs"];
-          SelectedEntities: G["SelectedEntities"];
           ExplicitSelects: G["ExplicitSelects"];
         },
         A,
@@ -894,7 +867,6 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"] & Record<A, E>;
     CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
@@ -909,7 +881,6 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
             RootEntity: G["RootEntity"];
             JoinedEntities: G["JoinedEntities"];
             CTEs: G["CTEs"];
-            SelectedEntities: G["SelectedEntities"];
             ExplicitSelects: G["ExplicitSelects"];
           },
           A,
@@ -922,7 +893,6 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"] & Record<A, G["CTEs"][C]>;
     CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
@@ -941,7 +911,6 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"] & Record<A, E>;
     CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
@@ -992,7 +961,6 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
           RootEntity: G["RootEntity"];
           JoinedEntities: G["JoinedEntities"];
           CTEs: G["CTEs"];
-          SelectedEntities: G["SelectedEntities"];
           ExplicitSelects: G["ExplicitSelects"];
         },
         A,
@@ -1003,8 +971,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"] & Record<A, E>;
     CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
-    ExplicitSelects: G["ExplicitSelects"];
+    ExplicitSelects: G["ExplicitSelects"] & FlattenSelectSources<Record<A, E>>;
   }>;
 
   // RELATION
@@ -1022,8 +989,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"] & Record<A, E>;
     CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
-    ExplicitSelects: G["ExplicitSelects"];
+    ExplicitSelects: G["ExplicitSelects"] & FlattenSelectSources<Record<A, E>>;
   }>;
 
   public leftJoinAndSelect<
@@ -1076,8 +1042,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"] & Record<A, E>;
     CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
-    ExplicitSelects: G["ExplicitSelects"];
+    ExplicitSelects: G["ExplicitSelects"] & FlattenSelectSources<Record<A, E>>;
   }> {
     this.joinImpl(
       new JoinFactory(
@@ -1106,7 +1071,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
           RootEntity: G["RootEntity"];
           JoinedEntities: G["JoinedEntities"];
           CTEs: G["CTEs"];
-          SelectedEntities: G["SelectedEntities"];
+
           ExplicitSelects: G["ExplicitSelects"];
         },
         A,
@@ -1117,7 +1082,6 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"] & Record<A, E>;
     CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
@@ -1132,7 +1096,6 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
             RootEntity: G["RootEntity"];
             JoinedEntities: G["JoinedEntities"];
             CTEs: G["CTEs"];
-            SelectedEntities: G["SelectedEntities"];
             ExplicitSelects: G["ExplicitSelects"];
           },
           A,
@@ -1145,7 +1108,6 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"] & Record<A, G["CTEs"][C]>;
     CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
@@ -1164,7 +1126,6 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"] & Record<A, E>;
     CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
@@ -1215,7 +1176,6 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
           RootEntity: G["RootEntity"];
           JoinedEntities: G["JoinedEntities"];
           CTEs: G["CTEs"];
-          SelectedEntities: G["SelectedEntities"];
           ExplicitSelects: G["ExplicitSelects"];
         },
         A,
@@ -1226,8 +1186,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"] & Record<A, E>;
     CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
-    ExplicitSelects: G["ExplicitSelects"];
+    ExplicitSelects: G["ExplicitSelects"] & FlattenSelectSources<Record<A, E>>;
   }>;
 
   // RELATION
@@ -1245,8 +1204,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"] & Record<A, E>;
     CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
-    ExplicitSelects: G["ExplicitSelects"];
+    ExplicitSelects: G["ExplicitSelects"] & FlattenSelectSources<Record<A, E>>;
   }>;
 
   public rightJoinAndSelect<
@@ -1296,7 +1254,6 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
           RootEntity: G["RootEntity"];
           JoinedEntities: G["JoinedEntities"];
           CTEs: G["CTEs"];
-          SelectedEntities: G["SelectedEntities"];
           ExplicitSelects: G["ExplicitSelects"];
         },
         A,
@@ -1307,36 +1264,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"] & Record<A, E>;
     CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
-    ExplicitSelects: G["ExplicitSelects"];
-  }>;
-
-  // CTE
-  public fullJoinAndSelect<A extends string, C extends keyof G["CTEs"]>(
-    targetAlias: A,
-    CTEName: C,
-    conditionFn: (
-      j: Omit<
-        JoinFactory<
-          {
-            RootEntity: G["RootEntity"];
-            JoinedEntities: G["JoinedEntities"];
-            CTEs: G["CTEs"];
-            SelectedEntities: G["SelectedEntities"];
-            ExplicitSelects: G["ExplicitSelects"];
-          },
-          A,
-          G["CTEs"][C]
-        >,
-        "relation"
-      >
-    ) => JoinImplArgs
-  ): QueryBuilder<{
-    RootEntity: G["RootEntity"];
-    JoinedEntities: G["JoinedEntities"] & Record<A, G["CTEs"][C]>;
-    CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
-    ExplicitSelects: G["ExplicitSelects"];
+    ExplicitSelects: G["ExplicitSelects"] & FlattenSelectSources<Record<A, E>>;
   }>;
 
   // RELATION
@@ -1354,8 +1282,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"] & Record<A, E>;
     CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
-    ExplicitSelects: G["ExplicitSelects"];
+    ExplicitSelects: G["ExplicitSelects"] & FlattenSelectSources<Record<A, E>>;
   }>;
 
   public fullJoinAndSelect<
@@ -1405,7 +1332,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
           RootEntity: G["RootEntity"];
           JoinedEntities: G["JoinedEntities"];
           CTEs: G["CTEs"];
-          SelectedEntities: G["SelectedEntities"];
+
           ExplicitSelects: G["ExplicitSelects"];
         },
         A,
@@ -1416,7 +1343,6 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"] & Record<A, E>;
     CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
@@ -1431,7 +1357,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
             RootEntity: G["RootEntity"];
             JoinedEntities: G["JoinedEntities"];
             CTEs: G["CTEs"];
-            SelectedEntities: G["SelectedEntities"];
+
             ExplicitSelects: G["ExplicitSelects"];
           },
           A,
@@ -1444,7 +1370,6 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"] & Record<A, G["CTEs"][C]>;
     CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
@@ -1463,7 +1388,6 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"] & Record<A, E>;
     CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
@@ -1512,20 +1436,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"] & Record<A, E>;
     CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
-    ExplicitSelects: G["ExplicitSelects"];
-  }>;
-
-  // CTE
-  public crossJoinAndSelect<A extends string, C extends keyof G["CTEs"]>(
-    targetAlias: A,
-    CTEName: C
-  ): QueryBuilder<{
-    RootEntity: G["RootEntity"];
-    JoinedEntities: G["JoinedEntities"] & Record<A, G["CTEs"][C]>;
-    CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
-    ExplicitSelects: G["ExplicitSelects"];
+    ExplicitSelects: G["ExplicitSelects"] & FlattenSelectSources<Record<A, E>>;
   }>;
 
   public crossJoinAndSelect<A extends string, E extends AnEntity>(
@@ -1564,7 +1475,6 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"] & Record<A, E>;
     CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
@@ -1576,7 +1486,6 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"] & Record<A, G["CTEs"][C]>;
     CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
@@ -1621,8 +1530,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"] & Record<A, E>;
     CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
-    ExplicitSelects: G["ExplicitSelects"];
+    ExplicitSelects: G["ExplicitSelects"] & FlattenSelectSources<Record<A, E>>;
   }> {
     const targetSelectSourceContext: SelectSourceContext =
       typeof targetEntityOrCTE === "string"
@@ -1978,7 +1886,6 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"];
     CTEs: G["CTEs"];
-    SelectedEntities: G["SelectedEntities"];
     ExplicitSelects: {};
   }> {
     this.selects = [];
@@ -2028,11 +1935,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     );
   }
 
-  public async getRaw(): Promise<
-    keyof G["ExplicitSelects"] extends never
-      ? UnionToIntersection<FlattenSelectSources<G["SelectedEntities"]>>[]
-      : G["ExplicitSelects"][]
-  > {
+  public async getRaw(): Promise<G["ExplicitSelects"][]> {
     const query = this.getQuery(QueryResultType.RAW);
 
     return this.client.withConnection(

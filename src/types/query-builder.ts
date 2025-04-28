@@ -7,7 +7,6 @@ export type QueryBuilderGenerics = {
   RootEntity: AnEntity;
   JoinedEntities: Record<string, SelectSource>;
   CTEs: Record<string, SelectSource>;
-  SelectedEntities: Record<string, SelectSource>;
   ExplicitSelects: Record<string, any>;
 };
 

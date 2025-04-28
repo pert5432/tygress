@@ -13,6 +13,7 @@ import {
 } from "./types/connection-settings";
 import { Logger } from "./logger";
 import { QueryLogLevel } from "./enums";
+import { FlattenSelectSources } from "./types/query-builder";
 
 export class PostgresClient {
   private pool: Pool;
@@ -123,15 +124,13 @@ export class PostgresClient {
     RootEntity: E;
     JoinedEntities: Record<A, E>;
     CTEs: {};
-    SelectedEntities: Record<A, E>;
-    ExplicitSelects: {};
+    ExplicitSelects: FlattenSelectSources<Record<A, E>>;
   }> {
     return new QueryBuilder<{
       RootEntity: E;
       JoinedEntities: Record<A, E>;
       CTEs: {};
-      SelectedEntities: Record<A, E>;
-      ExplicitSelects: {};
+      ExplicitSelects: FlattenSelectSources<Record<A, E>>;
     }>(
       this,
       alias,
