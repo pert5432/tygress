@@ -1,13 +1,13 @@
 import { JoinStrategy, JoinType } from "../enums";
 import { AnEntity } from "./entity";
 import { NamedParams } from "./named-params";
+import { Parametrizable } from "./parametrizable";
 import { WhereComparator } from "./where-comparator";
 
 export type QueryBuilderGenerics = {
   RootEntity: AnEntity;
   JoinedEntities: Record<string, SelectSource>;
   CTEs: Record<string, SelectSource>;
-  SelectedEntities: Record<string, SelectSource>;
   ExplicitSelects: Record<string, any>;
 };
 
@@ -70,13 +70,30 @@ export type JoinImplArgs = {
     | { strategy: JoinStrategy.CROSS; type: JoinType.CROSS }
   );
 
+type IsClass<T> = T extends Parametrizable
+  ? false
+  : T extends object
+  ? T extends (...args: any) => any
+    ? true
+    : T extends new (...args: any) => any
+    ? true
+    : T extends { constructor: Function }
+    ? true
+    : T extends Array<infer I>
+    ? IsClass<I>
+    : false
+  : false;
+
 export type FlattenSelectSources<
   T extends { [key: string]: SelectSource },
   K = keyof T
 > = K extends string
   ? {
       [F in SelectSourceKeys<T[K]> as F extends string
-        ? `${K}.${F}`
+        ? // Make sure the field is not a function
+          IsClass<SelectSourceField<T[K], Stringify<F>>> extends false
+          ? `${K}.${F}`
+          : never
         : never]: SelectSourceField<T[K], Stringify<F>>;
     }
   : never;

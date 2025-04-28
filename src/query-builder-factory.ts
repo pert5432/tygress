@@ -34,7 +34,6 @@ export class QueryBuilderFactory<G extends QueryBuilderGenerics> {
     RootEntity: E;
     JoinedEntities: G["JoinedEntities"] & Record<A, E>;
     CTEs: G["CTEs"];
-    SelectedEntities: {};
     ExplicitSelects: {};
   }>;
 
@@ -46,7 +45,6 @@ export class QueryBuilderFactory<G extends QueryBuilderGenerics> {
     RootEntity: new () => Object;
     JoinedEntities: G["JoinedEntities"] & Pick<G["CTEs"], C>;
     CTEs: G["CTEs"];
-    SelectedEntities: {};
     ExplicitSelects: {};
   }>;
 
