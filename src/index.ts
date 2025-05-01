@@ -1,3 +1,5 @@
-const main = async () => {};
+import { PostgresClient } from "./postgres-client";
 
-main();
+export { PostgresClient };
+export * from "./api";
+export * from "./decorators";

@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, test } from "vitest";
 import { Users } from "../entities/users";
 import { TestHelper } from "../helpers";
 import { Pets } from "../entities/pets";
-import { Gt, In, IsNotNull, IsNull } from "../../api";
+import { Gt, In, IsNotNull, IsNull } from "../../";
 
 describe("select", async () => {
   const user1 = TEST_DB.instantiate(Users, {
