@@ -1,4 +1,4 @@
-import { Column, OneToMany, PrimaryKey, Table } from "../../decorators";
+import { Column, OneToMany, PrimaryKey, Table } from "../../";
 import { Pets } from "./pets";
 
 @Table("users")

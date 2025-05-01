@@ -1,4 +1,4 @@
-import { PostgresClient } from "../postgres-client";
+import { PostgresClient } from "../";
 import { Users } from "./entities/users";
 import { Pets } from "./entities/pets";
 import { PetCategories } from "./entities/pet-categories";

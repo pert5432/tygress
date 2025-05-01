@@ -1,4 +1,4 @@
-import { Column, ManyToOne, PrimaryKey, Table } from "../../decorators";
+import { Column, ManyToOne, PrimaryKey, Table } from "../../";
 import { PetCategories } from "./pet-categories";
 import { Pets } from "./pets";
 

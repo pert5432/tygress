@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, test } from "vitest";
 import { Users } from "../entities/users";
 import { TestHelper } from "../helpers";
 import { Pets } from "../entities/pets";
-import { In, IsNotNull, IsNull, Lte } from "../../api";
+import { In, IsNotNull, IsNull, Lte } from "../../";
 
 describe("QueryBuilder", async () => {
   const user1 = {
