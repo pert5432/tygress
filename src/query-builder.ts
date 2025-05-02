@@ -164,6 +164,12 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     });
   }
 
+  /**
+   * Adds a CTE to the query
+   *
+   * @param alias alias of the CTE being added
+   * @param qb function which takes a QueryBuilder instance as an argument and returns QueryBuilder
+   */
   public with<A extends string, T extends Record<string, any>>(
     alias: A,
     qb: (
@@ -186,6 +192,12 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
+  /**
+   * Adds a CTE to the query
+   *
+   * @param alias alias of the CTE being added
+   * @param qb QueryBuilder of the CTE
+   */
   public with<A extends string, T extends Record<string, any>>(
     alias: A,
     qb: QueryBuilder<{
@@ -232,6 +244,14 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     return this as any;
   }
 
+  /**
+   * Adds a WHERE condition comparing a column to result of a subquery
+   *
+   * @param leftAlias
+   * @param leftField
+   * @param comparator
+   * @param subQuery
+   */
   public where<
     K extends keyof G["JoinedEntities"],
     F extends SelectSourceKeys<G["JoinedEntities"][K]>
@@ -242,6 +262,15 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     subQuery: (qb: QueryBuilderFactory<G>) => QueryBuilder<any>
   ): QueryBuilder<G>;
 
+  /**
+   * Adds a WHERE condition comparing 2 columns
+   *
+   * @param leftAlias
+   * @param leftField
+   * @param comparator
+   * @param rightAlias
+   * @param rightField
+   */
   public where<
     K extends keyof G["JoinedEntities"],
     F extends SelectSourceKeys<G["JoinedEntities"][K]>,
@@ -255,11 +284,32 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     rightField: F2
   ): QueryBuilder<G>;
 
+  /**
+   * Adds a WHERE condition comparing a column to a parameter
+   *
+   * @param alias
+   * @param field
+   * @param condition
+   */
   public where<
     K extends keyof G["JoinedEntities"],
     F extends SelectSourceKeys<G["JoinedEntities"][K]>
   >(alias: K, field: F, condition: Condition<Parametrizable>): QueryBuilder<G>;
 
+  /**
+   * Adds an SQL WHERE condition
+   *
+   * Entity field names are re-written to their column names,
+   * for ex: `'a.firstName'` will become `"a"."first_name"` assuming the entity has a column called first_name defined on a field called firstName
+   *
+   * You can supply named params like this:
+   * ```ts
+   *  .where("a.firstName = :name", { name: "Joe" })
+   * ```
+   *
+   * @param sql
+   * @param namedParams
+   */
   public where(sql: string, namedParams?: NamedParams): QueryBuilder<G>;
 
   public where<
@@ -352,14 +402,20 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     return this;
   }
 
+  /**
+   * Selects a column
+   * The name of the selected column will be `alias.field`
+   *
+   * @param alias alias of the entity you are selecting from
+   * @param field field name of the column you are selecting
+   */
   public select<
     K extends keyof G["JoinedEntities"],
     F extends SelectSourceKeys<G["JoinedEntities"][K]>,
     A extends undefined
   >(
     alias: K,
-    field: F,
-    as?: A
+    field: F
   ): QueryBuilder<{
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"];
@@ -372,6 +428,13 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
         : {});
   }>;
 
+  /**
+   * Selects a column and specifies an alias for it
+   *
+   * @param alias alias of the entity you are selecting from
+   * @param field field name of the column you are selecting
+   * @param as alias of the column you are selecting
+   */
   public select<
     K extends keyof G["JoinedEntities"],
     F extends SelectSourceKeys<G["JoinedEntities"][K]>,
@@ -388,14 +451,19 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
       Record<A, SelectSourceField<G["JoinedEntities"][K], Stringify<F>>>;
   }>;
 
-  public select<
-    K extends keyof G["JoinedEntities"],
-    F extends "*",
-    A extends undefined
-  >(
+  /**
+   * Selects *all* columns of an entity
+   * The columns will all have aliases in the form `alias.fieldName`
+   *
+   * Currently does not work for selecting all columns of a CTE, sorry :'(
+   *
+   *
+   * @param alias alias of the entity you are selecting from
+   * @param field *
+   */
+  public select<K extends keyof G["JoinedEntities"], F extends "*">(
     alias: K,
-    field: F,
-    as?: A
+    field: F
   ): QueryBuilder<{
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"];
@@ -406,7 +474,21 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
         : {});
   }>;
 
-  // SQL
+  /**
+   * Selects using a "raw" SQL statement
+   *
+   * Entity field names are re-written to their column names,
+   * for ex: `'a.firstName'` will become `"a"."first_name"` assuming the entity has a column called first_name defined on a field called firstName
+   *
+   * You can supply named params like this:
+   * ```ts
+   *  .select("COALESCE(a.age, :defaultAge)", { defaultAge: 300 })
+   * ```
+   *
+   * @param sql
+   * @param alias alias of the selected column
+   * @param params optional named params
+   */
   public select<A extends string, T extends any = () => any>(
     sql: string,
     alias: A,
@@ -484,14 +566,19 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     return this as any;
   }
 
+  /**
+   * Selects a column and removes all other selects
+   * The name of the selected column will be `alias.field`
+   *
+   * @param alias alias of the entity you are selecting from
+   * @param field field name of the column you are selecting
+   */
   public setSelect<
     K extends keyof G["JoinedEntities"],
-    F extends SelectSourceKeys<G["JoinedEntities"][K]>,
-    A extends undefined
+    F extends SelectSourceKeys<G["JoinedEntities"][K]>
   >(
     alias: K,
-    field: F,
-    as?: A
+    field: F
   ): QueryBuilder<{
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"];
@@ -503,6 +590,13 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
       : {};
   }>;
 
+  /**
+   * Selects a column, specifies an alias for it and removes all other selects
+   *
+   * @param alias alias of the entity you are selecting from
+   * @param field field name of the column you are selecting
+   * @param as alias of the column you are selecting
+   */
   public setSelect<
     K extends keyof G["JoinedEntities"],
     F extends SelectSourceKeys<G["JoinedEntities"][K]>,
@@ -521,14 +615,19 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     >;
   }>;
 
-  public setSelect<
-    K extends keyof G["JoinedEntities"],
-    F extends "*",
-    A extends undefined
-  >(
+  /**
+   * Selects *all* columns of an entity and removes all other selects
+   * The columns will all have aliases in the form `alias.fieldName`
+   *
+   * Currently does not work for selecting all columns of a CTE, sorry :'(
+   *
+   *
+   * @param alias alias of the entity you are selecting from
+   * @param field *
+   */
+  public setSelect<K extends keyof G["JoinedEntities"], F extends "*">(
     alias: K,
-    field: F,
-    as?: A
+    field: F
   ): QueryBuilder<{
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"];
@@ -538,7 +637,21 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
       : {};
   }>;
 
-  // SQL
+  /**
+   * Selects using a "raw" SQL statement and removes all other selects
+   *
+   * Entity field names are re-written to their column names,
+   * for ex: `'a.firstName'` will become `"a"."first_name"` assuming the entity has a column called first_name defined on a field called firstName
+   *
+   * You can supply named params like this:
+   * ```ts
+   *  .select("COALESCE(a.age, :defaultAge)", { defaultAge: 300 })
+   * ```
+   *
+   * @param sql
+   * @param alias alias of the selected column
+   * @param params optional named params
+   */
   public setSelect<A extends string, T extends any = () => any>(
     sql: string,
     alias: A,
@@ -613,6 +726,13 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     return this as any;
   }
 
+  /**
+   * Adds an ORDER BY statement
+   *
+   * @param alias alias of entity
+   * @param field fieldName of entity you want to order by
+   * @param order direction of order, default: `ASC`
+   */
   public orderBy<
     K extends keyof G["JoinedEntities"],
     F extends SelectSourceKeys<G["JoinedEntities"][K]>
@@ -633,7 +753,13 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   // INNER JOIN AND SELECT
   //
 
-  // Entity
+  /**
+   * Adds an INNER JOIN and selects all columns of the joined entity
+   *
+   * @param targetAlias alias of the newly joined entity
+   * @param targetEntity entity being joined in
+   * @param conditionFn join condition function
+   */
   public innerJoinAndSelect<A extends string, E extends AnEntity>(
     targetAlias: A,
     targetEntity: E,
@@ -656,7 +782,15 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     ExplicitSelects: G["ExplicitSelects"] & FlattenSelectSources<Record<A, E>>;
   }>;
 
-  // RELATION
+  /**
+   * Adds an INNER JOIN and selects all columns of the joined entity
+   * Uses a relation for the join condition
+   *
+   * @param targetAlias alias of the newly joined entity
+   * @param targetEntity entity being joined in
+   * @param parentAlias
+   * @param parentField together with parentAlias it forms the parent side of the relation
+   */
   public innerJoinAndSelect<
     A extends string,
     E extends AnEntity,
@@ -711,7 +845,13 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   // INNER JOIN
   //
 
-  // ENTITY
+  /**
+   * Adds an INNER JOIN
+   *
+   * @param targetAlias alias of the newly joined entity
+   * @param targetEntity entity being joined in
+   * @param conditionFn join condition function
+   */
   public innerJoin<A extends string, E extends AnEntity>(
     targetAlias: A,
     targetEntity: E,
@@ -734,7 +874,18 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
-  // CTE
+  /**
+   * Adds an INNER JOIN to a CTE
+   *
+   * Generates SQL like:
+   * ```sql
+   * INNER JOIN `CTEName` `targetAlias` ON `condition`
+   * ```
+   *
+   * @param targetAlias alias given to the CTE in the join
+   * @param CTEName name of the existing CTE
+   * @param conditionFn join condition function
+   */
   public innerJoin<A extends string, C extends keyof G["CTEs"]>(
     targetAlias: A,
     CTEName: C,
@@ -760,7 +911,15 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
-  // RELATION
+  /**
+   * Adds an INNER JOIN
+   * Uses a relation for the join condition
+   *
+   * @param targetAlias alias of the newly joined entity
+   * @param targetEntity entity being joined in
+   * @param parentAlias
+   * @param parentField together with parentAlias it forms the parent side of the relation
+   */
   public innerJoin<
     A extends string,
     E extends AnEntity,
@@ -814,6 +973,17 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   //
   // INNER JOIN AND MAP
   //
+
+  /**
+   * Adds an INNER JOIN, selects all the columns of the joined entity and maps the result to the relation field on the parent entity
+   *
+   * Uses a relation for the join condition
+   *
+   * @param targetAlias alias of the newly joined entity
+   * @param targetEntity entity being joined in
+   * @param parentAlias
+   * @param parentField together with parentAlias it forms the parent side of the relation
+   */
   public innerJoinAndMap<
     A extends string,
     E extends AnEntity,
@@ -821,7 +991,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     F extends SelectSourceKeys<G["JoinedEntities"][K]>
   >(
     targetAlias: A,
-    targetEntityOrCTE: E | string,
+    targetEntity: E,
     parentAlias: K,
     parentField: F
   ): QueryBuilder<{
@@ -833,7 +1003,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     this.joinImpl(
       new JoinFactory(
         targetAlias,
-        targetEntityOrCTE,
+        targetEntity,
         JoinType.INNER,
         true,
         true
@@ -847,7 +1017,13 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   // LEFT JOIN
   //
 
-  // ENTITY
+  /**
+   * Adds a LEFT JOIN
+   *
+   * @param targetAlias alias of the newly joined entity
+   * @param targetEntity entity being joined in
+   * @param conditionFn join condition function
+   */
   public leftJoin<A extends string, E extends AnEntity>(
     targetAlias: A,
     targetEntity: E,
@@ -870,7 +1046,18 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
-  // CTE
+  /**
+   * Adds a LEFT JOIN to a CTE
+   *
+   * Generates SQL like:
+   * ```sql
+   * LEFT JOIN `CTEName` `targetAlias` ON `condition`
+   * ```
+   *
+   * @param targetAlias alias given to the CTE in the join
+   * @param CTEName name of the existing CTE
+   * @param conditionFn join condition function
+   */
   public leftJoin<A extends string, C extends keyof G["CTEs"]>(
     targetAlias: A,
     CTEName: C,
@@ -896,7 +1083,15 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
-  // RELATION
+  /**
+   * Adds a LEFT JOIN
+   * Uses a relation for the join condition
+   *
+   * @param targetAlias alias of the newly joined entity
+   * @param targetEntity entity being joined in
+   * @param parentAlias
+   * @param parentField together with parentAlias it forms the parent side of the relation
+   */
   public leftJoin<
     A extends string,
     E extends AnEntity,
@@ -951,7 +1146,13 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   // LEFT JOIN AND SELECT
   //
 
-  // ENTITY
+  /**
+   * Adds a LEFT JOIN and selects all columns of the joined entity
+   *
+   * @param targetAlias alias of the newly joined entity
+   * @param targetEntity entity being joined in
+   * @param conditionFn join condition function
+   */
   public leftJoinAndSelect<A extends string, E extends AnEntity>(
     targetAlias: A,
     targetEntity: E,
@@ -974,7 +1175,15 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     ExplicitSelects: G["ExplicitSelects"] & FlattenSelectSources<Record<A, E>>;
   }>;
 
-  // RELATION
+  /**
+   * Adds an INNER JOIN and selects all columns of the joined entity
+   * Uses a relation for the join condition
+   *
+   * @param targetAlias alias of the newly joined entity
+   * @param targetEntity entity being joined in
+   * @param parentAlias
+   * @param parentField together with parentAlias it forms the parent side of the relation
+   */
   public leftJoinAndSelect<
     A extends string,
     E extends AnEntity,
@@ -1028,6 +1237,17 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   //
   // LEFT JOIN AND MAP
   //
+
+  /**
+   * Adds a LEFT JOIN, selects all the columns of the joined entity and maps the result to the relation field on the parent entity
+   *
+   * Uses a relation for the join condition
+   *
+   * @param targetAlias alias of the newly joined entity
+   * @param targetEntity entity being joined in
+   * @param parentAlias
+   * @param parentField together with parentAlias it forms the parent side of the relation
+   */
   public leftJoinAndMap<
     A extends string,
     E extends AnEntity,
@@ -1061,7 +1281,13 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   // RIGHT JOIN
   //
 
-  // ENTITY
+  /**
+   * Adds a RIGHT JOIN
+   *
+   * @param targetAlias alias of the newly joined entity
+   * @param targetEntity entity being joined in
+   * @param conditionFn join condition function
+   */
   public rightJoin<A extends string, E extends AnEntity>(
     targetAlias: A,
     targetEntity: E,
@@ -1085,7 +1311,18 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
-  // CTE
+  /**
+   * Adds a RIGHT JOIN to a CTE
+   *
+   * Generates SQL like:
+   * ```sql
+   * RIGHT JOIN `CTEName` `targetAlias` ON `condition`
+   * ```
+   *
+   * @param targetAlias alias given to the CTE in the join
+   * @param CTEName name of the existing CTE
+   * @param conditionFn join condition function
+   */
   public rightJoin<A extends string, C extends keyof G["CTEs"]>(
     targetAlias: A,
     CTEName: C,
@@ -1111,7 +1348,15 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
-  // RELATION
+  /**
+   * Adds a RIGHT JOIN
+   * Uses a relation for the join condition
+   *
+   * @param targetAlias alias of the newly joined entity
+   * @param targetEntity entity being joined in
+   * @param parentAlias
+   * @param parentField together with parentAlias it forms the parent side of the relation
+   */
   public rightJoin<
     A extends string,
     E extends AnEntity,
@@ -1166,7 +1411,16 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   // RIGHT JOIN AND SELECT
   //
 
-  // ENTITY
+  /**
+   * Adds a RIGHT JOIN, selects all the columns of the joined entity and maps the result to the relation field on the parent entity
+   *
+   * Uses a relation for the join condition
+   *
+   * @param targetAlias alias of the newly joined entity
+   * @param targetEntity entity being joined in
+   * @param parentAlias
+   * @param parentField together with parentAlias it forms the parent side of the relation
+   */
   public rightJoinAndSelect<A extends string, E extends AnEntity>(
     targetAlias: A,
     targetEntity: E,
@@ -1189,7 +1443,13 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     ExplicitSelects: G["ExplicitSelects"] & FlattenSelectSources<Record<A, E>>;
   }>;
 
-  // RELATION
+  /**
+   * Adds a RIGHT JOIN and selects all columns of the joined entity
+   *
+   * @param targetAlias alias of the newly joined entity
+   * @param targetEntity entity being joined in
+   * @param conditionFn join condition function
+   */
   public rightJoinAndSelect<
     A extends string,
     E extends AnEntity,
@@ -1244,7 +1504,13 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   // FULL JOIN AND SELECT
   //
 
-  // ENTITY
+  /**
+   * Adds a FULL JOIN and selects all columns of the joined entity
+   *
+   * @param targetAlias alias of the newly joined entity
+   * @param targetEntity entity being joined in
+   * @param conditionFn join condition function
+   */
   public fullJoinAndSelect<A extends string, E extends AnEntity>(
     targetAlias: A,
     targetEntity: E,
@@ -1267,7 +1533,15 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     ExplicitSelects: G["ExplicitSelects"] & FlattenSelectSources<Record<A, E>>;
   }>;
 
-  // RELATION
+  /**
+   * Adds a FULL JOIN and selects all columns of the joined entity
+   * Uses a relation for the join condition
+   *
+   * @param targetAlias alias of the newly joined entity
+   * @param targetEntity entity being joined in
+   * @param parentAlias
+   * @param parentField together with parentAlias it forms the parent side of the relation
+   */
   public fullJoinAndSelect<
     A extends string,
     E extends AnEntity,
@@ -1322,7 +1596,13 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   // FULL JOIN
   //
 
-  // ENTITY
+  /**
+   * Adds a FULL JOIN
+   *
+   * @param targetAlias alias of the newly joined entity
+   * @param targetEntity entity being joined in
+   * @param conditionFn join condition function
+   */
   public fullJoin<A extends string, E extends AnEntity>(
     targetAlias: A,
     targetEntity: E,
@@ -1346,7 +1626,18 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
-  // CTE
+  /**
+   * Adds a FULL JOIN to a CTE
+   *
+   * Generates SQL like:
+   * ```sql
+   * FULL JOIN `CTEName` `targetAlias` ON `condition`
+   * ```
+   *
+   * @param targetAlias alias given to the CTE in the join
+   * @param CTEName name of the existing CTE
+   * @param conditionFn join condition function
+   */
   public fullJoin<A extends string, C extends keyof G["CTEs"]>(
     targetAlias: A,
     CTEName: C,
@@ -1373,7 +1664,15 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
-  // RELATION
+  /**
+   * Adds a FULL JOIN
+   * Uses a relation for the join condition
+   *
+   * @param targetAlias alias of the newly joined entity
+   * @param targetEntity entity being joined in
+   * @param parentAlias
+   * @param parentField together with parentAlias it forms the parent side of the relation
+   */
   public fullJoin<
     A extends string,
     E extends AnEntity,
@@ -1428,7 +1727,14 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   // CROSS JOIN AND SELECT
   //
 
-  // ENTITY
+  /**
+   * Adds a CROSS JOIN with an entity and selects all its columns
+   *
+   * @param targetAlias alias of the newly joined entity
+   * @param targetEntity entity being joined in
+   * @param parentAlias
+   * @param parentField together with parentAlias it forms the parent side of the relation
+   */
   public crossJoinAndSelect<A extends string, E extends AnEntity>(
     targetAlias: A,
     targetEntity: E
@@ -1467,7 +1773,12 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   // CROSS JOIN
   //
 
-  // ENTITY
+  /**
+   * Adds a CROSS JOIN with an entity
+   *
+   * @param targetAlias alias of the newly joined entity
+   * @param targetEntity entity being joined in
+   */
   public crossJoin<A extends string, E extends AnEntity>(
     targetAlias: A,
     targetEntity: E
@@ -1478,7 +1789,12 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     ExplicitSelects: G["ExplicitSelects"];
   }>;
 
-  // CTE
+  /**
+   * Adds a CROSS JOIN with a CTE
+   *
+   * @param targetAlias alias of the newly joined CTE
+   * @param CTEName name of the existing CTE
+   */
   public crossJoin<A extends string, C extends keyof G["CTEs"]>(
     targetAlias: A,
     CTEName: C
@@ -1516,6 +1832,15 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   //
   // CROSS JOIN AND MAP
   //
+
+  /**
+   * Adds a CROSS JOIN, selects all the columns of the joined entity and maps the result to the relation field on the parent entity
+   *
+   * @param targetAlias alias of the newly joined entity
+   * @param targetEntity entity being joined in
+   * @param parentAlias
+   * @param parentField together with parentAlias it forms the parent side of the relation
+   */
   public crossJoinAndMap<
     A extends string,
     E extends AnEntity,
@@ -1523,7 +1848,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     F extends SelectSourceKeys<G["JoinedEntities"][K]>
   >(
     targetAlias: A,
-    targetEntityOrCTE: E | string,
+    targetEntity: E,
     parentAlias: K,
     parentField: F
   ): QueryBuilder<{
@@ -1533,9 +1858,9 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     ExplicitSelects: G["ExplicitSelects"] & FlattenSelectSources<Record<A, E>>;
   }> {
     const targetSelectSourceContext: SelectSourceContext =
-      typeof targetEntityOrCTE === "string"
-        ? { type: "cte", name: targetEntityOrCTE, source: Object }
-        : { type: "entity", source: targetEntityOrCTE };
+      typeof targetEntity === "string"
+        ? { type: "cte", name: targetEntity, source: Object }
+        : { type: "entity", source: targetEntity };
 
     const joinArgs: JoinImplArgs = {
       targetAlias,
@@ -1830,6 +2155,13 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     );
   }
 
+  /**
+   * Adds a GROUP BY clause
+   * Repeat calls add more columns to group by
+   *
+   * @param alias
+   * @param field together with alias specifies the column which to group by
+   */
   public groupBy<
     K extends keyof G["JoinedEntities"],
     F extends SelectSourceKeys<G["JoinedEntities"][K]>
@@ -1841,30 +2173,63 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     return this;
   }
 
+  /**
+   * Adds a limit clause, repeat calls override the value
+   */
   public limit(val: number): this {
     this._limit = val;
 
     return this;
   }
 
+  /**
+   * Removes any limit clause present
+   */
   public removeLimit(): this {
     this._limit = undefined;
 
     return this;
   }
 
+  /**
+   * Adds an offset clause, repeat calls override the value
+   *
+   * @param val
+   * @returns
+   */
   public offset(val: number): this {
     this._offset = val;
 
     return this;
   }
 
+  /**
+   * Removes any offset clause present
+   */
+  public removeOffset(): this {
+    this._offset = undefined;
+
+    return this;
+  }
+
+  /**
+   * Adds `DISTINCT` to the query or removes it when called with `false`
+   *
+   * @param value
+   */
   public distinct(value: boolean = true): this {
     this._distinct = value;
 
     return this;
   }
 
+  /**
+   * Adds DISTINCT ON clause
+   * Repeat calls add more columns to the clause
+   *
+   * @param alias
+   * @param field
+   */
   public distinctOn<
     K extends keyof G["JoinedEntities"],
     F extends SelectSourceKeys<G["JoinedEntities"][K]>
@@ -1876,12 +2241,9 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     return this;
   }
 
-  public removeOffset(): this {
-    this._offset = undefined;
-
-    return this;
-  }
-
+  /**
+   * Removes all selected columns
+   */
   public unselectAll(): QueryBuilder<{
     RootEntity: G["RootEntity"];
     JoinedEntities: G["JoinedEntities"];
@@ -1893,12 +2255,21 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     return this as any;
   }
 
+  /**
+   * Removes all ORDER BY clauses
+   */
   public removeOrderBys(): this {
     this.orderBys = [];
 
     return this;
   }
 
+  /**
+   * Returns SQL + params array of the query
+   *
+   * @param resultType specifies whether query is supposed to return entities or raw results
+   * @param paramBuilder
+   */
   public getQuery(
     resultType: QueryResultType,
     paramBuilder?: ParamBuilder
@@ -1924,6 +2295,9 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     ).buildSelect();
   }
 
+  /**
+   * Executes the query and returns the result as entities
+   */
   public async getEntities(): Promise<InstanceType<G["RootEntity"]>[]> {
     const query = this.getQuery(QueryResultType.ENTITIES);
 
@@ -1935,6 +2309,9 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     );
   }
 
+  /**
+   * Executes the query and returns the raw result the way it comes from the pg client
+   */
   public async getRaw(): Promise<G["ExplicitSelects"][]> {
     const query = this.getQuery(QueryResultType.RAW);
 

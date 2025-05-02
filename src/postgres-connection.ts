@@ -11,7 +11,17 @@ import {
 import { Logger } from "./logger";
 
 export class PostgresConnection {
+  /**
+    If options.collectSql is set to true 
+    all SQL statements ran on this connection will be colected here
+  */
   public $sqlLog: { sql: string; params: any[] }[] = [];
+
+  /**
+    The underlying pg client
+    You should not need to use this
+  */
+  public $client: PoolClient;
 
   private state: "CONNECTED" | "INITIALIZING" | "READY" | "RELEASED" =
     "CONNECTED";
@@ -21,10 +31,11 @@ export class PostgresConnection {
   private postgresSettings: Partial<PostgresConfigSettings>;
 
   constructor(
-    public $client: PoolClient,
+    client: PoolClient,
     private logger: Logger,
     options?: PostgresConnectionOptions
   ) {
+    this.$client = client;
     this.collectSql = options?.collectSql ?? false;
     this.postgresSettings = options?.postgresConfig ?? {};
   }
@@ -40,6 +51,7 @@ export class PostgresConnection {
     return this;
   }
 
+  // Runs a SELECT query, returning entitites as a result
   public async select<T extends AnEntity>(
     entity: T,
     args: SelectArgs<InstanceType<T>>
@@ -49,6 +61,10 @@ export class PostgresConnection {
     return Repository.select(this, entity, args);
   }
 
+  /**
+    Runs an INSERT statement using the provided values
+    Optionally returns inserted rows as entities
+  */
   public async insert<
     T extends AnEntity,
     ReturnedFields extends keyof InstanceType<T>,
@@ -64,6 +80,10 @@ export class PostgresConnection {
     return Repository.insert(this, entity, values, options ?? {});
   }
 
+  /**
+    Runs an UPDATE statement using the provided values and WHERE condition
+    Optionally returns updated rows as entities
+  */
   public async update<
     T extends AnEntity,
     ReturnedFields extends keyof InstanceType<T>
@@ -78,6 +98,10 @@ export class PostgresConnection {
     return Repository.update(this, entity, values, where ?? {}, options ?? {});
   }
 
+  /**
+    Runs a DELETE statement using the provided WHERE condition
+    Optionally returns deleted rows as entities
+  */
   public async delete<
     T extends AnEntity,
     ReturnedFields extends keyof InstanceType<T>
@@ -91,6 +115,11 @@ export class PostgresConnection {
     return Repository.delete(this, entity, where ?? {}, options ?? {});
   }
 
+  /** 
+    Executes an SQL statement
+
+    @param type is used to determine whether the statement should be logged or not
+  */
   public async query<T extends { [key: string]: any } = any>(
     sql: string,
     params?: any[],
@@ -117,36 +146,47 @@ export class PostgresConnection {
     }
   }
 
+  // Starts a transaction
   public async begin(): Promise<void> {
     this.ensureReadiness();
 
     await this.query("BEGIN;");
   }
 
+  // Commits a transaction
   public async commit(): Promise<void> {
     this.ensureReadiness();
 
     await this.query("COMMIT;");
   }
 
+  // Rolls back a transaction
   public async rollback(): Promise<void> {
     this.ensureReadiness();
 
     await this.query("ROLLBACK;");
   }
 
+  // Starts a transaction
   public async startTransaction(): Promise<void> {
     await this.begin();
   }
 
+  // Commits a transaction
   public async commitTransaction(): Promise<void> {
     await this.commit();
   }
 
+  // Rolls back a transaction
   public async rollbackTransaction(): Promise<void> {
     await this.rollback();
   }
 
+  /**
+    Sets Postgres config settings
+
+    for ex. passing `{work_mem: '512MB'}` will execute `SET work_mem = '512MB'`
+  */
   public async setConfig(
     settings: Partial<PostgresConfigSettings>
   ): Promise<void> {
@@ -161,12 +201,20 @@ export class PostgresConnection {
     }
   }
 
+  /**
+    Releases the connection back to the pool
+    You won't be able to run any queries on this connection afterwards
+  */
   public release(): void {
     this.state = "RELEASED";
 
     this.$client.release();
   }
 
+  /**
+    Closes the connection
+    You won't be able to run any queries on this connection afterwards
+  */
   public close(): void {
     if (this.state === "RELEASED") {
       throw new Error(
