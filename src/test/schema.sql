@@ -49,7 +49,9 @@ CREATE TABLE public.pet_categories_pet (
 CREATE TABLE public.pets (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     user_id uuid NOT NULL,
-    name text
+    name text,
+    meta jsonb,
+    image bytea
 );
 
 
