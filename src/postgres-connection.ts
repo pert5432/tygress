@@ -25,6 +25,7 @@ export class PostgresConnection {
 
   private state: "CONNECTED" | "INITIALIZING" | "READY" | "RELEASED" =
     "CONNECTED";
+  private inTransaction: boolean = false;
 
   private collectSql: boolean;
 
@@ -151,6 +152,8 @@ export class PostgresConnection {
     this.ensureReadiness();
 
     await this.query("BEGIN;");
+
+    this.inTransaction = true;
   }
 
   // Commits a transaction
@@ -158,6 +161,8 @@ export class PostgresConnection {
     this.ensureReadiness();
 
     await this.query("COMMIT;");
+
+    this.inTransaction = false;
   }
 
   // Rolls back a transaction
@@ -165,6 +170,8 @@ export class PostgresConnection {
     this.ensureReadiness();
 
     await this.query("ROLLBACK;");
+
+    this.inTransaction = false;
   }
 
   // Starts a transaction
@@ -206,6 +213,12 @@ export class PostgresConnection {
     You won't be able to run any queries on this connection afterwards
   */
   public release(): void {
+    if (this.inTransaction) {
+      throw new Error(
+        `Can't release a connection that has an open transaction`
+      );
+    }
+
     this.state = "RELEASED";
 
     this.$client.release();
