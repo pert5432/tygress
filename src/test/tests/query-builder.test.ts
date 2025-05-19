@@ -6,39 +6,48 @@ import { Pets } from "../entities/pets";
 import { In, IsNotNull, IsNull, Lte } from "../../";
 
 describe("QueryBuilder", async () => {
-  const user1 = {
-    id: "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
-    firstName: "John",
-    lastName: "Doe",
-    username: "JohnDoe",
-    birthdate: new Date("2020-01-01"),
-  };
+  await TestHelper.trunc();
 
-  const pet1 = {
-    id: "bec37141-f990-4960-a03c-d78b43bc4c8e",
-    userId: "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
-    name: "Pootis",
-  };
+  const [user1, user2] = (
+    await TEST_DB.insert(
+      Users,
+      [
+        {
+          id: "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+          firstName: "John",
+          lastName: "Doe",
+          username: "JohnDoe",
+          birthdate: new Date("2020-01-01"),
+        },
+        {
+          id: "406b635b-508e-4824-855d-fb71d77bcdac",
+          firstName: "Kyriakos",
+          lastName: "Grizzly",
+          username: "AAAAAAAAAAA",
+        },
+      ],
+      { returning: "*" }
+    )
+  ).rows as [Users, Users];
 
-  const pet2 = {
-    id: "388a73d0-1dbb-45cb-b7d2-0cefea41f92b",
-    userId: "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
-    name: "Moofis",
-  };
-
-  const user2 = {
-    id: "406b635b-508e-4824-855d-fb71d77bcdac",
-    firstName: "Kyriakos",
-    lastName: "Grizzly",
-    username: "AAAAAAAAAAA",
-  };
-
-  beforeAll(async () => {
-    await TestHelper.trunc();
-
-    await TEST_DB.insert(Users, [user1, user2]);
-    await TEST_DB.insert(Pets, [pet1, pet2]);
-  });
+  const [pet1, pet2] = (
+    await TEST_DB.insert(
+      Pets,
+      [
+        {
+          id: "bec37141-f990-4960-a03c-d78b43bc4c8e",
+          userId: "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+          name: "Pootis",
+        },
+        {
+          id: "388a73d0-1dbb-45cb-b7d2-0cefea41f92b",
+          userId: "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+          name: "Moofis",
+        },
+      ],
+      { returning: "*" }
+    )
+  ).rows as [Pets, Pets];
 
   test("basic select", async () => {
     const res = await TEST_DB.queryBuilder("u", Users).getEntities();
@@ -121,16 +130,26 @@ describe("QueryBuilder", async () => {
         .getRaw();
 
       expect(res).toStrictEqual([
-        { "p.id": null, "p.userId": null, "p.name": null },
+        {
+          "p.id": null,
+          "p.userId": null,
+          "p.name": null,
+          "p.meta": null,
+          "p.image": null,
+        },
         {
           "p.id": "388a73d0-1dbb-45cb-b7d2-0cefea41f92b",
           "p.userId": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
           "p.name": "Moofis",
+          "p.meta": null,
+          "p.image": null,
         },
         {
           "p.id": "bec37141-f990-4960-a03c-d78b43bc4c8e",
           "p.userId": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
           "p.name": "Pootis",
+          "p.meta": null,
+          "p.image": null,
         },
       ]);
     });
@@ -143,8 +162,6 @@ describe("QueryBuilder", async () => {
     //     .orderBy("u", "id")
     //     .orderBy("p", "id")
     //     .getRaw();
-
-    //   console.log(res);
 
     //   expect(res).toStrictEqual([
     //     { "p.id": null, "p.userId": null, "p.name": null },
@@ -219,8 +236,6 @@ describe("QueryBuilder", async () => {
         .orderBy("u", "id", "ASC")
         .getRaw();
 
-      console.log(res);
-
       expect(res).toStrictEqual([
         {
           "u.id": "406b635b-508e-4824-855d-fb71d77bcdac",
@@ -231,6 +246,8 @@ describe("QueryBuilder", async () => {
           "p.id": "388a73d0-1dbb-45cb-b7d2-0cefea41f92b",
           "p.userId": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
           "p.name": "Moofis",
+          "p.meta": null,
+          "p.image": null,
         },
         {
           "u.id": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
@@ -241,6 +258,8 @@ describe("QueryBuilder", async () => {
           "p.id": "388a73d0-1dbb-45cb-b7d2-0cefea41f92b",
           "p.userId": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
           "p.name": "Moofis",
+          "p.meta": null,
+          "p.image": null,
         },
         {
           "u.id": "406b635b-508e-4824-855d-fb71d77bcdac",
@@ -251,6 +270,8 @@ describe("QueryBuilder", async () => {
           "p.id": "bec37141-f990-4960-a03c-d78b43bc4c8e",
           "p.userId": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
           "p.name": "Pootis",
+          "p.meta": null,
+          "p.image": null,
         },
         {
           "u.id": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
@@ -261,6 +282,8 @@ describe("QueryBuilder", async () => {
           "p.id": "bec37141-f990-4960-a03c-d78b43bc4c8e",
           "p.userId": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
           "p.name": "Pootis",
+          "p.meta": null,
+          "p.image": null,
         },
       ]);
     });

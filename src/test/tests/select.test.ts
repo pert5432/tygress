@@ -6,40 +6,49 @@ import { Pets } from "../entities/pets";
 import { Gt, In, IsNotNull, IsNull } from "../../";
 
 describe("select", async () => {
-  const user1 = TEST_DB.instantiate(Users, {
-    id: "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
-    firstName: "John",
-    lastName: "Doe",
-    username: "JohnDoe",
-    birthdate: new Date("2020-01-01"),
-  });
+  await TestHelper.trunc();
 
-  const pet1 = TEST_DB.instantiate(Pets, {
-    id: "f894a951-c092-44f4-ac82-ce586f872ff9",
-    userId: "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
-    name: "Pootis",
-  });
+  const [user1, user2] = (
+    await TEST_DB.insert(
+      Users,
+      [
+        {
+          id: "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+          firstName: "John",
+          lastName: "Doe",
+          username: "JohnDoe",
+          birthdate: new Date("2020-01-01"),
+        },
+        {
+          id: "406b635b-508e-4824-855d-fb71d77bcdac",
+          firstName: "Kyriakos",
+          lastName: "Grizzly",
+          username: "AAAAAAAAAAA",
+          birthdate: null,
+        },
+      ],
+      { returning: "*" }
+    )
+  ).rows as [Users, Users];
 
-  const pet2 = TEST_DB.instantiate(Pets, {
-    id: "5eedfce2-c677-4153-b92e-3a2dd04392c9",
-    userId: "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
-    name: "Moofis",
-  });
-
-  const user2 = TEST_DB.instantiate(Users, {
-    id: "406b635b-508e-4824-855d-fb71d77bcdac",
-    firstName: "Kyriakos",
-    lastName: "Grizzly",
-    username: "AAAAAAAAAAA",
-    birthdate: null,
-  });
-
-  beforeAll(async () => {
-    await TestHelper.trunc();
-
-    await TEST_DB.insert(Users, [user1, user2]);
-    await TEST_DB.insert(Pets, [pet1, pet2]);
-  });
+  const [pet1, pet2] = (
+    await TEST_DB.insert(
+      Pets,
+      [
+        {
+          id: "f894a951-c092-44f4-ac82-ce586f872ff9",
+          userId: "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+          name: "Pootis",
+        },
+        {
+          id: "5eedfce2-c677-4153-b92e-3a2dd04392c9",
+          userId: "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+          name: "Moofis",
+        },
+      ],
+      { returning: "*" }
+    )
+  ).rows as [Pets, Pets];
 
   test("basic", async () => {
     const res = await TEST_DB.select(Users, {});
