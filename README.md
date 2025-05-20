@@ -1,6 +1,6 @@
 Tygress is an ORM connecting NodeJS and Postgres.
 
-## Main goals
+## Main goals 🎯
 
 - Support all Postgres features
   - Including Postgres config, per-table overrides, explicit locking, DDL etc...
@@ -10,6 +10,34 @@ Tygress is an ORM connecting NodeJS and Postgres.
 - Have full type safety
   - This includes query results and building the queries themselves
 - Keep simple queries simple but offer support for building complex ones
+
+## Usage
+
+Run `yarn add tygress` / `npm install tygress`.
+
+Make sure you have decorators enabled in your `tsconfig.json`:
+
+```json
+{
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  }
+}
+```
+
+Initialize the client:
+
+```typescript
+import { PostgresClient } from "tygress";
+
+const DB = new PostgresClient({
+  databaseUrl: "postgres://username:password@host:5432/database",
+  entities: [],
+});
+```
+
+And from there you can run queries based on the examples below :)
 
 ## Current features ✅
 
