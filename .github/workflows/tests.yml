@@ -39,7 +39,7 @@ jobs:
         run: yarn install
 
       - name: Load DB schema
-        run: psql -d tygress -U ci -f ./src/test/schema.sql
+        run: psql -h localhost -d tygress -U ci -f ./src/test/schema.sql
 
       - name: Tests
         run: yarn test
