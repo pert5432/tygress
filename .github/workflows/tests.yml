@@ -1,0 +1,47 @@
+name: Tests
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+    branches: [main]
+
+jobs:
+  test:
+    name: Run tests
+    runs-on: Ubuntu-22.04
+    # Don't run if the PR is a draft
+    if: ${{ !github.event.pull_request.draft }}
+
+    concurrency:
+      group: tests-${{ github.ref }}
+      cancel-in-progress: true
+
+    steps:
+      - name: Setup Postgres
+        uses: ikalnytskyi/action-setup-postgres@v7
+        with:
+          username: ci
+          database: tygress
+          port: 5432
+          postgres-version: "17"
+          ssl: false
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: yarn
+
+      - name: Yarn install
+        run: yarn install
+
+      - name: Load DB schema
+        run: psql -d tygress -U ci -f ./src/test/schema.sql
+
+      - name: Tests
+        run: yarn test
+        env:
+          DATABASE_URL: postgres://ci@localhost:5432/tygress
