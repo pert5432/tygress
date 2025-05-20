@@ -5,7 +5,7 @@ import { PetCategories } from "./entities/pet-categories";
 import { PetCategoriesPet } from "./entities/pet-categories-pet";
 
 export const TEST_DB = new PostgresClient({
-  databaseUrl: "postgres://petr@localhost:5437/tygress_test",
+  databaseUrl: process.env.DATABASE_URL!,
   ssl: false,
   entities: [Users, Pets, PetCategories, PetCategoriesPet],
 
