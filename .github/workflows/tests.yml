@@ -18,6 +18,7 @@ jobs:
 
     steps:
       - name: Setup Postgres
+        id: postgres
         uses: ikalnytskyi/action-setup-postgres@v7
         with:
           username: ci
@@ -39,9 +40,9 @@ jobs:
         run: yarn install
 
       - name: Load DB schema
-        run: psql -h localhost -d tygress -U ci -f ./src/test/schema.sql
+        run: psql -d ${{ steps.postgres.outputs.connection-uri }} -f ./src/test/schema.sql
 
       - name: Tests
         run: yarn test
         env:
-          DATABASE_URL: postgres://ci@localhost:5432/tygress
+          DATABASE_URL: ${{ steps.postgres.outputs.connection-uri }}
