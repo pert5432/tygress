@@ -11,28 +11,28 @@ Tygress is an ORM connecting NodeJS and Postgres.
   - This includes query results and building the queries themselves
 - Keep simple queries simple but offer support for building complex ones
 
-## Current features
+## Current features ✅
 
 - Complex query builder including support for:
 
-  - Joins
-  - CTEs
+  - `JOIN`s
+  - `CTE`s
   - Subqueries
   - Type safety for results and for building queries
-  - GROUP BY
-  - DISTINCT (ON)
-  - ORDER BY
-  - LIMIT / OFFSET
+  - `GROUP BY`
+  - `DISTINCT (ON)`
+  - `ORDER BY`
+  - `LIMIT` / `OFFSET`
   - Returning raw results or class instances
 
-- Simple selects with WHEREs, JOINs, ORDER, LIMIT / OFFSET
-- Inserts, Upserts via ON CONFLICT
-- Updates by WHERE condition
-- Deletes by WHERE condition
+- Simple selects with `WHERE`, `JOIN`, `ORDER`, `LIMIT` / `OFFSET`
+- Inserts, Upserts via `ON CONFLICT`
+- Updates by `WHERE` condition
+- Deletes by `WHERE` condition
 - Connection and transaction management
 - Changing Postgres settings
 
-## Upcoming features (ordered by priority)
+## Upcoming features (ordered by priority) 🚧
 
 - Migration support
   - Generating migrations
