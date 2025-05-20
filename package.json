@@ -1,8 +1,16 @@
 {
   "name": "tygress",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "author": "pert5432",
   "license": "MIT",
+  "repository": "https://github.com/pert5432/tygress",
+  "keywords": [
+    "Postgres",
+    "NodeJS",
+    "ORM"
+  ],
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
     "start": "ts-node ./src/index.ts",
