@@ -2,14 +2,14 @@ Tygress is an ORM connecting NodeJS and Postgres.
 
 ## Main goals 🎯
 
-- Support all Postgres features
-  - Including Postgres config, per-table overrides, explicit locking, DDL etc...
+- Support all Postgres features to get the most out of your database
+  - Including changing Postgres config, per-table overrides, explicit locking, DDL etc...
 - Have minimum performance overhead and maximum control
   - You should have full control over which columns and how many rows you select
-  - It should be clear what queries are ran where so Tygress API functions aim to only execute 1 query
+  - It should be clear what queries are ran where so Tygress API functions aim to only execute 1 query per call
 - Have full type safety
-  - This includes query results and building the queries themselves
-- Keep simple queries simple but offer support for building complex ones
+  - This includes query results, building the queries themselves and other interactions with Postgres
+- Keep simple queries simple but offer solid support for building complex ones
 
 ## Usage
 
@@ -41,12 +41,12 @@ And from there you can run queries based on the examples below :)
 
 ## Current features ✅
 
-- Complex query builder including support for:
+- Complex query builder including:
 
-  - `JOIN`s
-  - `CTE`s
-  - Subqueries
   - Type safety for results and for building queries
+  - `JOIN`s
+  - Subqueries
+  - `CTE`s
   - `GROUP BY`
   - `DISTINCT (ON)`
   - `ORDER BY`
@@ -55,8 +55,8 @@ And from there you can run queries based on the examples below :)
 
 - Simple selects with `WHERE`, `JOIN`, `ORDER`, `LIMIT` / `OFFSET`
 - Inserts, Upserts via `ON CONFLICT`
-- Updates by `WHERE` condition
-- Deletes by `WHERE` condition
+- Updates
+- Deletes
 - Connection and transaction management
 - Changing Postgres settings
 
@@ -65,13 +65,16 @@ And from there you can run queries based on the examples below :)
 - Migration support
   - Generating migrations
   - Index management
-  - Table overrides (for ex. vacuum settings)
-- Support (materialized) views
-  - Materialized views refreshing
+  - Table config overrides (for ex. vacuum settings)
+- Support managing views and materialized views
 - Inserts/Updates/Deletes using query builder
   - To support `INSERT INTO a SELECT ...`
   - Or `DELETE FROM a WHERE id IN(SELECT ...)`
 - Type hinting for popular extensions, for ex. PostGIS
+
+## Feedback
+
+Do you have feedback, suggestions or feature requests? Feel free to open an issue or a discussion in this repo.
 
 ## Example usage
 
