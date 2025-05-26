@@ -1,10 +1,17 @@
-import { Column, ManyToOne, OneToMany, PrimaryKey, Table } from "../../";
+import {
+  Column,
+  ManyToOne,
+  OneToMany,
+  PrimaryKey,
+  Table,
+  TygressEntity,
+} from "../../";
 import { PetCategoriesPet } from "./pet-categories-pet";
 import { PetMeta } from "./pet-meta";
 import { Users } from "./users";
 
 @Table("pets")
-export class Pets {
+export class Pets extends TygressEntity {
   @PrimaryKey("id")
   id: string;
 
