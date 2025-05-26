@@ -47,17 +47,6 @@ export class PostgresClient {
     this.migrationFolders = migrationFolders;
   }
 
-  public async runMigrations(): Promise<void> {
-    if (!this.migrationFolders?.length) {
-      throw new Error(`No migrations path specified, can't run migrations`);
-    }
-
-    await this.withConnection(
-      async (conn) =>
-        await new MigrationRunner(conn, this.migrationFolders!).run()
-    );
-  }
-
   /**
     Creates an instance of an entity
     Does *not* save the entity to the database
@@ -253,6 +242,34 @@ export class PostgresClient {
     type: "QUERY" | "DML" = "QUERY"
   ): Promise<QueryResult<T>> {
     return this.withConnection((conn) => conn.query(sql, params ?? [], type));
+  }
+
+  /**
+   * Executes all pending migrations
+   */
+  public async runMigrations(): Promise<void> {
+    if (!this.migrationFolders?.length) {
+      throw new Error(`No migrations path specified, can't run migrations`);
+    }
+
+    await this.withConnection(
+      async (conn) =>
+        await new MigrationRunner(conn, this.migrationFolders!).run()
+    );
+  }
+
+  /**
+   * Rolls back the last executed migration
+   */
+  public async rollbackLastMigration(): Promise<void> {
+    if (!this.migrationFolders?.length) {
+      throw new Error(`No migrations path specified, can't run migrations`);
+    }
+
+    await this.withConnection(
+      async (conn) =>
+        await new MigrationRunner(conn, this.migrationFolders!).rollback()
+    );
   }
 
   //

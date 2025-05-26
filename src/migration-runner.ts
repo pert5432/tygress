@@ -9,19 +9,20 @@ export class MigrationRunner {
   private migrations: Migration[] = [];
   private migrationsMap: Map<string, Migration> = new Map();
 
-  private executedMigrations: Set<string> = new Set();
+  private executedMigrations: { name: string; executed_at: Date }[] = [];
+  private executedMigrationsMap: Map<string, Date> = new Map();
 
   constructor(
     private conn: PostgresConnection,
     private migrationFolders: string[]
   ) {}
 
-  async run() {
+  async run(): Promise<void> {
     await this.ensureMigrationLogTable();
     await Promise.all([this.loadMigrations(), this.loadExecutedMigrations()]);
 
     const pendingMigrations = this.migrations.filter(
-      (m) => !this.executedMigrations.has(m.name)
+      (m) => !this.executedMigrationsMap.has(m.name)
     );
 
     console.log(`There are ${pendingMigrations.length} pending migrations`);
@@ -49,6 +50,45 @@ export class MigrationRunner {
     console.log(`Migrations executed successfully`);
   }
 
+  async rollback(): Promise<void> {
+    await this.ensureMigrationLogTable();
+    await Promise.all([this.loadMigrations(), this.loadExecutedMigrations()]);
+
+    if (this.executedMigrations.length < 1) {
+      console.log(`No executed migrations found, nothing to rollback`);
+      return;
+    }
+
+    const lastExecutedMigration =
+      this.executedMigrations[this.executedMigrations.length - 1]!;
+
+    console.log(
+      `Last executed migration is ${lastExecutedMigration.name}, executed at ${lastExecutedMigration.executed_at}`
+    );
+
+    const migration = this.migrationsMap.get(lastExecutedMigration.name);
+    if (!migration) {
+      throw new Error(
+        `${lastExecutedMigration.name} is the last executed migration in the database but it was not found in the migration files`
+      );
+    }
+
+    await this.conn.begin();
+    try {
+      await this.rollbackMigration(migration);
+
+      await this.conn.commit();
+    } catch (e) {
+      console.log(`Rolling back migration failed`);
+
+      await this.conn.rollback();
+
+      throw e;
+    }
+
+    console.log(`Migration rolled back successfully`);
+  }
+
   private async executeMigration(migration: Migration): Promise<void> {
     console.log(`Executing ${migration.name}`);
 
@@ -56,6 +96,19 @@ export class MigrationRunner {
 
     await this.conn.query(
       `INSERT INTO ${this.migrationLogTablename} (name, executed_at) VALUES ($1, NOW())`,
+      [migration.name]
+    );
+
+    console.log("----------------------------------------");
+  }
+
+  private async rollbackMigration(migration: Migration): Promise<void> {
+    console.log(`Rolling back ${migration.name}`);
+
+    await migration.down(this.conn);
+
+    await this.conn.query(
+      `DELETE FROM ${this.migrationLogTablename} WHERE name = $1`,
       [migration.name]
     );
 
@@ -114,12 +167,14 @@ export class MigrationRunner {
   }
 
   private async loadExecutedMigrations(): Promise<void> {
-    this.executedMigrations = new Set(
-      (
-        await this.conn.query<{ name: string }>(
-          `SELECT name FROM ${this.migrationLogTablename}`
-        )
-      ).rows.map((e) => e.name)
+    this.executedMigrations = (
+      await this.conn.query<{ name: string; executed_at: Date }>(
+        `SELECT name, executed_at FROM ${this.migrationLogTablename} ORDER BY executed_at DESC`
+      )
+    ).rows;
+
+    this.executedMigrationsMap = new Map(
+      this.executedMigrations.map((e) => [e.name, e.executed_at])
     );
   }
 }
