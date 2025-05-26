@@ -1,4 +1,5 @@
 import { JoinStrategy, JoinType } from "../enums";
+import { TygressEntityMarker } from "../tygress-entity";
 import { AnEntity } from "./entity";
 import { NamedParams } from "./named-params";
 import { Parametrizable } from "./parametrizable";
@@ -70,28 +71,29 @@ export type JoinImplArgs = {
     | { strategy: JoinStrategy.CROSS; type: JoinType.CROSS }
   );
 
-type IsClass<T> = T extends Parametrizable
+type IsPrimitive<T> = T extends Parametrizable
+  ? true
+  : T extends { [TygressEntityMarker]: true }
   ? false
-  : T extends object
-  ? T extends (...args: any) => any
-    ? true
-    : T extends new (...args: any) => any
-    ? true
-    : T extends { constructor: Function }
-    ? true
-    : T extends Array<infer I>
-    ? IsClass<I>
-    : false
-  : false;
+  : T extends Function
+  ? false
+  : T extends { new (...args: any[]): any }
+  ? false
+  : T extends Array<infer I>
+  ? IsPrimitive<I>
+  : true;
 
-export type FlattenSelectSources<
+export type FlattenRawSelectSources<
   T extends { [key: string]: SelectSource },
   K = keyof T
 > = K extends string
   ? {
       [F in SelectSourceKeys<T[K]> as F extends string
-        ? // Make sure the field is not a function
-          IsClass<SelectSourceField<T[K], Stringify<F>>> extends false
+        ? // Discard TygressEntity marker
+          F extends typeof TygressEntityMarker
+          ? never
+          : // Make sure the field is not a function/entity
+          IsPrimitive<SelectSourceField<T[K], Stringify<F>>> extends true
           ? `${K}.${F}`
           : never
         : never]: SelectSourceField<T[K], Stringify<F>>;

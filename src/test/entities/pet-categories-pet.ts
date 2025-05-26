@@ -1,9 +1,9 @@
-import { Column, ManyToOne, PrimaryKey, Table } from "../../";
+import { Column, ManyToOne, PrimaryKey, Table, TygressEntity } from "../../";
 import { PetCategories } from "./pet-categories";
 import { Pets } from "./pets";
 
 @Table("pet_categories_pet")
-export class PetCategoriesPet {
+export class PetCategoriesPet extends TygressEntity {
   @PrimaryKey("id")
   id: string;
 

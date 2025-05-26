@@ -1,9 +1,14 @@
 import { expect } from "vitest";
 import { TEST_DB } from "./client";
+import { TygressEntityMarker } from "../tygress-entity";
 
 export abstract class TestHelper {
   static validateObject(a: Record<string, any>, b: Record<string, any>) {
     for (const key of Object.keys(b)) {
+      if (key === TygressEntityMarker) {
+        continue;
+      }
+
       expect(a[key]).toStrictEqual(b[key]);
     }
   }

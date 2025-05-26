@@ -8,3 +8,4 @@ export { QueryLogLevel };
 export * from "./api";
 export * from "./decorators";
 export * from "./types/connection-settings";
+export { TygressEntity } from "./tygress-entity";

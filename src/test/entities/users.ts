@@ -1,8 +1,8 @@
-import { Column, OneToMany, PrimaryKey, Table } from "../../";
+import { Column, OneToMany, PrimaryKey, Table, TygressEntity } from "../../";
 import { Pets } from "./pets";
 
 @Table("users")
-export class Users {
+export class Users extends TygressEntity {
   @PrimaryKey("id")
   id: string;
 
