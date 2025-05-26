@@ -15,7 +15,8 @@ export abstract class TestHelper {
 
   static async trunc(): Promise<void> {
     const res = await TEST_DB.query<{ tablename: string }>(
-      `SELECT tablename FROM pg_tables WHERE schemaname = 'public'`
+      `SELECT tablename FROM pg_tables WHERE schemaname = $1 AND tablename <> $2`,
+      ["public", "tygress_migrations"]
     );
 
     const query = res.rows

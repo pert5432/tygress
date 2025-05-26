@@ -20,4 +20,7 @@ export type PostgresClientOptions = {
   queryLogLevel?: QueryLogLevel;
 
   entities: AnEntity[];
+
+  // Path to file(s) containing migrations
+  migrationFolders?: string[];
 };
