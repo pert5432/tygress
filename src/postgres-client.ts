@@ -14,6 +14,7 @@ import {
 import { Logger } from "./logger";
 import { QueryLogLevel } from "./enums";
 import { FlattenRawSelectSources } from "./types/query-builder";
+import { MigrationRunner } from "./migration-runner";
 
 export class PostgresClient {
   private pool: Pool;
@@ -22,6 +23,8 @@ export class PostgresClient {
 
   private logger: Logger;
 
+  private migrationFolders?: string[];
+
   constructor({
     databaseUrl,
     maxConnectionPoolSize,
@@ -29,6 +32,7 @@ export class PostgresClient {
     defaultConnectionOptions,
     queryLogLevel,
     entities,
+    migrationFolders,
   }: PostgresClientOptions) {
     this.pool = new Pool({
       connectionString: databaseUrl,
@@ -39,6 +43,19 @@ export class PostgresClient {
     this.defaultConnectionSettings = defaultConnectionOptions;
 
     this.logger = new Logger(queryLogLevel ?? QueryLogLevel.ALL);
+
+    this.migrationFolders = migrationFolders;
+  }
+
+  public async runMigrations(): Promise<void> {
+    if (!this.migrationFolders?.length) {
+      throw new Error(`No migrations path specified, can't run migrations`);
+    }
+
+    await this.withConnection(
+      async (conn) =>
+        await new MigrationRunner(conn, this.migrationFolders!).run()
+    );
   }
 
   /**
