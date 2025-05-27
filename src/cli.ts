@@ -22,7 +22,7 @@ abstract class CLI {
     const args = parseArgs<{}>({
       options: argsOptions,
       allowPositionals: true,
-      args: argv, // ["migration:blank", "--config", "./config.ts", "asdasd"],
+      args: argv,
     });
 
     const command = args.positionals[0];
