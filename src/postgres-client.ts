@@ -272,6 +272,13 @@ export class PostgresClient {
     );
   }
 
+  /**
+   * Closes the connection pool, effectivelly turning off the client
+   */
+  public async close(): Promise<void> {
+    await this.pool.end();
+  }
+
   //
   // PRIVATE
   //
