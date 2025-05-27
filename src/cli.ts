@@ -10,6 +10,9 @@ const argsOptions: ParseArgsConfig["options"] = {
   config: {
     type: "string",
   },
+  name: {
+    type: "string",
+  },
 };
 
 abstract class CLI {
@@ -42,6 +45,19 @@ abstract class CLI {
       case "migration:rollback":
         await client.rollbackLastMigration();
         break;
+      case "migration:blank": {
+        const name = (args.values.name as string) ?? args.positionals[1];
+
+        if (!name) {
+          throw new Error(
+            `You need to supply a name when generating a migration`
+          );
+        }
+
+        await client.createBlankMigration(name);
+        break;
+      }
+
       default:
         throw new Error(`Unknown command ${command}`);
     }
