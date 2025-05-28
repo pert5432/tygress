@@ -11,7 +11,7 @@ Tygress is an ORM connecting NodeJS and Postgres.
   - This includes query results, building the queries themselves and other interactions with Postgres
 - Keep simple queries simple but offer solid support for building complex ones
 
-## Usage
+## Usage 💯
 
 Run `yarn add tygress` / `npm install tygress`.
 
@@ -31,9 +31,8 @@ Initialize the client:
 ```typescript
 import { PostgresClient } from "tygress";
 
-const DB = new PostgresClient({
+export const DB = new PostgresClient({
   databaseUrl: "postgres://username:password@host:5432/database",
-  entities: [],
 });
 ```
 
@@ -72,7 +71,7 @@ And from there you can run queries based on the examples below :)
   - Or `DELETE FROM a WHERE id IN(SELECT ...)`
 - Type hinting for popular extensions, for ex. PostGIS
 
-## Feedback
+## Feedback 🗣️
 
 Do you have feedback, suggestions or feature requests? Feel free to open an issue or a discussion in this repo.
 
@@ -191,3 +190,34 @@ await DB.update(Users, { firstName: "Joe" }, { firstName: "John" });
 await DB.delete(Users, { firstName: "Joe" });
 // []
 ```
+
+## Migrations ⚠️
+
+### CLI
+
+To be able to run migrations using the CLI you need to specify an instance of `PostgresClient` with the `migrationFolders` option specified:
+
+```typescript
+import path from "node:path";
+import { PostgresClient } from "tygress";
+
+export default new PostgresClient({
+  databaseUrl: "postgres://username:password@host:5432/database",
+
+  migrationFolders: [path.join(__dirname, "src", "migrations")],
+});
+```
+
+`tygress migration:blank Name` to create an empty migration \
+`tygress migration:run` to run all pending migrations \
+`tygress migration:rollback` to rollback the last executed migration
+
+You can either put the `PostgresClient` you want to use for migrations in `tygress-client.ts` in the folder where you run migrations from or you can specify the path to the file like `--config ./src/tygress-client.ts`.
+
+### Programmatically
+
+You can use functions on the `PostgresClient` to do everything you can do with the CLI.
+
+`await DB.createBlankMigration("Name")` to create an empty migration \
+`await DB.runMigrations()` to run all pending migrations \
+`await DB.rollbackLastMigration()` to rollback the last executed migration
