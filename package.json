@@ -12,9 +12,12 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cp ./src/cli.ts ./dist/cli.ts",
     "start": "ts-node ./src/index.ts",
     "test": "vitest"
+  },
+  "bin": {
+    "tygress": "dist/cli.ts"
   },
   "dependencies": {
     "pg": "^8.13.1",

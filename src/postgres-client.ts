@@ -15,6 +15,7 @@ import { Logger } from "./logger";
 import { QueryLogLevel } from "./enums";
 import { FlattenRawSelectSources } from "./types/query-builder";
 import { MigrationRunner } from "./migration-runner";
+import { MigrationGenerator } from "./migration-generator";
 
 export class PostgresClient {
   private pool: Pool;
@@ -270,6 +271,28 @@ export class PostgresClient {
       async (conn) =>
         await new MigrationRunner(conn, this.migrationFolders!).rollback()
     );
+  }
+
+  /*
+   * Creates a blank migration file in the first migrations folder
+   */
+  public async createBlankMigration(name: string): Promise<void> {
+    const folderPath = (this.migrationFolders ?? [])[0];
+
+    if (!folderPath) {
+      throw new Error(
+        `Can't generate a migration as no migration folders are specified`
+      );
+    }
+
+    await new MigrationGenerator().createBlank(name, folderPath);
+  }
+
+  /**
+   * Closes the connection pool, effectivelly turning off the client
+   */
+  public async close(): Promise<void> {
+    await this.pool.end();
   }
 
   //
