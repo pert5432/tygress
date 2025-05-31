@@ -280,33 +280,24 @@ export class PostgresClient {
    * Creates a blank migration file in the first migrations folder
    */
   public async createBlankMigration(name: string): Promise<void> {
-    const folderPath = (this.migrationFolders ?? [])[0];
-
-    if (!folderPath) {
-      throw new Error(
-        `Can't generate a migration as no migration folders are specified`
-      );
-    }
-
-    await new MigrationGenerator(this, this.entities).createBlank(
+    await new MigrationGenerator(
+      this,
+      this.entities,
       name,
-      folderPath
-    );
+      this.mainMigrationsFolder()
+    ).createBlank();
   }
 
   /*
    * Generates a migration resolving the different between current database schema and Tygress entities
    */
   public async generateMigration(name: string): Promise<void> {
-    const folderPath = (this.migrationFolders ?? [])[0];
-
-    if (!folderPath) {
-      throw new Error(
-        `Can't generate a migration as no migration folders are specified`
-      );
-    }
-
-    await new MigrationGenerator(this, this.entities).generate();
+    await new MigrationGenerator(
+      this,
+      this.entities,
+      name,
+      this.mainMigrationsFolder()
+    ).generate();
   }
 
   /**
@@ -333,5 +324,17 @@ export class PostgresClient {
         options.postgresConfig ??
         this.defaultConnectionSettings?.postgresConfig,
     };
+  }
+
+  private mainMigrationsFolder(): string {
+    const folderPath = (this.migrationFolders ?? [])[0];
+
+    if (!folderPath) {
+      throw new Error(
+        `Can't generate a migration as no migration folders are specified`
+      );
+    }
+
+    return folderPath;
   }
 }
