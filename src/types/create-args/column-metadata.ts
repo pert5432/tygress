@@ -18,4 +18,6 @@ export type ColumnMetadataArgs = {
   nullable: boolean;
 
   default?: string;
+
+  primaryKey?: boolean;
 };

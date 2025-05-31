@@ -26,6 +26,8 @@ export class PostgresClient {
 
   private migrationFolders?: string[];
 
+  private entities: AnEntity[];
+
   constructor({
     databaseUrl,
     maxConnectionPoolSize,
@@ -46,6 +48,7 @@ export class PostgresClient {
     this.logger = new Logger(queryLogLevel ?? QueryLogLevel.ALL);
 
     this.migrationFolders = migrationFolders;
+    this.entities = entities;
   }
 
   /**
@@ -285,7 +288,25 @@ export class PostgresClient {
       );
     }
 
-    await new MigrationGenerator().createBlank(name, folderPath);
+    await new MigrationGenerator(this, this.entities).createBlank(
+      name,
+      folderPath
+    );
+  }
+
+  /*
+   * Generates a migration resolving the different between current database schema and Tygress entities
+   */
+  public async generateMigration(name: string): Promise<void> {
+    const folderPath = (this.migrationFolders ?? [])[0];
+
+    if (!folderPath) {
+      throw new Error(
+        `Can't generate a migration as no migration folders are specified`
+      );
+    }
+
+    await new MigrationGenerator(this, this.entities).generate();
   }
 
   /**

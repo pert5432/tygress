@@ -14,6 +14,7 @@ export const PrimaryKey = (args: PrimaryKeyDecoratorArgs) => {
       dataType: type,
       default: defaultValue,
       nullable: false,
+      primaryKey: true,
     });
 
     METADATA_STORE.addUniqueConstraint({

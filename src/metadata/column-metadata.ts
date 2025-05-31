@@ -20,4 +20,6 @@ export class ColumnMetadata {
   nullable: boolean;
 
   default?: string;
+
+  primaryKey: boolean;
 }

@@ -7,6 +7,11 @@ export abstract class ColumnMetadataFactory {
     name,
     fieldName,
     select,
+
+    dataType,
+    nullable,
+    default: defaultValue,
+    primaryKey,
   }: ColumnMetadataArgs): ColumnMetadata {
     const e = new ColumnMetadata();
 
@@ -14,6 +19,11 @@ export abstract class ColumnMetadataFactory {
     e.fieldName = fieldName;
 
     e.select = isNull(select) ? true : select!;
+
+    e.dataType = dataType;
+    e.nullable = nullable ?? false;
+    e.default = defaultValue;
+    e.primaryKey = primaryKey ?? false;
 
     return e;
   }
