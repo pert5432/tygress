@@ -1,11 +1,12 @@
 import { ColumnMetadata } from "../../metadata";
+import { q } from "../../utils";
 
 export class ColumnStructureSqlBuilder {
   constructor(private column: ColumnMetadata) {}
 
   public sql(): string {
     const defaultValue = this.column.default
-      ? [`DEFAULT ${this.column.default}`]
+      ? [`DEFAULT ${q(this.column.default)}`]
       : [];
     const nullable = this.column.nullable === false ? [`NOT NULL`] : [];
     const primaryKey = this.column.primaryKey ? [`PRIMARY KEY`] : [];
