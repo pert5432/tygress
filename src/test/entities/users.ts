@@ -3,19 +3,19 @@ import { Pets } from "./pets";
 
 @Table("users")
 export class Users extends TygressEntity {
-  @PrimaryKey("id")
+  @PrimaryKey({ name: "id", type: "UUID" })
   id: string;
 
-  @Column("first_name")
+  @Column({ name: "first_name", type: "TEXT" })
   firstName: string;
 
-  @Column("last_name")
+  @Column({ name: "last_name", type: "TEXT" })
   lastName: string;
 
-  @Column("username")
+  @Column({ name: "username", type: "TEXT" })
   username: string;
 
-  @Column("birthdate")
+  @Column({ name: "birthdate", type: "TIMESTAMPTZ", nullable: true })
   birthdate: Date | null;
 
   @OneToMany(Pets, "user")

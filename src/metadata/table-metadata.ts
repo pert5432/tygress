@@ -11,6 +11,7 @@ export class TableMetadata {
 
   schemaname?: string;
 
+  // TODO: ✂️
   get dmlIdentifier() {
     return TableIdentifierSqlBuilderFactory.createDML(this.tablename);
   }
