@@ -114,7 +114,7 @@ class MetadataStore {
     this.tables.set(metadata.klass, metadata);
   }
 
-  public addColumn(args: ColumnMetadataArgs): void {
+  public addColumn<T>(args: ColumnMetadataArgs<T>): void {
     const metadata = ColumnMetadataFactory.create(args);
 
     const newColumns = this.columns.get(args.klass) ?? [];

@@ -2,13 +2,15 @@ import { METADATA_STORE } from "../metadata/metadata-store";
 import { PrimaryKeyDecoratorArgs } from "../types/decorators";
 import { AnEntity } from "../types/entity";
 
-export const PrimaryKey = (args: PrimaryKeyDecoratorArgs) => {
-  return function (target: Object, propertyName: string) {
+export const PrimaryKey = <K extends Object, F extends keyof K>(
+  args: PrimaryKeyDecoratorArgs<K[F]>
+) => {
+  return function (target: K, propertyName: F) {
     const { name, type, default: defaultValue } = args;
 
     METADATA_STORE.addColumn({
       name,
-      fieldName: propertyName,
+      fieldName: propertyName.toString(),
       klass: target.constructor as AnEntity,
 
       dataType: type,
@@ -19,7 +21,7 @@ export const PrimaryKey = (args: PrimaryKeyDecoratorArgs) => {
 
     METADATA_STORE.addUniqueConstraint({
       klass: target.constructor as AnEntity,
-      fieldName: propertyName,
+      fieldName: propertyName.toString(),
     });
   };
 };

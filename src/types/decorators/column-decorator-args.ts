@@ -1,6 +1,6 @@
 import { PostgresDataType } from "../structure";
 
-export type ColumnDecoratorArgs = {
+export type ColumnDecoratorArgs<T> = {
   name: string;
 
   select?: boolean;
@@ -12,5 +12,5 @@ export type ColumnDecoratorArgs = {
 
   nullable?: boolean;
 
-  default?: string;
+  default?: (() => string) | T;
 };

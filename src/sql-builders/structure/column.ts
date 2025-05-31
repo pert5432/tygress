@@ -5,9 +5,7 @@ export class ColumnStructureSqlBuilder {
   constructor(private column: ColumnMetadata) {}
 
   public sql(): string {
-    const defaultValue = this.column.default
-      ? [`DEFAULT ${q(this.column.default)}`]
-      : [];
+    const defaultValue = this.formatDefault();
     const nullable = this.column.nullable === false ? [`NOT NULL`] : [];
     const primaryKey = this.column.primaryKey ? [`PRIMARY KEY`] : [];
 
@@ -15,5 +13,20 @@ export class ColumnStructureSqlBuilder {
     additives = additives.length ? ` ${additives}` : "";
 
     return `${this.column.name} ${this.column.dataType}${additives}`;
+  }
+
+  private formatDefault(): string[] {
+    if (!this.column.default) {
+      return [];
+    }
+
+    switch (this.column.default.type) {
+      case "expression":
+        return [`DEFAULT ${this.column.default.value}`];
+      case "value":
+        return [
+          `DEFAULT ${q(this.column.default.value)}::${this.column.dataType}`,
+        ];
+    }
   }
 }

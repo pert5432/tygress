@@ -15,7 +15,11 @@ export class Users extends TygressEntity {
   @Column({ name: "username", type: "TEXT" })
   username: string;
 
-  @Column({ name: "birthdate", type: "TIMESTAMPTZ", nullable: true })
+  @Column({
+    name: "birthdate",
+    type: "TIMESTAMPTZ",
+    nullable: true,
+  })
   birthdate: Date | null;
 
   @OneToMany(Pets, "user")

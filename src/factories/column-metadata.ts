@@ -3,7 +3,7 @@ import { ColumnMetadataArgs } from "../types/create-args";
 import { isNull } from "../utils";
 
 export abstract class ColumnMetadataFactory {
-  public static create({
+  public static create<T>({
     name,
     fieldName,
     select,
@@ -12,7 +12,7 @@ export abstract class ColumnMetadataFactory {
     nullable,
     default: defaultValue,
     primaryKey,
-  }: ColumnMetadataArgs): ColumnMetadata {
+  }: ColumnMetadataArgs<T>): ColumnMetadata {
     const e = new ColumnMetadata();
 
     e.name = name;
@@ -22,9 +22,17 @@ export abstract class ColumnMetadataFactory {
 
     e.dataType = dataType;
     e.nullable = nullable ?? false;
-    e.default = defaultValue;
+    e.default = defaultValue
+      ? this.isFunction(defaultValue)
+        ? { type: "expression", value: defaultValue() }
+        : { type: "value", value: defaultValue.toString() }
+      : undefined;
     e.primaryKey = primaryKey ?? false;
 
     return e;
+  }
+
+  private static isFunction(value: unknown): value is () => string {
+    return typeof value === "function";
   }
 }

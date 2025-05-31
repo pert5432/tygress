@@ -19,7 +19,7 @@ export class ColumnMetadata {
 
   nullable: boolean;
 
-  default?: string;
+  default?: { type: "value" | "expression"; value: string };
 
   primaryKey: boolean;
 }

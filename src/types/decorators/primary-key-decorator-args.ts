@@ -1,6 +1,6 @@
 import { PostgresDataType } from "../structure";
 
-export type PrimaryKeyDecoratorArgs = {
+export type PrimaryKeyDecoratorArgs<T> = {
   name: string;
 
   select?: boolean;
@@ -10,5 +10,5 @@ export type PrimaryKeyDecoratorArgs = {
   //
   type: PostgresDataType;
 
-  default?: string;
+  default?: (() => string) | T;
 };

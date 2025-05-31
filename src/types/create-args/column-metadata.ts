@@ -1,7 +1,7 @@
 import { Entity } from "../entity";
 import { PostgresDataType } from "../structure";
 
-export type ColumnMetadataArgs = {
+export type ColumnMetadataArgs<T> = {
   // The class which the decorated field belongs to
   klass: Entity<unknown>;
 
@@ -17,7 +17,7 @@ export type ColumnMetadataArgs = {
 
   nullable: boolean;
 
-  default?: string;
+  default?: (() => string) | T;
 
   primaryKey?: boolean;
 };
