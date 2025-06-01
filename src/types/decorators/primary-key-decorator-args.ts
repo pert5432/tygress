@@ -1,4 +1,4 @@
-import { PostgresDataType } from "../structure";
+import { DataType } from "../structure";
 
 export type PrimaryKeyDecoratorArgs<T> = {
   name: string;
@@ -8,7 +8,7 @@ export type PrimaryKeyDecoratorArgs<T> = {
   //
   // STRUCTURE
   //
-  type: PostgresDataType;
+  type: DataType;
 
   default?: (() => string) | T;
 };

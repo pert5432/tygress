@@ -7,7 +7,7 @@ import {
   CreateTableSqlBuilder,
 } from "./sql-builders/structure";
 import { ColumnMetadata, METADATA_STORE, TableMetadata } from "./metadata";
-import { pad } from "./utils";
+import { dataTypesEqual, pad } from "./utils";
 import { PostgresColumnDefinition } from "./types/postgres";
 
 export class MigrationGenerator {
@@ -98,7 +98,7 @@ export class MigrationGenerator {
   ): void {
     // TODO: Generate down statements
 
-    if (column.dataType.toLowerCase() !== pgColumn.data_type) {
+    if (!dataTypesEqual(column.dataType, pgColumn.data_type)) {
       upBuilder.setDataType(column);
     }
 

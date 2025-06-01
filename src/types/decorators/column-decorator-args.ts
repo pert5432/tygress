@@ -1,4 +1,4 @@
-import { PostgresDataType } from "../structure";
+import { DataType } from "../structure";
 
 export type ColumnDecoratorArgs<T> = {
   name: string;
@@ -8,7 +8,7 @@ export type ColumnDecoratorArgs<T> = {
   //
   // STRUCTURE
   //
-  type: PostgresDataType;
+  type: DataType;
 
   nullable?: boolean;
 

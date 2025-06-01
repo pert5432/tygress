@@ -27,7 +27,7 @@ export type UUIDType = "UUID";
 
 export type BlobType = "BYTEA";
 
-export type PostgresDataType =
+export type DataType =
   | NumericType
   | TextType
   | BooleanType

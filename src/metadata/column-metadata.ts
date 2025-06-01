@@ -1,4 +1,4 @@
-import { PostgresDataType } from "../types/structure";
+import { DataType } from "../types/structure";
 import { TableMetadata } from "./table-metadata";
 
 export class ColumnMetadata {
@@ -15,7 +15,7 @@ export class ColumnMetadata {
   //
   // STRUCTURE
   //
-  dataType: PostgresDataType;
+  dataType: DataType;
 
   nullable: boolean;
 

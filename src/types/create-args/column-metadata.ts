@@ -1,5 +1,5 @@
 import { Entity } from "../entity";
-import { PostgresDataType } from "../structure";
+import { DataType } from "../structure";
 
 export type ColumnMetadataArgs<T> = {
   // The class which the decorated field belongs to
@@ -13,7 +13,7 @@ export type ColumnMetadataArgs<T> = {
   //
   // STRUCTURE
   //
-  dataType: PostgresDataType;
+  dataType: DataType;
 
   nullable: boolean;
 
