@@ -6,7 +6,7 @@ import {
   AlterTableSqlBuilder,
   CreateTableSqlBuilder,
 } from "./sql-builders/structure";
-import { METADATA_STORE, TableMetadata } from "./metadata";
+import { ColumnMetadata, METADATA_STORE, TableMetadata } from "./metadata";
 import { pad } from "./utils";
 import { PostgresColumnDefinition } from "./types/postgres";
 
@@ -42,20 +42,27 @@ export class MigrationGenerator {
       }
 
       const upBuilder = new AlterTableSqlBuilder(table);
+      const downBuilder = new AlterTableSqlBuilder(table);
       const postgresColumns = await this.getTableColumns(table);
 
       // Adding columns that are not in Postgres
       for (const column of table.columns) {
-        const postgresColumn = postgresColumns.find(
+        const pgColumn = postgresColumns.find(
           (pc) => pc.column_name === column.name
         );
 
         // Column does not exists in Postgres
-        if (!postgresColumn) {
+        if (!pgColumn) {
           // TODO: Generate down statement
           upBuilder.addColumn(column);
+        } else {
+          this.handleColumnParameterDiff(
+            column,
+            pgColumn,
+            upBuilder,
+            downBuilder
+          );
         }
-        // TODO: handle differences in column details (type, default, null)
       }
 
       // Dropping columns that are not in our entities
@@ -77,6 +84,39 @@ export class MigrationGenerator {
     }
 
     this.writeMigration();
+  }
+
+  //
+  // PRIVATE
+  //
+
+  private handleColumnParameterDiff(
+    column: ColumnMetadata,
+    pgColumn: PostgresColumnDefinition,
+    upBuilder: AlterTableSqlBuilder,
+    downBuilder: AlterTableSqlBuilder
+  ): void {
+    // TODO: Generate down statements
+
+    if (column.dataType.toLowerCase() !== pgColumn.data_type) {
+      upBuilder.setDataType(column);
+    }
+
+    if (column.nullable !== (pgColumn.is_nullable === "YES")) {
+      if (column.nullable) {
+        upBuilder.dropNotNull(column);
+      } else {
+        upBuilder.setNotNull(column);
+      }
+    }
+
+    if (column.default && !pgColumn.column_default) {
+      upBuilder.setDefault(column);
+    }
+
+    if (pgColumn.column_default && !column.default) {
+      upBuilder.dropDefault(column);
+    }
   }
 
   private async entityExists(table: TableMetadata): Promise<boolean> {
