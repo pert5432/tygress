@@ -163,7 +163,7 @@ export class MigrationRunner {
       }
     }
 
-    this.migrations.sort((a, b) => (a.name > b.name ? -1 : 1));
+    this.migrations.sort((a, b) => (a.name > b.name ? 1 : -1));
   }
 
   private async loadExecutedMigrations(): Promise<void> {
