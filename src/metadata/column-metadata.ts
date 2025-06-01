@@ -1,4 +1,4 @@
-import { DataType } from "../types/structure";
+import { DataType, ColumnDefault } from "../types/structure";
 import { TableMetadata } from "./table-metadata";
 
 export class ColumnMetadata {
@@ -19,7 +19,7 @@ export class ColumnMetadata {
 
   nullable: boolean;
 
-  default?: { type: "value" | "expression"; value: string };
+  default?: ColumnDefault;
 
   primaryKey: boolean;
 }

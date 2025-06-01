@@ -7,7 +7,7 @@ import {
   CreateTableSqlBuilder,
 } from "./sql-builders/structure";
 import { ColumnMetadata, METADATA_STORE, TableMetadata } from "./metadata";
-import { dataTypesEqual, pad } from "./utils";
+import { dataTypesEqual, pad, parsePgColumnDefault } from "./utils";
 import { PostgresColumnDefinition } from "./types/postgres";
 
 export class MigrationGenerator {
@@ -110,12 +110,29 @@ export class MigrationGenerator {
       }
     }
 
-    if (column.default && !pgColumn.column_default) {
-      upBuilder.setDefault(column);
-    }
+    // Default in entity
+    if (column.default) {
+      // But not in PG
+      if (!pgColumn.column_default) {
+        upBuilder.setDefault(column);
+      } else {
+        const pgDefault = parsePgColumnDefault(pgColumn.column_default);
 
-    if (pgColumn.column_default && !column.default) {
-      upBuilder.dropDefault(column);
+        // Default in PG but different
+        if (
+          !(
+            column.default.type === pgDefault.type &&
+            column.default.value === pgDefault.value
+          )
+        ) {
+          upBuilder.setDefault(column);
+        }
+      }
+      // Default in PG but not in entity
+    } else {
+      if (pgColumn.column_default) {
+        upBuilder.dropDefault(column);
+      }
     }
   }
 
