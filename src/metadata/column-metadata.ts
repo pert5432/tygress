@@ -1,3 +1,4 @@
+import { ColumnDataTypeAndOptions } from "../types/decorators";
 import { DataType, ColumnDefault } from "../types/structure";
 import { TableMetadata } from "./table-metadata";
 
@@ -20,6 +21,12 @@ export class ColumnMetadata {
   nullable: boolean;
 
   default?: ColumnDefault;
+
+  precision?: number;
+
+  scale?: number;
+
+  maxLength?: number;
 
   primaryKey: boolean;
 }

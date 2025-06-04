@@ -5,9 +5,16 @@ export type NumericType =
   | "INT"
   | "INT4"
   | "BIGINT"
-  | "INT8";
+  | "INT8"
+  | "NUMERIC"
+  | "DECIMAL";
 
-export type TextType = "TEXT" | "CHARACTER VARYING" | "VARCHAR";
+export type TextType =
+  | "TEXT"
+  | "CHARACTER VARYING"
+  | "VARCHAR"
+  | "CHAR"
+  | "CHARACTER";
 
 export type BooleanType = "BOOLEAN" | "BOOL";
 
@@ -25,7 +32,7 @@ export type DateTimeType =
 
 export type UUIDType = "UUID";
 
-export type BlobType = "BYTEA";
+export type BinaryTypes = "BYTEA" | "BIT" | "BIT VARYING" | "VARBIT";
 
 export type DataType =
   | NumericType
@@ -34,4 +41,4 @@ export type DataType =
   | JSONType
   | DateTimeType
   | UUIDType
-  | BlobType;
+  | BinaryTypes;

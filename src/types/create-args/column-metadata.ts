@@ -20,4 +20,10 @@ export type ColumnMetadataArgs<T> = {
   default?: (() => string) | T;
 
   primaryKey?: boolean;
+
+  precision?: number;
+
+  scale?: number;
+
+  maxLength?: number;
 };

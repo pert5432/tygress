@@ -6,17 +6,12 @@ export const PrimaryKey = <K extends Object, F extends keyof K>(
   args: PrimaryKeyDecoratorArgs<K[F]>
 ) => {
   return function (target: K, propertyName: F) {
-    const { name, type, default: defaultValue } = args;
-
     METADATA_STORE.addColumn({
-      name,
+      ...args,
       fieldName: propertyName.toString(),
       klass: target.constructor as AnEntity,
-
-      dataType: type,
-      default: defaultValue,
+      dataType: args.type,
       nullable: false,
-      primaryKey: true,
     });
 
     METADATA_STORE.addUniqueConstraint({

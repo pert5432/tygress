@@ -1,4 +1,4 @@
-import { DataType } from "../structure";
+import { ColumnDataTypeAndOptions } from "./data-type-and-options";
 
 export type PrimaryKeyDecoratorArgs<T> = {
   name: string;
@@ -8,7 +8,5 @@ export type PrimaryKeyDecoratorArgs<T> = {
   //
   // STRUCTURE
   //
-  type: DataType;
-
   default?: (() => string) | T;
-};
+} & ColumnDataTypeAndOptions;

@@ -1,4 +1,4 @@
-import { DataType } from "../structure";
+import { ColumnDataTypeAndOptions } from "./";
 
 export type ColumnDecoratorArgs<T> = {
   name: string;
@@ -8,9 +8,8 @@ export type ColumnDecoratorArgs<T> = {
   //
   // STRUCTURE
   //
-  type: DataType;
 
   nullable?: boolean;
 
   default?: (() => string) | T;
-};
+} & ColumnDataTypeAndOptions;

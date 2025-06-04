@@ -1,6 +1,7 @@
 import { ColumnMetadata, TableMetadata } from "../../metadata";
-import { pad, q } from "../../utils";
+import { pad } from "../../utils";
 import { ColumnStructureSqlBuilder } from "./column";
+import { StructureSqlBuilderUtils } from "./utils";
 
 export class AlterTableSqlBuilder {
   private actions: string[] = [];
@@ -27,14 +28,22 @@ export class AlterTableSqlBuilder {
   }
 
   setDataType(column: ColumnMetadata): void {
-    this.do(`ALTER COLUMN ${column.name} SET DATA TYPE ${column.dataType}`);
+    this.do(
+      `ALTER COLUMN ${
+        column.name
+      } SET DATA TYPE ${StructureSqlBuilderUtils.dataType(column)}`
+    );
   }
 
   setDefault(column: ColumnMetadata): void {
+    if (!column.default) {
+      throw new Error(`Column ${column.name} does not have a default value`);
+    }
+
     this.do(
-      `ALTER COLUMN ${column.name} SET DEFAULT ${this.formatDefaultValue(
-        column
-      )}`
+      `ALTER COLUMN ${
+        column.name
+      } SET DEFAULT ${StructureSqlBuilderUtils.defaultValue(column)}`
     );
   }
 
@@ -56,18 +65,5 @@ export class AlterTableSqlBuilder {
 
   private do(statement: string): void {
     this.actions.push(statement);
-  }
-
-  private formatDefaultValue(column: ColumnMetadata): string {
-    if (!column.default) {
-      throw new Error(`Column ${column.name} does not have a default value`);
-    }
-
-    switch (column.default.type) {
-      case "expression":
-        return `${column.default.value}`;
-      case "value":
-        return `${q(column.default.value)}::${column.dataType}`;
-    }
   }
 }

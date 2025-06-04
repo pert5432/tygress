@@ -12,5 +12,6 @@ export { SelectQueryArgs } from "./select-query-args";
 export { SelectQueryTarget } from "./select-query-target";
 export { ClassArg } from "./class-arg";
 export { Migration } from "./migration";
+export { OneOf } from "./one-of";
 
 export * from "./conditions";
