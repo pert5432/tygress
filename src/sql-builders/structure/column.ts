@@ -6,7 +6,7 @@ export class ColumnStructureSqlBuilder {
 
   public sql(): string {
     const defaultValue = this.column.default
-      ? [StructureSqlBuilderUtils.defaultValue(this.column)]
+      ? [`DEFAULT ${StructureSqlBuilderUtils.defaultValue(this.column)}`]
       : [];
     const nullable = this.column.nullable === false ? [`NOT NULL`] : [];
     const primaryKey = this.column.primaryKey ? [`PRIMARY KEY`] : [];
