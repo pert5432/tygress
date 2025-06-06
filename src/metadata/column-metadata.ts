@@ -1,4 +1,3 @@
-import { ColumnDataTypeAndOptions } from "../types/decorators";
 import { DataType, ColumnDefault } from "../types/structure";
 import { TableMetadata } from "./table-metadata";
 
