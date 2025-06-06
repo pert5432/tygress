@@ -177,16 +177,19 @@ export class MigrationGenerator {
 
   private writeMigration(): void {
     const executeStatement = (statement: string) =>
-      `  await conn.query(\`\n${pad(2, statement)}\`\n  );`;
+      `${pad(1, `await conn.query(\`\n${pad(2, statement)}\`\n`)}${pad(
+        1,
+        ");"
+      )}`;
 
     let contents = `import { PostgresConnection } from "tygress";\n\n`;
     contents += `export const name: string = "${this.fullName}";\n\n`;
     contents += `export const up = async (conn: PostgresConnection): Promise<void> => {\n${this.upStatements
       .map((s) => executeStatement(s))
-      .join("\n")}\n};\n\n`;
+      .join("\n\n")}\n};\n\n`;
     contents += `export const down = async (conn: PostgresConnection): Promise<void> => {\n${this.downStatements
       .map((s) => executeStatement(s))
-      .join("\n")}\n};\n`;
+      .join("\n\n")}\n};\n`;
 
     fs.writeFileSync(this.filePath, Buffer.from(contents));
   }
