@@ -9,7 +9,7 @@ export type ColumnDataTypeAndOptions =
           type:
             | "TIMESTAMP"
             | "TIMESTAMPTZ"
-            | "TIMESTAMP WITH TIMEZONE"
+            | "TIMESTAMP WITH TIME ZONE"
             | "TIME"
             | "TIMETZ"
             | "TIME WITH TIME ZONE";

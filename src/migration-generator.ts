@@ -5,10 +5,12 @@ import { AnEntity } from "./types";
 import {
   AlterTableSqlBuilder,
   CreateTableSqlBuilder,
+  DropTableSqlBuilder,
 } from "./sql-builders/structure";
 import { ColumnMetadata, METADATA_STORE, TableMetadata } from "./metadata";
 import { dataTypesEqual, pad, parsePgColumnDefault } from "./utils";
 import { PostgresColumnDefinition } from "./types/postgres";
+import { ColumnMetadataFactory } from "./factories";
 
 export class MigrationGenerator {
   private upStatements: string[] = [];
@@ -37,9 +39,17 @@ export class MigrationGenerator {
       // Create entire table if it doesn't exist
       if (!(await this.entityExists(table))) {
         this.upStatements.push(new CreateTableSqlBuilder(table).sql());
-        // TODO: Generate down statement
+
+        this.downStatements.push(
+          new DropTableSqlBuilder(table.tablename).sql()
+        );
+
         continue;
       }
+
+      //
+      // Resolve possible differences in the table
+      //
 
       const upBuilder = new AlterTableSqlBuilder(table);
       const downBuilder = new AlterTableSqlBuilder(table);
@@ -53,8 +63,9 @@ export class MigrationGenerator {
 
         // Column does not exists in Postgres
         if (!pgColumn) {
-          // TODO: Generate down statement
           upBuilder.addColumn(column);
+
+          downBuilder.dropColumn(column.name);
         } else {
           this.handleColumnParameterDiff(
             column,
@@ -73,13 +84,17 @@ export class MigrationGenerator {
 
         // Column does not exists in our entity but exists in db
         if (!column) {
-          // TODO: Generate down statement
           upBuilder.dropColumn(postgresColumn.column_name);
+
+          downBuilder.addColumn(
+            ColumnMetadataFactory.fromPGColumn(postgresColumn)
+          );
         }
       }
 
       if (upBuilder.hasChanges()) {
         this.upStatements.push(upBuilder.sql());
+        this.downStatements.push(downBuilder.sql());
       }
     }
 
@@ -96,17 +111,18 @@ export class MigrationGenerator {
     upBuilder: AlterTableSqlBuilder,
     downBuilder: AlterTableSqlBuilder
   ): void {
-    // TODO: Generate down statements
-
     if (!dataTypesEqual(column, pgColumn)) {
       upBuilder.setDataType(column);
+      downBuilder.setDataType(ColumnMetadataFactory.fromPGColumn(pgColumn));
     }
 
     if (column.nullable !== (pgColumn.is_nullable === "YES")) {
       if (column.nullable) {
         upBuilder.dropNotNull(column);
+        downBuilder.setNotNull(column);
       } else {
         upBuilder.setNotNull(column);
+        downBuilder.dropNotNull(column);
       }
     }
 
@@ -115,6 +131,7 @@ export class MigrationGenerator {
       // But not in PG
       if (!pgColumn.column_default) {
         upBuilder.setDefault(column);
+        upBuilder.dropDefault(column);
       } else {
         const pgDefault = parsePgColumnDefault(pgColumn.column_default);
 
@@ -126,12 +143,14 @@ export class MigrationGenerator {
           )
         ) {
           upBuilder.setDefault(column);
+          upBuilder.setDefault(ColumnMetadataFactory.fromPGColumn(pgColumn));
         }
       }
       // Default in PG but not in entity
     } else {
       if (pgColumn.column_default) {
         upBuilder.dropDefault(column);
+        downBuilder.setDefault(ColumnMetadataFactory.fromPGColumn(pgColumn));
       }
     }
   }

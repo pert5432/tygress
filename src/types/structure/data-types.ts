@@ -22,12 +22,10 @@ export type JSONType = "JSONB" | "JSON";
 
 export type DateTimeType =
   | "TIME"
-  | "TIME WITHOUT TIME ZONE"
   | "TIME WITH TIME ZONE"
   | "TIMETZ"
   | "TIMESTAMP"
-  | "TIMESTAMP WITHOUT TIMEZONE"
-  | "TIMESTAMP WITH TIMEZONE"
+  | "TIMESTAMP WITH TIME ZONE"
   | "TIMESTAMPTZ";
 
 export type UUIDType = "UUID";

@@ -1,6 +1,8 @@
 import { ColumnMetadata } from "../metadata/column-metadata";
 import { ColumnMetadataArgs } from "../types/create-args";
-import { isNull } from "../utils";
+import { PostgresColumnDefinition } from "../types/postgres";
+import { DataType } from "../types/structure";
+import { isNull, parsePgColumnDefault } from "../utils";
 
 export abstract class ColumnMetadataFactory {
   public static create<T>(args: ColumnMetadataArgs<T>): ColumnMetadata {
@@ -35,6 +37,34 @@ export abstract class ColumnMetadataFactory {
     e.maxLength = (args as { maxLength?: number }).maxLength;
 
     e.primaryKey = primaryKey ?? false;
+
+    return e;
+  }
+
+  public static fromPGColumn(
+    pgColumn: PostgresColumnDefinition
+  ): ColumnMetadata {
+    console.log(pgColumn);
+
+    const e = new ColumnMetadata();
+
+    e.name = pgColumn.column_name;
+
+    e.dataType = pgColumn.data_type.toUpperCase() as DataType;
+    e.nullable = pgColumn.is_nullable === "YES";
+    e.default = pgColumn.column_default?.length
+      ? parsePgColumnDefault(pgColumn.column_default)
+      : undefined;
+
+    e.precision =
+      pgColumn.numeric_precision ??
+      pgColumn.datetime_precision ??
+      pgColumn.interval_precision ??
+      undefined;
+    e.scale = pgColumn.numeric_scale ?? undefined;
+    e.maxLength = pgColumn.character_maximum_length ?? undefined;
+
+    console.log(e);
 
     return e;
   }
