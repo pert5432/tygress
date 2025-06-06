@@ -3,46 +3,54 @@ import { q } from "../../utils";
 
 export abstract class StructureSqlBuilderUtils {
   static dataType(column: ColumnMetadata): string {
-    const options: string = (() => {
-      switch (column.dataType) {
-        case "TIMESTAMP":
-        case "TIMESTAMPTZ":
-        case "TIMESTAMP WITH TIMEZONE":
-        case "TIME":
-        case "TIMETZ":
-        case "TIME WITH TIME ZONE":
-          return column.precision ? ` (${column.precision})` : "";
-        case "BIT":
-        case "BIT VARYING":
-        case "VARBIT":
-        case "CHARACTER":
-        case "CHAR":
-        case "CHARACTER VARYING":
-        case "VARCHAR":
-          return column.maxLength ? ` (${column.maxLength})` : "";
-        case "NUMERIC":
-        case "DECIMAL": {
-          if (!column.scale && !column.precision) {
-            return "";
-          }
+    const { dataType: type } = column;
 
-          if (column.scale && !column.precision) {
-            throw new Error(
-              `If you specify scale you also need to specify precision`
-            );
-          }
+    switch (type) {
+      case "TIMESTAMP":
+      case "TIMESTAMPTZ":
+      case "TIME":
+      case "TIMETZ":
+        return column.precision ? `${type} (${column.precision})` : type;
 
-          return ` (${[column.precision, column.scale]
-            .filter((e) => !!e)
-            .join(", ")})`;
+      case "TIMESTAMP WITH TIME ZONE":
+        return column.precision
+          ? `TIMESTAMP (${column.precision}) WITH TIME ZONE`
+          : type;
+
+      case "TIME WITH TIME ZONE":
+        return column.precision
+          ? `TIME (${column.precision}) WITH TIME ZONE`
+          : type;
+
+      case "BIT":
+      case "BIT VARYING":
+      case "VARBIT":
+      case "CHARACTER":
+      case "CHAR":
+      case "CHARACTER VARYING":
+      case "VARCHAR":
+        return column.maxLength ? `${type} (${column.maxLength})` : type;
+
+      case "NUMERIC":
+      case "DECIMAL": {
+        if (!column.scale && !column.precision) {
+          return type;
         }
 
-        default:
-          return "";
-      }
-    })();
+        if (column.scale && !column.precision) {
+          throw new Error(
+            `If you specify scale you also need to specify precision`
+          );
+        }
 
-    return `${column.dataType}${options}`;
+        return `${type} (${[column.precision, column.scale]
+          .filter((e) => !!e)
+          .join(", ")})`;
+      }
+
+      default:
+        return type;
+    }
   }
 
   static defaultValue(column: ColumnMetadata): string {
