@@ -22,7 +22,6 @@ export abstract class StructureSqlBuilderUtils {
           return column.maxLength ? ` (${column.maxLength})` : "";
         case "NUMERIC":
         case "DECIMAL": {
-          console.log(column);
           if (!column.scale && !column.precision) {
             return "";
           }
