@@ -1,15 +1,29 @@
-import { DataType, PostgresDataType } from "../types/structure";
+import { ColumnMetadata } from "../metadata";
+import { PostgresColumnDefinition } from "../types/postgres";
+import { PostgresDataType } from "../types/structure";
 
 export const dataTypesEqual = (
-  type: DataType,
-  pgType: PostgresDataType
+  column: ColumnMetadata,
+  pgColumn: PostgresColumnDefinition
 ): boolean => {
-  const _type = type.toLowerCase();
-  const _pgType = pgType.toLowerCase();
+  const type = column.dataType.toLowerCase();
+  const pgType = pgColumn.data_type.toLowerCase();
 
-  return (
-    _type.toLowerCase() === _pgType.toLowerCase() || aliasMap[_type] === _pgType
-  );
+  // Compare if the data type names match, taking type aliases into account
+  if (type === pgType || aliasMap[type] === pgType) {
+    // Compare if all the column details (precision, scale, maxLength) match
+    return (
+      [
+        pgColumn.numeric_precision,
+        pgColumn.datetime_precision,
+        pgColumn.interval_precision,
+      ].includes(column.precision ?? null) &&
+      pgColumn.numeric_scale === (column.scale ?? null) &&
+      pgColumn.character_maximum_length === (column.maxLength ?? null)
+    );
+  }
+
+  return false;
 };
 
 // Maps type aliases to proper type names

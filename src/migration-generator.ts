@@ -98,7 +98,7 @@ export class MigrationGenerator {
   ): void {
     // TODO: Generate down statements
 
-    if (!dataTypesEqual(column.dataType, pgColumn.data_type)) {
+    if (!dataTypesEqual(column, pgColumn)) {
       upBuilder.setDataType(column);
     }
 
@@ -158,7 +158,7 @@ export class MigrationGenerator {
 
   private writeMigration(): void {
     const executeStatement = (statement: string) =>
-      `await conn.query(\`\n${pad(2, statement)}\`\n  );`;
+      `  await conn.query(\`\n${pad(2, statement)}\`\n  );`;
 
     let contents = `import { PostgresConnection } from "tygress";\n\n`;
     contents += `export const name: string = "${this.fullName}";\n\n`;

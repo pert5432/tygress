@@ -32,7 +32,7 @@ export abstract class StructureSqlBuilderUtils {
             );
           }
 
-          return ` (${[column.scale, column.precision]
+          return ` (${[column.precision, column.scale]
             .filter((e) => !!e)
             .join(", ")})`;
         }
