@@ -8,12 +8,26 @@ export class CreateTableSqlBuilder {
   sql(): string {
     return [
       `CREATE TABLE ${this.table.tablename} (`,
-      this.table.columns.map((c) => this.column(c)).join(",\n"),
+      pad(
+        1,
+        [
+          ...this.table.columns.map((c) => this.column(c)),
+          this.primaryKey(),
+        ].join(",\n")
+      ),
       ");",
     ].join("\n");
   }
 
   private column(column: ColumnMetadata): string {
-    return pad(1, new ColumnStructureSqlBuilder(column).sql());
+    return new ColumnStructureSqlBuilder(column).sql();
+  }
+
+  private primaryKey(): string {
+    const primaryKey = this.table.columnsMap.get(
+      this.table.primaryKey.fieldName
+    )!;
+
+    return `CONSTRAINT "${this.table.tablename}_pk" PRIMARY KEY ("${primaryKey.name}")`;
   }
 }
