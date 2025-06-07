@@ -1,12 +1,13 @@
 import { Relation } from "../enums";
 import { METADATA_STORE } from "../metadata/metadata-store";
+import { RelationForeignSideArgs } from "../types";
 import { AnEntity, Entity } from "../types/entity";
 
 export const ManyToOne = <Foreign extends Object, Primary extends AnEntity>(
   primary: Primary,
   primaryField: keyof InstanceType<Primary>,
   foreignKey: keyof Foreign,
-  primaryKey?: keyof InstanceType<Primary>
+  args?: RelationForeignSideArgs<Primary>
 ) => {
   return function (target: Foreign, propertyName: string) {
     METADATA_STORE.addRelation({
@@ -18,7 +19,10 @@ export const ManyToOne = <Foreign extends Object, Primary extends AnEntity>(
 
       primary,
       primaryField: primaryField.toString(),
-      primaryKey: primaryKey?.toString() ?? "id",
+      primaryKey: args?.primaryKey?.toString() ?? "id",
+
+      onUpdate: args?.onUpdate,
+      onDelete: args?.onDelete,
     });
   };
 };

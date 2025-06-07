@@ -11,6 +11,8 @@ export abstract class RelationMetadataFactory {
     primary,
     primaryField,
     primaryKey,
+    onUpdate,
+    onDelete,
   }: RelationMetadataArgs): RelationMetadata {
     const e = new RelationMetadata();
 
@@ -23,6 +25,9 @@ export abstract class RelationMetadataFactory {
     e.foreign = foreign;
     e.foreignField = foreignField;
     e.foreignKey = foreignKey ?? fieldNameToColumName(foreignField) + "_id";
+
+    e.onUpdate = onUpdate ?? "RESTRICT";
+    e.onDelete = onDelete ?? "RESTRICT";
 
     return e;
   }
