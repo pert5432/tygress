@@ -192,6 +192,10 @@ class MetadataStore {
       }
     }
 
+    // TODO: handle 1-1 relations by finding inverse as above
+    //   on adding new relation verify one side specifies inverse key
+    //     (if inverse relation found ensure either new or old specifies inverse key, not both)
+
     // Finally insert new relation into the array
     this.relations.push(relation);
 
