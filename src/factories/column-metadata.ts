@@ -22,7 +22,7 @@ export abstract class ColumnMetadataFactory {
     e.name = name;
     e.fieldName = fieldName;
 
-    e.select = isNull(select) ? true : select!;
+    e.select = isNull(select) ? true : select;
 
     e.dataType = dataType;
     e.nullable = nullable ?? false;
