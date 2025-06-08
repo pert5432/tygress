@@ -1,4 +1,9 @@
-import { ColumnMetadata, TableMetadata } from "../../metadata";
+import {
+  ColumnMetadata,
+  METADATA_STORE,
+  RelationMetadata,
+  TableMetadata,
+} from "../../metadata";
 import { pad } from "../../utils";
 import { ColumnStructureSqlBuilder } from "./column";
 import { StructureSqlBuilderUtils } from "./utils";
@@ -57,6 +62,25 @@ export class AlterTableSqlBuilder {
 
   dropNotNull(column: ColumnMetadata): void {
     this.do(`ALTER COLUMN ${column.name} DROP NOT NULL`);
+  }
+
+  addFK(relation: RelationMetadata, name: string): void {
+    if (this.table.klass !== relation.foreign) {
+      throw new Error(
+        `You should add an FK for this relation on the foreign table of the relation`
+      );
+    }
+
+    const primaryMeta = METADATA_STORE.getTable(relation.primary);
+
+    // ADD CONSTRAINT "campaign_email_customers_campaign_email_id_fkey" FOREIGN KEY ("campaign_email_id") REFERENCES "campaign_emails"("id") ON DELETE NO ACTION ON UPDATE NO ACTION
+    this.do(
+      `ADD CONSTRAINT "${name}" FOREIGN KEY ("${relation.foreignColumn.name}") REFERENCES "${primaryMeta.tablename}" ("${relation.primaryColumn.name}") ON DELETE ${relation.onDelete} ON UPDATE ${relation.onUpdate}`
+    );
+  }
+
+  dropFK(name: string): void {
+    this.do(`DROP CONSTRAINT "${name}"`);
   }
 
   //
