@@ -9,6 +9,6 @@ export class PetCategories extends TygressEntity {
   @Column("name")
   name: string;
 
-  @OneToMany(PetCategoriesPet, "category")
+  @OneToMany(() => PetCategoriesPet, "category")
   pets: PetCategoriesPet[];
 }
