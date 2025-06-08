@@ -13,12 +13,12 @@ import {
   TableMetadataArgs,
   UniqueConstraintMetadataArgs,
 } from "../types/create-args";
-import { AnEntity, Entity } from "../types";
+import { AnEntity } from "../types";
 import { UniqueConstraintMetadata } from "./unique-constraint";
 
 class MetadataStore {
-  public tables = new Map<Entity<unknown>, TableMetadata>();
-  public columns = new Map<Entity<unknown>, ColumnMetadata[]>();
+  public tables = new Map<AnEntity, TableMetadata>();
+  public columns = new Map<AnEntity, ColumnMetadata[]>();
 
   public relations: RelationMetadata[] = [];
 
@@ -30,11 +30,13 @@ class MetadataStore {
   // All fields which are decorated by our decorators
   public fields = new Map<AnEntity, string[]>();
 
+  private relationArgs: RelationMetadataArgs[] = [];
+
   //
   // Getters
   //
-  public getTable<T extends Entity<unknown>>(table: T): TableMetadata {
-    const res = this.tables.get(table as Entity<unknown>);
+  public getTable<T extends AnEntity>(table: T): TableMetadata {
+    const res = this.tables.get(table as AnEntity);
     if (!res) {
       throw new Error(`No metadata found for ${table}`);
     }
@@ -104,11 +106,7 @@ class MetadataStore {
     const metadata = TableMetadataFactory.create(
       args,
       columns,
-      this.relations.filter(
-        (e) => e.primary === args.klass || e.foreign === args.klass
-      ),
-      uniqueConstraint,
-      this.fields.get(args.klass) ?? []
+      uniqueConstraint
     );
 
     this.tables.set(metadata.klass, metadata);
@@ -148,60 +146,112 @@ class MetadataStore {
   }
 
   public addRelation(args: RelationMetadataArgs) {
-    const relation = RelationMetadataFactory.create(args);
+    this.relationArgs.push(args);
+  }
 
-    // Inserting OneToMany so current relation is the primary side
-    // Back-fill the primary class to the inverse side of the currently inserted relation
-    if (relation.type === Relation.ONE_TO_MANY && relation.foreign) {
-      const inverseRelation = this.relations.find(
-        (e) =>
-          e.type === Relation.MANY_TO_ONE &&
-          e.foreign === relation.foreign &&
-          e.primaryField === relation.primaryField &&
-          e.foreignField === relation.foreignField
-      );
+  public finalize(_entities: AnEntity[]): void {
+    this.createRelations();
 
-      if (inverseRelation) {
-        if (!inverseRelation.primary) {
-          inverseRelation.primary = relation.primary;
+    this.registerRelationsToEntities();
+
+    this.registerArrayFields();
+  }
+
+  // Creates relation metadata from relation args
+  private createRelations(): void {
+    for (const args of this.relationArgs) {
+      const relation = RelationMetadataFactory.create(args);
+
+      // Inserting OneToMany so current relation is the primary side
+      // Back-fill the primary class to the inverse side of the currently inserted relation
+      if (relation.type === Relation.ONE_TO_MANY && relation.foreign) {
+        const inverseRelation = this.relations.find(
+          (e) =>
+            e.type === Relation.MANY_TO_ONE &&
+            e.foreign === relation.foreign &&
+            e.primaryField === relation.primaryField &&
+            e.foreignField === relation.foreignField
+        );
+
+        if (inverseRelation) {
+          if (!inverseRelation.primary) {
+            inverseRelation.primary = relation.primary;
+          }
+
+          relation.primaryKey = inverseRelation.primaryKey;
+          relation.foreignKey = inverseRelation.foreignKey;
         }
+      }
 
-        relation.primaryKey = inverseRelation.primaryKey;
-        relation.foreignKey = inverseRelation.foreignKey;
+      // Inserting ManyToOne so current relation is the foreign side
+      // Back-fill the foreign class to the inverse side of the currently inserted relation
+      if (relation.type === Relation.MANY_TO_ONE && relation.primary) {
+        const inverseRelation = this.relations.find(
+          (e) =>
+            e.type === Relation.ONE_TO_MANY &&
+            e.primary === relation.primary &&
+            e.primaryField === relation.primaryField &&
+            e.foreignField === relation.foreignField
+        );
+
+        if (inverseRelation) {
+          if (!inverseRelation.foreign) {
+            inverseRelation.foreign = relation.foreign;
+          }
+
+          inverseRelation.foreignKey = relation.foreignKey;
+          inverseRelation.primaryKey = relation.primaryKey;
+        }
+      }
+
+      // TODO: handle 1-1 relations by finding inverse as above
+      //   on adding new relation verify one side specifies inverse key
+      //     (if inverse relation found ensure either new or old specifies inverse key, not both)
+
+      // Finally insert new relation into the array
+      this.relations.push(relation);
+
+      // Log both fiels from the relation
+      this.addField(args.foreign(), args.foreignField);
+      this.addField(args.primary(), args.primaryField);
+    }
+  }
+
+  // Adds info about relations to entity metadata
+  private registerRelationsToEntities(): void {
+    for (const relation of this.relations) {
+      // Register relation to foreign tables meta
+      const foreignMeta = this.getTable(relation.foreign);
+      if (!foreignMeta.columnsMap.get(relation.foreignKey)) {
+        throw new Error(
+          `No column found for entity ${foreignMeta.klass.name}, field name ${relation.foreignKey}`
+        );
+      }
+      foreignMeta.relations.set(relation.foreignField, relation);
+
+      // Register relation to primary tables meta
+      const primaryMeta = this.getTable(relation.primary);
+      if (!primaryMeta.columnsMap.get(relation.primaryKey)) {
+        throw new Error(
+          `No column found for entity ${primaryMeta.klass.name}, field name ${relation.primaryKey}`
+        );
+      }
+      primaryMeta.relations.set(relation.primaryField, relation);
+    }
+  }
+
+  // Adds info about which fields are arrays to entity metadata
+  private registerArrayFields(): void {
+    for (const entity of this.tables.values()) {
+      const instance = new entity.klass();
+      for (const field of this.fields.get(entity.klass) ?? []) {
+        if (
+          Reflect.getMetadata("design:type", instance as any, field) === Array
+        ) {
+          entity.arrayFields.add(field);
+        }
       }
     }
-
-    // Inserting ManyToOne so current relation is the foreign side
-    // Back-fill the foreign class to the inverse side of the currently inserted relation
-    if (relation.type === Relation.MANY_TO_ONE && relation.primary) {
-      const inverseRelation = this.relations.find(
-        (e) =>
-          e.type === Relation.ONE_TO_MANY &&
-          e.primary === relation.primary &&
-          e.primaryField === relation.primaryField &&
-          e.foreignField === relation.foreignField
-      );
-
-      if (inverseRelation) {
-        if (!inverseRelation.foreign) {
-          inverseRelation.foreign = relation.foreign;
-        }
-
-        inverseRelation.foreignKey = relation.foreignKey;
-        inverseRelation.primaryKey = relation.primaryKey;
-      }
-    }
-
-    // TODO: handle 1-1 relations by finding inverse as above
-    //   on adding new relation verify one side specifies inverse key
-    //     (if inverse relation found ensure either new or old specifies inverse key, not both)
-
-    // Finally insert new relation into the array
-    this.relations.push(relation);
-
-    // Log both fiels from the relation
-    this.addField(args.foreign, args.foreignField);
-    this.addField(args.primary, args.primaryField);
   }
 }
 

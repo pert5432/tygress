@@ -16,6 +16,7 @@ import { QueryLogLevel } from "./enums";
 import { FlattenRawSelectSources } from "./types/query-builder";
 import { MigrationRunner } from "./migration-runner";
 import { MigrationGenerator } from "./migration-generator";
+import { METADATA_STORE } from "./metadata";
 
 export class PostgresClient {
   private pool: Pool;
@@ -37,6 +38,8 @@ export class PostgresClient {
     entities,
     migrationFolders,
   }: PostgresClientOptions) {
+    METADATA_STORE.finalize(entities);
+
     this.pool = new Pool({
       connectionString: databaseUrl,
       ssl,

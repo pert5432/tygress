@@ -18,11 +18,11 @@ export abstract class RelationMetadataFactory {
 
     e.type = type;
 
-    e.primary = primary;
+    e.primary = primary();
     e.primaryField = primaryField;
     e.primaryKey = primaryKey ?? "id";
 
-    e.foreign = foreign;
+    e.foreign = foreign();
     e.foreignField = foreignField;
     e.foreignKey = foreignKey ?? fieldNameToColumName(foreignField) + "_id";
 

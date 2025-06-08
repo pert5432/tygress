@@ -1,17 +1,17 @@
 import { Relation } from "../enums";
 import { METADATA_STORE } from "../metadata/metadata-store";
-import { Entity } from "../types/entity";
+import { AnEntity } from "../types/entity";
 
-export const OneToMany = <Foreign extends Entity<unknown>>(
-  foreign: Foreign,
+export const OneToMany = <Foreign extends AnEntity>(
+  foreignFn: () => Foreign,
   foreignField: keyof InstanceType<Foreign>
 ) => {
   return function (target: Object, propertyName: string) {
     METADATA_STORE.addRelation({
       type: Relation.ONE_TO_MANY,
-      foreign,
+      foreign: foreignFn,
       foreignField: foreignField.toString(),
-      primary: target.constructor as Entity<unknown>,
+      primary: () => target.constructor as AnEntity,
       primaryField: propertyName,
     });
   };

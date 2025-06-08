@@ -13,9 +13,9 @@ export class PetCategoriesPet extends TygressEntity {
   @Column({ name: "pet_category_id", type: "TEXT" })
   petCategoryId: string;
 
-  @ManyToOne(Pets, "categories", "petId")
+  @ManyToOne(() => Pets, "categories", "petId")
   pet: Pets;
 
-  @ManyToOne(PetCategories, "pets", "petCategoryId")
+  @ManyToOne(() => PetCategories, "pets", "petCategoryId")
   category: PetCategories;
 }

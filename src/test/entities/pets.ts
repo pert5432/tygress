@@ -29,9 +29,9 @@ export class Pets extends TygressEntity {
 
   // RELATIONS
 
-  @ManyToOne(Users, "pets", "userId")
+  @ManyToOne(() => Users, "pets", "userId")
   user: Users;
 
-  @OneToMany(PetCategoriesPet, "pet")
+  @OneToMany(() => PetCategoriesPet, "pet")
   categories: PetCategoriesPet[];
 }

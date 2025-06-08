@@ -22,6 +22,6 @@ export class Users extends TygressEntity {
   })
   birthdate: Date | null;
 
-  @OneToMany(Pets, "user")
+  @OneToMany(() => Pets, "user")
   pets: Pets[];
 }
