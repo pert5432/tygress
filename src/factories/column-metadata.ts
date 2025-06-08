@@ -44,8 +44,6 @@ export abstract class ColumnMetadataFactory {
   public static fromPGColumn(
     pgColumn: PostgresColumnDefinition
   ): ColumnMetadata {
-    console.log(pgColumn);
-
     const e = new ColumnMetadata();
 
     e.name = pgColumn.column_name;
@@ -63,8 +61,6 @@ export abstract class ColumnMetadataFactory {
       undefined;
     e.scale = pgColumn.numeric_scale ?? undefined;
     e.maxLength = pgColumn.character_maximum_length ?? undefined;
-
-    console.log(e);
 
     return e;
   }
