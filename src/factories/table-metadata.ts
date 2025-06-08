@@ -1,4 +1,4 @@
-import { ColumnMetadata, RelationMetadata } from "../metadata";
+import { ColumnMetadata } from "../metadata";
 import { TableMetadata } from "../metadata/table-metadata";
 import { UniqueConstraintMetadata } from "../metadata/unique-constraint";
 import { AnEntity } from "../types";
@@ -8,9 +8,7 @@ export abstract class TableMetadataFactory {
   public static create(
     { tablename, klass, schemaname }: TableMetadataArgs,
     columns: ColumnMetadata[],
-    relations: RelationMetadata[],
-    uniqueConstraint: UniqueConstraintMetadata<AnEntity>,
-    fields: string[]
+    uniqueConstraint: UniqueConstraintMetadata<AnEntity>
   ): TableMetadata {
     const e = new TableMetadata();
 
@@ -28,43 +26,7 @@ export abstract class TableMetadataFactory {
       column.table = e;
     }
 
-    for (const relation of relations) {
-      if (relation.foreign === klass) {
-        // Ensure column referenced by relation exists
-        if (!e.columnsMap.get(relation.foreignKey)) {
-          throw new Error(
-            `No column found for entity ${e}, field name ${relation.foreignKey}`
-          );
-        }
-
-        e.relations.set(relation.foreignField, relation);
-      } else if (relation.primary === klass) {
-        // Ensure column referenced by relation exists
-        if (!e.columnsMap.get(relation.primaryKey)) {
-          throw new Error(
-            `No column found for entity ${e}, field name ${relation.primaryKey}`
-          );
-        }
-
-        e.relations.set(relation.primaryField, relation);
-      } else {
-        throw new Error(
-          `Tried to register relation that belongs to ${relation.primary} and ${relation.foreign} to ${klass}`
-        );
-      }
-    }
-
     e.primaryKey = uniqueConstraint;
-
-    // Figure out which fields are typed as arrays
-    const instance = new klass();
-    for (const field of fields) {
-      if (
-        Reflect.getMetadata("design:type", instance as any, field) === Array
-      ) {
-        e.arrayFields.add(field);
-      }
-    }
 
     return e;
   }
