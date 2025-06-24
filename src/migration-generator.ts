@@ -11,7 +11,8 @@ import { ColumnMetadata, METADATA_STORE, TableMetadata } from "./metadata";
 import { dataTypesEqual, pad, parsePgColumnDefault } from "./utils";
 import { PostgresColumnDefinition, PostgresForeignKey } from "./types/postgres";
 import { ColumnMetadataFactory } from "./factories";
-import { Relation } from "./enums";
+import { QueryLogLevel, Relation } from "./enums";
+import { Logger } from "./logger";
 
 export class MigrationGenerator {
   private upStatements: string[] = [];
@@ -19,6 +20,8 @@ export class MigrationGenerator {
 
   private fullName: string;
   private filePath: string;
+
+  private logger: Logger;
 
   constructor(
     private client: PostgresClient,
@@ -29,6 +32,8 @@ export class MigrationGenerator {
     const timestamp = new Date().getTime().toString().slice(0, -3);
     this.fullName = `${timestamp}${name}`;
     this.filePath = path.join(folder, `${this.fullName}.ts`);
+
+    this.logger = new Logger(QueryLogLevel.DDL);
   }
 
   async createBlank(): Promise<void> {
@@ -210,9 +215,11 @@ export class MigrationGenerator {
 
   private async entityExists(table: TableMetadata): Promise<boolean> {
     return !!(
-      await this.client.query(
-        "SELECT 1 FROM information_schema.tables WHERE table_schema = $1 AND table_name = $2",
-        [table.schemaname ?? "public", table.tablename]
+      await this.client.withConnection({ logger: this.logger }, (conn) =>
+        conn.query(
+          "SELECT 1 FROM information_schema.tables WHERE table_schema = $1 AND table_name = $2",
+          [table.schemaname ?? "public", table.tablename]
+        )
       )
     ).rows.length;
   }
@@ -221,9 +228,11 @@ export class MigrationGenerator {
     table: TableMetadata
   ): Promise<PostgresColumnDefinition[]> {
     return (
-      await this.client.query<PostgresColumnDefinition>(
-        "SELECT * FROM information_schema.columns WHERE table_schema = $1 AND table_name = $2",
-        [table.schemaname ?? "public", table.tablename]
+      await this.client.withConnection({ logger: this.logger }, (conn) =>
+        conn.query<PostgresColumnDefinition>(
+          "SELECT * FROM information_schema.columns WHERE table_schema = $1 AND table_name = $2",
+          [table.schemaname ?? "public", table.tablename]
+        )
       )
     ).rows;
   }
@@ -232,8 +241,9 @@ export class MigrationGenerator {
     table: TableMetadata
   ): Promise<PostgresForeignKey[]> {
     return (
-      await this.client.query<PostgresForeignKey>(
-        `
+      await this.client.withConnection({ logger: this.logger }, (conn) =>
+        conn.query<PostgresForeignKey>(
+          `
       WITH constraint_data AS (
         SELECT 
           UNNEST(conkey) AS foreign_column,
@@ -270,7 +280,8 @@ export class MigrationGenerator {
         AND con.primary_column = primary_col.attnum
 
       GROUP BY con.foreign_table_oid, con.primary_table_oid, con.on_update, con.on_delete, con.name`,
-        [table.schemaname ?? "public", table.tablename]
+          [table.schemaname ?? "public", table.tablename]
+        )
       )
     ).rows;
   }

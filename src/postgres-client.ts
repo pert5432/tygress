@@ -100,7 +100,7 @@ export class PostgresClient {
   ): Promise<PostgresConnection> {
     return new PostgresConnection(
       await this.pool.connect(),
-      this.logger,
+      settings?.logger ?? this.logger,
       this.connectionSettings(settings)
     ).init();
   }
@@ -246,7 +246,7 @@ export class PostgresClient {
   public async query<T extends { [key: string]: any } = any>(
     sql: string,
     params?: any[],
-    type: "QUERY" | "DML" = "QUERY"
+    type: "QUERY" | "DML" | "DDL" = "QUERY"
   ): Promise<QueryResult<T>> {
     return this.withConnection((conn) => conn.query(sql, params ?? [], type));
   }
@@ -260,6 +260,7 @@ export class PostgresClient {
     }
 
     await this.withConnection(
+      { logger: new Logger(QueryLogLevel.DDL) },
       async (conn) =>
         await new MigrationRunner(conn, this.migrationFolders!).run()
     );
@@ -274,6 +275,7 @@ export class PostgresClient {
     }
 
     await this.withConnection(
+      { logger: new Logger(QueryLogLevel.DDL) },
       async (conn) =>
         await new MigrationRunner(conn, this.migrationFolders!).rollback()
     );

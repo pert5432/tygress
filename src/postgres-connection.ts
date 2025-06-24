@@ -1,4 +1,4 @@
-import { PoolClient, QueryResult } from "pg";
+import { PoolClient, Query, QueryResult } from "pg";
 import { AnEntity, SelectArgs, Wheres } from "./types";
 import { Repository } from "./repository";
 import { InsertPayload, InsertOptions, InsertResult } from "./types/insert";
@@ -9,6 +9,7 @@ import {
   PostgresConnectionOptions,
 } from "./types/connection-settings";
 import { Logger } from "./logger";
+import { QueryLogLevel } from "./enums";
 
 export class PostgresConnection {
   /**
@@ -124,7 +125,7 @@ export class PostgresConnection {
   public async query<T extends { [key: string]: any } = any>(
     sql: string,
     params?: any[],
-    type: "QUERY" | "DML" = "QUERY"
+    type: "QUERY" | "DML" | "DDL" = "QUERY"
   ): Promise<QueryResult<T>> {
     this.ensureReadiness();
 
@@ -132,11 +133,7 @@ export class PostgresConnection {
       this.$sqlLog.push({ sql, params: params ?? [] });
     }
 
-    if (type === "DML") {
-      this.logger.logDML(sql, params);
-    } else {
-      this.logger.logQuery(sql, params);
-    }
+    this.logger.log(this.statementTypeToLogLevel(type), sql, params);
 
     try {
       return await this.$client.query(sql, params ?? []);
@@ -250,6 +247,19 @@ export class PostgresConnection {
           this.state
         } but it needs to be ${"READY"}`
       );
+    }
+  }
+
+  private statementTypeToLogLevel(
+    statementType: "QUERY" | "DML" | "DDL"
+  ): QueryLogLevel {
+    switch (statementType) {
+      case "QUERY":
+        return QueryLogLevel.ALL;
+      case "DML":
+        return QueryLogLevel.DML;
+      case "DDL":
+        return QueryLogLevel.DDL;
     }
   }
 }
