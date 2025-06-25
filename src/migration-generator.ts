@@ -123,10 +123,6 @@ export class MigrationGenerator {
       (r) => r.type === Relation.MANY_TO_ONE && r.foreign === table.klass
     );
 
-    if (!pgForeignKeys.length && relations.length) {
-      return;
-    }
-
     const upBuilder = new AlterTableSqlBuilder(table);
     const downBuilder = new AlterTableSqlBuilder(table);
 
