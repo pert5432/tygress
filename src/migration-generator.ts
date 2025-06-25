@@ -52,58 +52,9 @@ export class MigrationGenerator {
         this.downStatements.push(
           new DropTableSqlBuilder(table.tablename).sql()
         );
-
-        continue;
-      }
-
-      //
-      // Resolve possible differences in the table
-      //
-
-      const upBuilder = new AlterTableSqlBuilder(table);
-      const downBuilder = new AlterTableSqlBuilder(table);
-      const postgresColumns = await this.getTableColumns(table);
-
-      // Adding columns that are not in Postgres
-      for (const column of table.columns) {
-        const pgColumn = postgresColumns.find(
-          (pc) => pc.column_name === column.name
-        );
-
-        // Column does not exists in Postgres
-        if (!pgColumn) {
-          upBuilder.addColumn(column);
-
-          downBuilder.dropColumn(column.name);
-        } else {
-          this.handleColumnParameterDiff(
-            column,
-            pgColumn,
-            upBuilder,
-            downBuilder
-          );
-        }
-      }
-
-      // Dropping columns that are not in our entities
-      for (const postgresColumn of postgresColumns) {
-        const column = table.columns.find(
-          (c) => c.name === postgresColumn.column_name
-        );
-
-        // Column does not exists in our entity but exists in db
-        if (!column) {
-          upBuilder.dropColumn(postgresColumn.column_name);
-
-          downBuilder.addColumn(
-            ColumnMetadataFactory.fromPGColumn(postgresColumn)
-          );
-        }
-      }
-
-      if (upBuilder.hasChanges()) {
-        this.upStatements.push(upBuilder.sql());
-        this.downStatements.push(downBuilder.sql());
+      } else {
+        // Make sure table has the exact columns desired with the exact parameters if table already exists
+        await this.ensureTableColumns(table);
       }
     }
 
@@ -112,6 +63,7 @@ export class MigrationGenerator {
       await this.ensureForeignKeys(table);
     }
 
+    // Write the migration file
     this.writeMigration();
   }
 
@@ -165,7 +117,50 @@ export class MigrationGenerator {
     // The reason is to not interfere with tables not managed by Tygress, yet ;)
   }
 
-  private handleColumnParameterDiff(
+  private async ensureTableColumns(table: TableMetadata): Promise<void> {
+    const upBuilder = new AlterTableSqlBuilder(table);
+    const downBuilder = new AlterTableSqlBuilder(table);
+    const postgresColumns = await this.getTableColumns(table);
+
+    // Adding columns that are not in Postgres
+    for (const column of table.columns) {
+      const pgColumn = postgresColumns.find(
+        (pc) => pc.column_name === column.name
+      );
+
+      // Column does not exists in Postgres
+      if (!pgColumn) {
+        upBuilder.addColumn(column);
+
+        downBuilder.dropColumn(column.name);
+      } else {
+        this.ensureColumnParameters(column, pgColumn, upBuilder, downBuilder);
+      }
+    }
+
+    // Dropping columns that are not in our entities
+    for (const postgresColumn of postgresColumns) {
+      const column = table.columns.find(
+        (c) => c.name === postgresColumn.column_name
+      );
+
+      // Column does not exists in our entity but exists in db
+      if (!column) {
+        upBuilder.dropColumn(postgresColumn.column_name);
+
+        downBuilder.addColumn(
+          ColumnMetadataFactory.fromPGColumn(postgresColumn)
+        );
+      }
+    }
+
+    if (upBuilder.hasChanges()) {
+      this.upStatements.push(upBuilder.sql());
+      this.downStatements.push(downBuilder.sql());
+    }
+  }
+
+  private ensureColumnParameters(
     column: ColumnMetadata,
     pgColumn: PostgresColumnDefinition,
     upBuilder: AlterTableSqlBuilder,
