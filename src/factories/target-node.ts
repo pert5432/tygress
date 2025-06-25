@@ -1,9 +1,9 @@
 import { METADATA_STORE } from "../metadata";
-import { AnEntity, Entity } from "../types";
+import { AnEntity } from "../types";
 import { TargetNode } from "../types/query";
 
 export abstract class TargetNodeFactory {
-  public static create<T extends Entity<unknown>>(
+  public static create<T extends AnEntity>(
     alias: string,
     parentNode: TargetNode<AnEntity>,
     klass: T,

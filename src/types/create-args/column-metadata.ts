@@ -1,9 +1,9 @@
-import { Entity } from "../entity";
+import { AnEntity } from "../entity";
 import { DataType } from "../structure";
 
 export type ColumnMetadataArgs<T> = {
   // The class which the decorated field belongs to
-  klass: Entity<unknown>;
+  klass: AnEntity;
 
   name: string;
   fieldName: string;

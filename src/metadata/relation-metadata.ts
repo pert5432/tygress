@@ -1,5 +1,5 @@
 import { Relation } from "../enums";
-import { AnEntity, Entity } from "../types";
+import { AnEntity } from "../types";
 import { ReferentialAction } from "../types/structure";
 import { ColumnMetadata } from "./column-metadata";
 import { METADATA_STORE } from "./metadata-store";
@@ -32,7 +32,7 @@ export class RelationMetadata {
   onDelete: ReferentialAction;
   onUpdate: ReferentialAction;
 
-  public getOtherTable(table: Entity<unknown>): Entity<unknown> {
+  public getOtherTable(table: AnEntity): AnEntity {
     return this.primary === table ? this.foreign : this.primary;
   }
 }
