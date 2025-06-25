@@ -116,7 +116,9 @@ export class MigrationGenerator {
   //
 
   private async ensureForeignKeys(table: TableMetadata): Promise<void> {
-    const pgForeignKeys = await this.getTableForeignKeys(table);
+    const pgForeignKeys = (await this.entityExists(table))
+      ? await this.getTableForeignKeys(table)
+      : [];
     const relations = METADATA_STORE.relations.filter(
       (r) => r.type === Relation.MANY_TO_ONE && r.foreign === table.klass
     );
