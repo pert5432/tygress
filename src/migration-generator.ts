@@ -41,7 +41,10 @@ export class MigrationGenerator {
   }
 
   async generate(): Promise<void> {
-    for (const table of this.entities.map((e) => METADATA_STORE.getTable(e))) {
+    const tables = this.entities.map((e) => METADATA_STORE.getTable(e));
+
+    // Ensure table and columns
+    for (const table of tables) {
       // Create entire table if it doesn't exist
       if (!(await this.entityExists(table))) {
         this.upStatements.push(new CreateTableSqlBuilder(table).sql());
@@ -49,8 +52,6 @@ export class MigrationGenerator {
         this.downStatements.push(
           new DropTableSqlBuilder(table.tablename).sql()
         );
-
-        await this.ensureForeignKeys(table);
 
         continue;
       }
@@ -104,7 +105,10 @@ export class MigrationGenerator {
         this.upStatements.push(upBuilder.sql());
         this.downStatements.push(downBuilder.sql());
       }
+    }
 
+    // Ensure foreign keys
+    for (const table of tables) {
       await this.ensureForeignKeys(table);
     }
 
