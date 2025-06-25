@@ -31,6 +31,7 @@ class MetadataStore {
   public fields = new Map<AnEntity, string[]>();
 
   private relationArgs: RelationMetadataArgs[] = [];
+  private tableArgs = new Map<AnEntity, TableMetadataArgs>();
 
   //
   // Getters
@@ -88,9 +89,24 @@ class MetadataStore {
   //
   // Modifiers
   //
-  public addTable(args: TableMetadataArgs): void {
-    if (this.tables.get(args.klass)) {
-      throw new Error(`Metadata for table ${args.klass} already registered`);
+  public addTableArgs(args: TableMetadataArgs): void {
+    if (this.tableArgs.get(args.klass)) {
+      throw new Error(
+        `Arguments already registered for class ${args.klass.name}`
+      );
+    }
+
+    this.tableArgs.set(args.klass, args);
+  }
+
+  public addTable(entity: AnEntity): void {
+    if (this.tables.get(entity)) {
+      throw new Error(`Metadata for table ${entity.name} already registered`);
+    }
+
+    const args = this.tableArgs.get(entity);
+    if (!args) {
+      throw new Error(`No args found for klass ${entity.name}`);
     }
 
     const uniqueConstraint = this.uniqueConstraints.get(args.klass);
@@ -149,7 +165,11 @@ class MetadataStore {
     this.relationArgs.push(args);
   }
 
-  public finalize(_entities: AnEntity[]): void {
+  public finalize(entities: AnEntity[]): void {
+    for (const entity of entities) {
+      this.addTable(entity);
+    }
+
     this.createRelations();
 
     this.registerRelationsToEntities();

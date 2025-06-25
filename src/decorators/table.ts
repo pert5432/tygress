@@ -3,6 +3,6 @@ import { AnEntity } from "../types/entity";
 
 export const Table = (tablename: string): ClassDecorator => {
   return function (target: Object) {
-    METADATA_STORE.addTable({ tablename, klass: target as AnEntity });
+    METADATA_STORE.addTableArgs({ tablename, klass: target as AnEntity });
   };
 };
