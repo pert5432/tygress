@@ -299,6 +299,7 @@ export class MigrationGenerator {
       .map((s) => executeStatement(s))
       .join("\n\n")}\n};\n\n`;
     contents += `export const down = async (conn: PostgresConnection): Promise<void> => {\n${this.downStatements
+      .toReversed()
       .map((s) => executeStatement(s))
       .join("\n\n")}\n};\n`;
 
