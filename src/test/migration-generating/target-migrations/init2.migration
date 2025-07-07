@@ -1,0 +1,42 @@
+import { PostgresConnection } from "tygress";
+
+export const name: string = "1750874525init";
+
+export const up = async (conn: PostgresConnection): Promise<void> => {
+  await conn.query(`
+      CREATE TABLE members (
+        id UUID DEFAULT gen_random_uuid() NOT NULL,
+        username TEXT DEFAULT 'user'::TEXT,
+        group_id BIGINT NOT NULL,
+        CONSTRAINT "members_pk" PRIMARY KEY ("id")
+      );`
+    );
+
+  await conn.query(`
+      CREATE TABLE groups (
+        id BIGINT NOT NULL,
+        name TEXT NOT NULL,
+        CONSTRAINT "groups_pk" PRIMARY KEY ("id")
+      );`
+    );
+
+  await conn.query(`
+      ALTER TABLE members
+        ADD CONSTRAINT "members_group_fk" FOREIGN KEY ("group_id") REFERENCES "groups" ("id") ON DELETE CASCADE ON UPDATE RESTRICT;`
+    );
+};
+
+export const down = async (conn: PostgresConnection): Promise<void> => {
+  await conn.query(`
+      ALTER TABLE members
+        DROP CONSTRAINT "members_group_fk";`
+    );
+
+  await conn.query(`
+      DROP TABLE groups`
+    );
+
+  await conn.query(`
+      DROP TABLE members`
+    );
+};
