@@ -186,7 +186,7 @@ export class MigrationGenerator {
       // But not in PG
       if (!pgColumn.column_default) {
         upBuilder.setDefault(column);
-        upBuilder.dropDefault(column);
+        downBuilder.dropDefault(column);
       } else {
         const pgDefault = parsePgColumnDefault(pgColumn.column_default);
 
@@ -198,7 +198,7 @@ export class MigrationGenerator {
           )
         ) {
           upBuilder.setDefault(column);
-          upBuilder.setDefault(ColumnMetadataFactory.fromPGColumn(pgColumn));
+          downBuilder.setDefault(ColumnMetadataFactory.fromPGColumn(pgColumn));
         }
       }
       // Default in PG but not in entity
