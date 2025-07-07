@@ -4,6 +4,7 @@ import {
   RelationMetadata,
   TableMetadata,
 } from "../../metadata";
+import { ReferentialAction } from "../../types/structure";
 import { pad } from "../../utils";
 import { ColumnStructureSqlBuilder } from "./column";
 import { StructureSqlBuilderUtils } from "./utils";
@@ -64,7 +65,11 @@ export class AlterTableSqlBuilder {
     this.do(`ALTER COLUMN ${column.name} DROP NOT NULL`);
   }
 
-  addFK(relation: RelationMetadata, name: string): void {
+  addFK(
+    relation: RelationMetadata,
+    name: string,
+    actions?: { onDelete?: ReferentialAction; onUpdate?: ReferentialAction }
+  ): void {
     if (this.table.klass !== relation.foreign) {
       throw new Error(
         `You should add an FK for this relation on the foreign table of the relation`
@@ -75,7 +80,13 @@ export class AlterTableSqlBuilder {
 
     // ADD CONSTRAINT "campaign_email_customers_campaign_email_id_fkey" FOREIGN KEY ("campaign_email_id") REFERENCES "campaign_emails"("id") ON DELETE NO ACTION ON UPDATE NO ACTION
     this.do(
-      `ADD CONSTRAINT "${name}" FOREIGN KEY ("${relation.foreignColumn.name}") REFERENCES "${primaryMeta.tablename}" ("${relation.primaryColumn.name}") ON DELETE ${relation.onDelete} ON UPDATE ${relation.onUpdate}`
+      `ADD CONSTRAINT "${name}" FOREIGN KEY ("${
+        relation.foreignColumn.name
+      }") REFERENCES "${primaryMeta.tablename}" ("${
+        relation.primaryColumn.name
+      }") ON DELETE ${actions?.onDelete ?? relation.onDelete} ON UPDATE ${
+        actions?.onUpdate ?? relation.onUpdate
+      }`
     );
   }
 

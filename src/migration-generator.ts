@@ -8,7 +8,13 @@ import {
   DropTableSqlBuilder,
 } from "./sql-builders/structure";
 import { ColumnMetadata, METADATA_STORE, TableMetadata } from "./metadata";
-import { dataTypesEqual, pad, parsePgColumnDefault } from "./utils";
+import {
+  dataTypesEqual,
+  FKActionConverter,
+  fkActionsEqual,
+  pad,
+  parsePgColumnDefault,
+} from "./utils";
 import { PostgresColumnDefinition, PostgresForeignKey } from "./types/postgres";
 import { ColumnMetadataFactory } from "./factories";
 import { QueryLogLevel, Relation } from "./enums";
@@ -85,24 +91,44 @@ export class MigrationGenerator {
     // Create foreign keys that are missing in pg
     for (const relation of relations) {
       const primaryMeta = METADATA_STORE.getTable(relation.primary);
+      const fkName = `${table.tablename}_${relation.foreignField}_fk`;
 
       const pgForeignKey = pgForeignKeys.find(
         (e) =>
+          // Skip composite foreign keys (for now ;)
           e.foreign_columns.length === 1 &&
           e.primary_columns.length === 1 &&
+          // Compare table and column names
           e.foreign_table === table.tablename &&
           e.primary_table === primaryMeta.tablename &&
           e.foreign_columns[0] === relation.foreignColumn.name &&
           e.primary_columns[0] === relation.primaryColumn.name
       );
 
-      // FK exists in pg, we continue
+      // FK exists in pg
       if (pgForeignKey) {
+        // FK actions in Tygress match pg, continue
+        if (
+          fkActionsEqual(relation.onUpdate, pgForeignKey.on_update) &&
+          fkActionsEqual(relation.onDelete, pgForeignKey.on_delete)
+        ) {
+          continue;
+        }
+
+        // FK actions don't match, recreate FK with correct actions
+        upBuilder.dropFK(pgForeignKey.name);
+        upBuilder.addFK(relation, fkName);
+
+        downBuilder.dropFK(fkName);
+        downBuilder.addFK(relation, pgForeignKey.name, {
+          onUpdate: FKActionConverter.toTygress(pgForeignKey.on_update),
+          onDelete: FKActionConverter.toTygress(pgForeignKey.on_delete),
+        });
+
         continue;
       }
 
-      const fkName = `${table.tablename}_${relation.foreignField}_fk`;
-
+      // Create FK since it doesn't exist
       upBuilder.addFK(relation, fkName);
       downBuilder.dropFK(fkName);
     }
@@ -259,8 +285,8 @@ export class MigrationGenerator {
       )
 
       SELECT 
-        ARRAY_AGG(foreign_col.attname) AS foreign_columns,
-        ARRAY_AGG(primary_col.attname) AS primary_columns,
+        ARRAY_AGG(foreign_col.attname)::TEXT[] AS foreign_columns,
+        ARRAY_AGG(primary_col.attname)::TEXT[] AS primary_columns,
         con.foreign_table_oid::regclass AS foreign_table,
         con.primary_table_oid::regclass AS primary_table,
         con.on_update,
