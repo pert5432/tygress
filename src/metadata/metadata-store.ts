@@ -39,7 +39,7 @@ class MetadataStore {
   public getTable<T extends AnEntity>(table: T): TableMetadata {
     const res = this.tables.get(table as AnEntity);
     if (!res) {
-      throw new Error(`No metadata found for ${table}`);
+      throw new Error(`No metadata found for ${table.name}`);
     }
 
     return res;
@@ -101,7 +101,7 @@ class MetadataStore {
 
   public addTable(entity: AnEntity): void {
     if (this.tables.get(entity)) {
-      throw new Error(`Metadata for table ${entity.name} already registered`);
+      return;
     }
 
     const args = this.tableArgs.get(entity);
@@ -222,6 +222,20 @@ class MetadataStore {
           inverseRelation.foreignKey = relation.foreignKey;
           inverseRelation.primaryKey = relation.primaryKey;
         }
+      }
+
+      // Skip this relation if its already registered
+      if (
+        this.relations.find(
+          (r) =>
+            relation.type === r.type &&
+            relation.foreign === r.foreign &&
+            relation.primary === r.primary &&
+            relation.foreignField === r.foreignField &&
+            relation.primaryField === r.primaryField
+        )
+      ) {
+        continue;
       }
 
       // TODO: handle 1-1 relations by finding inverse as above
