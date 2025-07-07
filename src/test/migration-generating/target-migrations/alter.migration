@@ -1,0 +1,45 @@
+import { PostgresConnection } from "tygress";
+
+export const name: string = "1751919867alter";
+
+export const up = async (conn: PostgresConnection): Promise<void> => {
+  await conn.query(`
+      ALTER TABLE members
+        ALTER COLUMN username DROP NOT NULL,
+        ALTER COLUMN username SET DEFAULT 'user'::TEXT,
+        ALTER COLUMN group_id SET DATA TYPE BIGINT;`
+    );
+
+  await conn.query(`
+      ALTER TABLE groups
+        ALTER COLUMN id SET DATA TYPE BIGINT,
+        ALTER COLUMN name SET DATA TYPE TEXT;`
+    );
+
+  await conn.query(`
+      ALTER TABLE members
+        DROP CONSTRAINT "members_group_fk",
+        ADD CONSTRAINT "members_group_fk" FOREIGN KEY ("group_id") REFERENCES "groups" ("id") ON DELETE CASCADE ON UPDATE RESTRICT;`
+    );
+};
+
+export const down = async (conn: PostgresConnection): Promise<void> => {
+  await conn.query(`
+      ALTER TABLE members
+        DROP CONSTRAINT "members_group_fk",
+        ADD CONSTRAINT "members_group_fk" FOREIGN KEY ("group_id") REFERENCES "groups" ("id") ON DELETE SET NULL ON UPDATE CASCADE;`
+    );
+
+  await conn.query(`
+      ALTER TABLE groups
+        ALTER COLUMN id SET DATA TYPE INTEGER,
+        ALTER COLUMN name SET DATA TYPE CHARACTER VARYING (256);`
+    );
+
+  await conn.query(`
+      ALTER TABLE members
+        ALTER COLUMN username SET NOT NULL,
+        ALTER COLUMN username DROP DEFAULT,
+        ALTER COLUMN group_id SET DATA TYPE INTEGER;`
+    );
+};

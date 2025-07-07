@@ -1,20 +1,14 @@
-import * as fs from "fs";
 import { beforeAll, describe, expect, test } from "vitest";
 import { getClient } from "./client";
 import { countMigrationFiles } from "./count-migration-files";
-import path from "path";
 import { validateLatestMigration } from "./validate-latest-migration";
 import { Members, Groups, Groups2, Members2 } from "./entities/";
+import { wipeMigrations } from "./wipe-migrations";
 
 describe("migration generation", async () => {
   // Recreate migrations folder after tests finish
   beforeAll(async () => {
-    fs.rmSync(path.join(__dirname, "migrations"), {
-      recursive: true,
-      force: true,
-    });
-
-    fs.mkdirSync(path.join(__dirname, "migrations"));
+    wipeMigrations();
 
     // Drop tables used for migration tests
     await getClient([Members, Groups, Members2, Groups2]).query(
@@ -37,6 +31,36 @@ describe("migration generation", async () => {
       expect(countMigrationFiles()).toEqual(2);
 
       validateLatestMigration("init2.migration");
+    });
+  });
+
+  describe("generates alter table statements", async () => {
+    beforeAll(async () => {
+      wipeMigrations();
+
+      const DB = getClient([Members, Groups]);
+      await DB.generateMigration("init");
+      await DB.runMigrations();
+
+      // Waiting 1s so timestamp on next migration is greater than this one xd
+      await new Promise((resolve) => setTimeout(resolve, 1_000));
+    });
+
+    test("alter", async () => {
+      const DB = getClient([Members2, Groups2]);
+      await DB.generateMigration("alter");
+
+      expect(countMigrationFiles()).toEqual(2);
+
+      validateLatestMigration("alter.migration");
+
+      await DB.runMigrations();
+
+      await DB.generateMigration("alter2");
+
+      expect(countMigrationFiles()).toEqual(3);
+
+      validateLatestMigration("empty.migration");
     });
   });
 });
