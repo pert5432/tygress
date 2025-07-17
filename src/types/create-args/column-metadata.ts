@@ -1,11 +1,29 @@
-import { Entity } from "../entity";
+import { AnEntity } from "../entity";
+import { DataType } from "../structure";
 
-export type ColumnMetadataArgs = {
+export type ColumnMetadataArgs<T> = {
   // The class which the decorated field belongs to
-  klass: Entity<unknown>;
+  klass: AnEntity;
 
   name: string;
   fieldName: string;
 
   select?: boolean;
+
+  //
+  // STRUCTURE
+  //
+  dataType: DataType;
+
+  nullable: boolean;
+
+  default?: (() => string) | T;
+
+  primaryKey?: boolean;
+
+  precision?: number;
+
+  scale?: number;
+
+  maxLength?: number;
 };

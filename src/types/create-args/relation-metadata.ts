@@ -1,5 +1,6 @@
 import { Relation } from "../../enums/";
 import { AnEntity } from "../entity";
+import { ReferentialAction } from "../structure";
 
 export type RelationMetadataArgs = {
   type: Relation;
@@ -11,4 +12,7 @@ export type RelationMetadataArgs = {
   primary: () => AnEntity;
   primaryField: string;
   primaryKey?: string;
+
+  onUpdate?: ReferentialAction;
+  onDelete?: ReferentialAction;
 };

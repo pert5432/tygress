@@ -1,10 +1,10 @@
-import { Entity } from "./entity";
+import { AnEntity } from "./entity";
 import { Joins } from "./join-args";
 import { OrderArgs } from "./order-args";
 import { SelectTargetArgs } from "./select-target-args";
 import { Wheres } from "./where-args";
 
-export type SelectArgs<E extends InstanceType<Entity<unknown>>> = {
+export type SelectArgs<E extends InstanceType<AnEntity>> = {
   select?: SelectTargetArgs<E>;
 
   joins?: Joins<E>;

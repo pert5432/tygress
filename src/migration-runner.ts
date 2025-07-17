@@ -163,13 +163,13 @@ export class MigrationRunner {
       }
     }
 
-    this.migrations.sort((a, b) => (a.name > b.name ? -1 : 1));
+    this.migrations.sort((a, b) => (a.name > b.name ? 1 : -1));
   }
 
   private async loadExecutedMigrations(): Promise<void> {
     this.executedMigrations = (
       await this.conn.query<{ name: string; executed_at: Date }>(
-        `SELECT name, executed_at FROM ${this.migrationLogTablename} ORDER BY executed_at DESC`
+        `SELECT name, executed_at FROM ${this.migrationLogTablename} ORDER BY executed_at ASC`
       )
     ).rows;
 

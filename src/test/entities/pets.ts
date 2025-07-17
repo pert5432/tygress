@@ -12,19 +12,19 @@ import { Users } from "./users";
 
 @Table("pets")
 export class Pets extends TygressEntity {
-  @PrimaryKey("id")
+  @PrimaryKey({ name: "id", type: "UUID" })
   id: string;
 
-  @Column("user_id")
+  @Column({ name: "user_id", type: "UUID" })
   userId: string;
 
-  @Column("name")
+  @Column({ name: "name", type: "TEXT" })
   name: string;
 
-  @Column("meta")
+  @Column({ name: "meta", type: "JSONB" })
   meta: PetMeta;
 
-  @Column("image")
+  @Column({ name: "image", type: "BYTEA" })
   image: Buffer;
 
   // RELATIONS

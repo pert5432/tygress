@@ -31,6 +31,7 @@ class MetadataStore {
   public fields = new Map<AnEntity, string[]>();
 
   private relationArgs: RelationMetadataArgs[] = [];
+  private tableArgs = new Map<AnEntity, TableMetadataArgs>();
 
   //
   // Getters
@@ -38,7 +39,7 @@ class MetadataStore {
   public getTable<T extends AnEntity>(table: T): TableMetadata {
     const res = this.tables.get(table as AnEntity);
     if (!res) {
-      throw new Error(`No metadata found for ${table}`);
+      throw new Error(`No metadata found for ${table.name}`);
     }
 
     return res;
@@ -88,9 +89,24 @@ class MetadataStore {
   //
   // Modifiers
   //
-  public addTable(args: TableMetadataArgs): void {
-    if (this.tables.get(args.klass)) {
-      throw new Error(`Metadata for table ${args.klass} already registered`);
+  public addTableArgs(args: TableMetadataArgs): void {
+    if (this.tableArgs.get(args.klass)) {
+      throw new Error(
+        `Arguments already registered for class ${args.klass.name}`
+      );
+    }
+
+    this.tableArgs.set(args.klass, args);
+  }
+
+  public addTable(entity: AnEntity): void {
+    if (this.tables.get(entity)) {
+      return;
+    }
+
+    const args = this.tableArgs.get(entity);
+    if (!args) {
+      throw new Error(`No args found for klass ${entity.name}`);
     }
 
     const uniqueConstraint = this.uniqueConstraints.get(args.klass);
@@ -112,7 +128,7 @@ class MetadataStore {
     this.tables.set(metadata.klass, metadata);
   }
 
-  public addColumn(args: ColumnMetadataArgs): void {
+  public addColumn<T>(args: ColumnMetadataArgs<T>): void {
     const metadata = ColumnMetadataFactory.create(args);
 
     const newColumns = this.columns.get(args.klass) ?? [];
@@ -149,7 +165,11 @@ class MetadataStore {
     this.relationArgs.push(args);
   }
 
-  public finalize(_entities: AnEntity[]): void {
+  public finalize(entities: AnEntity[]): void {
+    for (const entity of entities) {
+      this.addTable(entity);
+    }
+
     this.createRelations();
 
     this.registerRelationsToEntities();
@@ -203,6 +223,24 @@ class MetadataStore {
           inverseRelation.primaryKey = relation.primaryKey;
         }
       }
+
+      // Skip this relation if its already registered
+      if (
+        this.relations.find(
+          (r) =>
+            relation.type === r.type &&
+            relation.foreign === r.foreign &&
+            relation.primary === r.primary &&
+            relation.foreignField === r.foreignField &&
+            relation.primaryField === r.primaryField
+        )
+      ) {
+        continue;
+      }
+
+      // TODO: handle 1-1 relations by finding inverse as above
+      //   on adding new relation verify one side specifies inverse key
+      //     (if inverse relation found ensure either new or old specifies inverse key, not both)
 
       // Finally insert new relation into the array
       this.relations.push(relation);

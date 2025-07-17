@@ -1,0 +1,11 @@
+import { PostgresConnection } from "tygress";
+
+export const name: string = "1751919867empty";
+
+export const up = async (conn: PostgresConnection): Promise<void> => {
+
+};
+
+export const down = async (conn: PostgresConnection): Promise<void> => {
+
+};

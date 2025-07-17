@@ -1,9 +1,13 @@
 import { PostgresConfigSettings } from ".";
+import { Logger } from "../../logger";
 
 export type PostgresConnectionOptions = {
   // If set to true the connection will collect all SQL ran in an array
   // This is mostly usefull for debugging/testing, you most likely do not want to have this on
   collectSql?: boolean;
+
+  // Optionally supply your own logger instance
+  logger?: Logger;
 
   /**
     Postgres config settings which will be SET when the connection is opened

@@ -1,5 +1,6 @@
 import { Relation } from "../enums";
-import { AnEntity, Entity, RelationSide } from "../types";
+import { AnEntity } from "../types";
+import { ReferentialAction } from "../types/structure";
 import { ColumnMetadata } from "./column-metadata";
 import { METADATA_STORE } from "./metadata-store";
 
@@ -28,21 +29,10 @@ export class RelationMetadata {
     return METADATA_STORE.getColumn(this.foreign, this.foreignKey);
   }
 
-  public getOtherTable(table: Entity<unknown>): Entity<unknown> {
-    return this.primary === table ? this.foreign : this.primary;
-  }
+  onDelete: ReferentialAction;
+  onUpdate: ReferentialAction;
 
-  public getOtherSide(table: Entity<unknown>): RelationSide {
-    return this.primary === table
-      ? {
-          field: this.foreignField,
-          key: this.foreignKey,
-          klass: this.foreign,
-        }
-      : {
-          field: this.primaryField,
-          key: this.primaryKey,
-          klass: this.primary,
-        };
+  public getOtherTable(table: AnEntity): AnEntity {
+    return this.primary === table ? this.foreign : this.primary;
   }
 }

@@ -27,6 +27,8 @@ export class PostgresClient {
 
   private migrationFolders?: string[];
 
+  private entities: AnEntity[];
+
   constructor({
     databaseUrl,
     maxConnectionPoolSize,
@@ -49,6 +51,7 @@ export class PostgresClient {
     this.logger = new Logger(queryLogLevel ?? QueryLogLevel.ALL);
 
     this.migrationFolders = migrationFolders;
+    this.entities = entities;
   }
 
   /**
@@ -97,7 +100,7 @@ export class PostgresClient {
   ): Promise<PostgresConnection> {
     return new PostgresConnection(
       await this.pool.connect(),
-      this.logger,
+      settings?.logger ?? this.logger,
       this.connectionSettings(settings)
     ).init();
   }
@@ -243,7 +246,7 @@ export class PostgresClient {
   public async query<T extends { [key: string]: any } = any>(
     sql: string,
     params?: any[],
-    type: "QUERY" | "DML" = "QUERY"
+    type: "QUERY" | "DML" | "DDL" = "QUERY"
   ): Promise<QueryResult<T>> {
     return this.withConnection((conn) => conn.query(sql, params ?? [], type));
   }
@@ -257,6 +260,7 @@ export class PostgresClient {
     }
 
     await this.withConnection(
+      { logger: new Logger(QueryLogLevel.DDL) },
       async (conn) =>
         await new MigrationRunner(conn, this.migrationFolders!).run()
     );
@@ -271,6 +275,7 @@ export class PostgresClient {
     }
 
     await this.withConnection(
+      { logger: new Logger(QueryLogLevel.DDL) },
       async (conn) =>
         await new MigrationRunner(conn, this.migrationFolders!).rollback()
     );
@@ -280,15 +285,24 @@ export class PostgresClient {
    * Creates a blank migration file in the first migrations folder
    */
   public async createBlankMigration(name: string): Promise<void> {
-    const folderPath = (this.migrationFolders ?? [])[0];
+    await new MigrationGenerator(
+      this,
+      this.entities,
+      name,
+      this.mainMigrationsFolder()
+    ).createBlank();
+  }
 
-    if (!folderPath) {
-      throw new Error(
-        `Can't generate a migration as no migration folders are specified`
-      );
-    }
-
-    await new MigrationGenerator().createBlank(name, folderPath);
+  /*
+   * Generates a migration resolving the different between current database schema and Tygress entities
+   */
+  public async generateMigration(name: string): Promise<void> {
+    await new MigrationGenerator(
+      this,
+      this.entities,
+      name,
+      this.mainMigrationsFolder()
+    ).generate();
   }
 
   /**
@@ -315,5 +329,17 @@ export class PostgresClient {
         options.postgresConfig ??
         this.defaultConnectionSettings?.postgresConfig,
     };
+  }
+
+  private mainMigrationsFolder(): string {
+    const folderPath = (this.migrationFolders ?? [])[0];
+
+    if (!folderPath) {
+      throw new Error(
+        `Can't generate a migration as no migration folders are specified`
+      );
+    }
+
+    return folderPath;
   }
 }

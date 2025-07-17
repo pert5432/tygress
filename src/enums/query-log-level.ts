@@ -3,7 +3,9 @@ export enum QueryLogLevel {
 
   DML = 8,
 
-  ERRORS = 16,
+  DDL = 16,
+
+  ERRORS = 32,
 
   NOTHING = 128,
 }

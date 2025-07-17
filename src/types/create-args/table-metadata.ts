@@ -1,8 +1,8 @@
-import { Entity } from "../entity";
+import { AnEntity } from "../entity";
 
 export type TableMetadataArgs = {
   tablename: string;
   schemaname?: string;
 
-  klass: Entity<unknown>;
+  klass: AnEntity;
 };

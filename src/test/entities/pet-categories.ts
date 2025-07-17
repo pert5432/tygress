@@ -3,10 +3,10 @@ import { PetCategoriesPet } from "./pet-categories-pet";
 
 @Table("pet_categories")
 export class PetCategories extends TygressEntity {
-  @PrimaryKey("id")
+  @PrimaryKey({ name: "id", type: "UUID" })
   id: string;
 
-  @Column("name")
+  @Column({ name: "name", type: "TEXT" })
   name: string;
 
   @OneToMany(() => PetCategoriesPet, "category")

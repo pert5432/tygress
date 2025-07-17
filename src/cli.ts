@@ -30,7 +30,7 @@ abstract class CLI {
       console.log(`
         CLI usage is 'tygress [command] --options'
         
-        command is one of: migration:blank, migration:run, migration:rollback
+        command is one of: migration:blank, migration:generate, migration:run, migration:rollback
         `);
 
       return;
@@ -45,7 +45,8 @@ abstract class CLI {
       case "migration:rollback":
         await client.rollbackLastMigration();
         break;
-      case "migration:blank": {
+      case "migration:blank":
+      case "migration:generate": {
         const name = (args.values.name as string) ?? args.positionals[1];
 
         if (!name) {
@@ -54,7 +55,14 @@ abstract class CLI {
           );
         }
 
-        await client.createBlankMigration(name);
+        switch (command) {
+          case "migration:blank":
+            await client.createBlankMigration(name);
+            break;
+          case "migration:generate":
+            await client.generateMigration(name);
+            break;
+        }
         break;
       }
 

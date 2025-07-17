@@ -1,12 +1,17 @@
 import { METADATA_STORE } from "../metadata/metadata-store";
-import { Entity } from "../types/entity";
+import { ColumnDecoratorArgs } from "../types/decorators";
+import { AnEntity } from "../types/entity";
 
-export const Column = (name: string) => {
-  return function (target: Object, propertyName: string) {
+export const Column = <K extends Object, F extends keyof K>(
+  args: ColumnDecoratorArgs<K[F]>
+) => {
+  return function (target: K, propertyName: F) {
     METADATA_STORE.addColumn({
-      name,
-      fieldName: propertyName,
-      klass: target.constructor as Entity<unknown>,
+      ...args,
+      fieldName: propertyName.toString(),
+      klass: target.constructor as AnEntity,
+      dataType: args.type,
+      nullable: args.nullable ?? false,
     });
   };
 };

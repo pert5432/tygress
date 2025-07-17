@@ -4,13 +4,13 @@ import { Pets } from "./pets";
 
 @Table("pet_categories_pet")
 export class PetCategoriesPet extends TygressEntity {
-  @PrimaryKey("id")
+  @PrimaryKey({ name: "id", type: "UUID" })
   id: string;
 
-  @Column("pet_id")
+  @Column({ name: "pet_id", type: "TEXT" })
   petId: string;
 
-  @Column("pet_category_id")
+  @Column({ name: "pet_category_id", type: "TEXT" })
   petCategoryId: string;
 
   @ManyToOne(() => Pets, "categories", "petId")
