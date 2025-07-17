@@ -62,13 +62,12 @@ And from there you can run queries based on the examples below :)
 ## Upcoming features (ordered by priority) 🚧
 
 - Migration support
-  - Generating migrations
   - Index management
   - Table config overrides (for ex. vacuum settings)
-- Support managing views and materialized views
+  - Managing views and materialized views
 - Inserts/Updates/Deletes using query builder
   - To support `INSERT INTO a SELECT ...`
-  - Or `DELETE FROM a WHERE id IN(SELECT ...)`
+  - Or `DELETE FROM a WHERE id IN(SELECT ...)` etc...
 - Type hinting for popular extensions, for ex. PostGIS
 
 ## Feedback 🗣️
@@ -82,31 +81,31 @@ You need to define your tables as classes and decorate them with Tygress decorat
 ```typescript
 @Table("users")
 export class Users {
-  @PrimaryKey("id")
+  @PrimaryKey({ name: "id", type: "UUID" })
   id: string;
 
-  @Column("first_name")
+  @Column({ name: "first_name", type: "TEXT" })
   firstName: string;
 
-  @Column("last_name")
+  @Column({ name: "last_name", type: "TEXT" })
   lastName: string;
 
-  @OneToMany(Pets, "user")
+  @OneToMany(() => Pets, "user")
   pets: Pets[];
 }
 
 @Table("pets")
 export class Pets {
-  @PrimaryKey("id")
+  @PrimaryKey({ name: "id", type: "UUID" })
   id: string;
 
-  @Column("user_id")
+  @Column({ name: "user_id", type: "UUID" })
   userId: string;
 
-  @Column("name")
+  @Column({ name: "name", type: "TEXT" })
   name: string;
 
-  @ManyToOne(Users, "pets", "userId")
+  @ManyToOne(() => Users, "pets", "userId")
   user: Users;
 }
 ```
@@ -208,6 +207,7 @@ export default new PostgresClient({
 });
 ```
 
+`tygress migration:generate Name` to generate a migration that will make your DB schema match Tygress entities \
 `tygress migration:blank Name` to create an empty migration \
 `tygress migration:run` to run all pending migrations \
 `tygress migration:rollback` to rollback the last executed migration
@@ -218,6 +218,7 @@ You can either put the `PostgresClient` you want to use for migrations in `tygre
 
 You can use functions on the `PostgresClient` to do everything you can do with the CLI.
 
+`await DB.generateMigration(name)` to generate a migration that will make your DB schema match Tygress entities \
 `await DB.createBlankMigration("Name")` to create an empty migration \
 `await DB.runMigrations()` to run all pending migrations \
 `await DB.rollbackLastMigration()` to rollback the last executed migration
