@@ -1,4 +1,4 @@
-import { PoolClient, Query, QueryResult } from "pg";
+import { PoolClient, QueryResult } from "pg";
 import { AnEntity, SelectArgs, Wheres } from "./types";
 import { Repository } from "./repository";
 import { InsertPayload, InsertOptions, InsertResult } from "./types/insert";
@@ -7,7 +7,8 @@ import { DeleteOptions, DeleteResult } from "./types/delete";
 import {
   PostgresConfigSettings,
   PostgresConnectionOptions,
-} from "./types/connection-settings";
+  ConnectionStatus,
+} from "./types/connection";
 import { Logger } from "./logger";
 import { QueryLogLevel } from "./enums";
 
@@ -24,8 +25,7 @@ export class PostgresConnection {
   */
   public $client: PoolClient;
 
-  private state: "CONNECTED" | "INITIALIZING" | "READY" | "RELEASED" =
-    "CONNECTED";
+  private status: ConnectionStatus = "CONNECTED";
   private inTransaction: boolean = false;
 
   private collectSql: boolean;
@@ -42,18 +42,22 @@ export class PostgresConnection {
     this.postgresSettings = options?.postgresConfig ?? {};
   }
 
-  // Sets the Postgres config values this connection has been created with
+  /**
+   *  Sets the Postgres config values this connection has been created with
+   */
   public async init(): Promise<this> {
-    this.state = "INITIALIZING";
+    this.status = "INITIALIZING";
 
     await this.setConfig(this.postgresSettings);
 
-    this.state = "READY";
+    this.status = "READY";
 
     return this;
   }
 
-  // Runs a SELECT query, returning entitites as a result
+  /**
+   *  Runs a SELECT query, returning entitites as a result
+   */
   public async select<T extends AnEntity>(
     entity: T,
     args: SelectArgs<InstanceType<T>>
@@ -194,9 +198,9 @@ export class PostgresConnection {
   public async setConfig(
     settings: Partial<PostgresConfigSettings>
   ): Promise<void> {
-    if (!["READY", "CONNECTED", "INITIALIZING"].includes(this.state)) {
+    if (!["READY", "CONNECTED", "INITIALIZING"].includes(this.status)) {
       throw new Error(
-        `Can't set config of this connection because its state is ${this.state}`
+        `Can't set config of this connection because its state is ${this.status}`
       );
     }
 
@@ -210,15 +214,7 @@ export class PostgresConnection {
     You won't be able to run any queries on this connection afterwards
   */
   public release(): void {
-    if (this.inTransaction) {
-      throw new Error(
-        `Can't release a connection that has an open transaction`
-      );
-    }
-
-    this.state = "RELEASED";
-
-    this.$client.release();
+    this._release(false);
   }
 
   /**
@@ -226,25 +222,41 @@ export class PostgresConnection {
     You won't be able to run any queries on this connection afterwards
   */
   public close(): void {
-    if (this.state === "RELEASED") {
-      throw new Error(
-        `Can't close connection as its already released back to the pool`
-      );
-    }
-
-    this.state = "RELEASED";
-
-    this.$client.release(true);
+    this._release(true);
   }
 
   //
   // PRIVATE
   //
+  private _release(terminate: boolean): void {
+    if (this.status === "RELEASED") {
+      this.logger.info(
+        `Tried to ${
+          terminate ? `close` : "release"
+        } an already released connection.`
+      );
+
+      return;
+    }
+
+    if (this.inTransaction) {
+      this.logger.warn(
+        `Tried to release a connection with an active transaction. Closing corresponding Postgres connection.`
+      );
+
+      terminate = true;
+    }
+
+    this.status = "RELEASED";
+
+    this.$client.release(terminate);
+  }
+
   private ensureReadiness(): void {
-    if (!["READY", "INITIALIZING"].includes(this.state)) {
+    if (!["READY", "INITIALIZING"].includes(this.status)) {
       throw new Error(
         `Can't run more commands on this connection because its state is ${
-          this.state
+          this.status
         } but it needs to be ${"READY"}`
       );
     }

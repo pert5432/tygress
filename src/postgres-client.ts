@@ -10,7 +10,7 @@ import {
   PostgresClientOptions,
   PostgresConnectionOptions,
   WithConnectionOptions,
-} from "./types/connection-settings";
+} from "./types/connection";
 import { Logger } from "./logger";
 import { QueryLogLevel } from "./enums";
 import { FlattenRawSelectSources } from "./types/query-builder";

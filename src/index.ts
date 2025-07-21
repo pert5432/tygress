@@ -9,5 +9,5 @@ export { PostgresConnection };
 export { QueryLogLevel };
 export * from "./api";
 export * from "./decorators";
-export * from "./types/connection-settings";
+export * from "./types/connection";
 export { TygressEntity } from "./tygress-entity";

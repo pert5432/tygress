@@ -1,4 +1,4 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import { TEST_DB } from "../client";
 
 describe("connection", async () => {
@@ -35,5 +35,17 @@ describe("connection", async () => {
         "Can't run more commands on this connection because its state is RELEASED but it needs to be READY"
       )
     );
+  });
+
+  test("terminate connection in transaction on release", async () => {
+    const conn = await TEST_DB.getConnection();
+
+    await conn.begin();
+
+    const spy = vi.spyOn(conn.$client, "release");
+
+    conn.release();
+
+    expect(spy).toHaveBeenCalledWith(true);
   });
 });

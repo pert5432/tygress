@@ -4,3 +4,4 @@ export {
   WithConnectionOptions,
 } from "./postgres-connection-options";
 export { PostgresConfigSettings } from "./postgres-config-settings";
+export { ConnectionStatus } from "./connection-status";

@@ -3,6 +3,14 @@ import { QueryLogLevel } from "./enums";
 export class Logger {
   constructor(private queryLogLevel: QueryLogLevel) {}
 
+  async warn(text: string): Promise<void> {
+    console.log(`[WARN] ${text}`);
+  }
+
+  async info(text: string): Promise<void> {
+    console.log(`[INFO] ${text}`);
+  }
+
   async log(level: QueryLogLevel, sql: string, params?: any[]): Promise<void> {
     switch (level) {
       case QueryLogLevel.ALL:
