@@ -7,7 +7,7 @@ import { DeleteOptions, DeleteResult } from "./types/delete";
 import {
   PostgresConfigSettings,
   PostgresConnectionOptions,
-} from "./types/connection-settings";
+} from "./types/connection";
 import { Logger } from "./logger";
 import { QueryLogLevel } from "./enums";
 
