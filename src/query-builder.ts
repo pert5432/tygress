@@ -17,7 +17,7 @@ import {
   SelectTargetSqlBuilder,
   ColumnIdentifierSqlBuilder,
 } from "./sql-builders";
-import { AnEntity, Parametrizable, WhereComparator } from "./types";
+import { AnEntity, Parametrizable, Pretty, WhereComparator } from "./types";
 import { NamedParams } from "./types/named-params";
 import { JoinArg } from "./types/query/join-arg";
 import { Condition } from "./types/where-args";
@@ -2324,7 +2324,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   /**
    * Executes the query and returns the raw result the way it comes from the pg client
    */
-  public async getRaw(): Promise<G["ExplicitSelects"][]> {
+  public async getRaw(): Promise<Pretty<G["ExplicitSelects"]>[]> {
     const query = this.getQuery(QueryResultType.RAW);
 
     return this.client.withConnection(
