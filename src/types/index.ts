@@ -13,5 +13,6 @@ export { ClassArg } from "./class-arg";
 export { Migration } from "./migration";
 export { OneOf } from "./one-of";
 export { RelationForeignSideArgs } from "./relation-foreign-side-args";
+export { Pretty } from "./pretty";
 
 export * from "./conditions";
