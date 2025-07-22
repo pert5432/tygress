@@ -1,17 +1,21 @@
 import { QueryLogLevel } from "./enums";
+import { STYLE } from "./utils";
 
 export class Logger {
-  constructor(private queryLogLevel: QueryLogLevel) {}
+  constructor(
+    private queryLogLevel: QueryLogLevel,
+    private colors: boolean = true
+  ) {}
 
-  async warn(text: string): Promise<void> {
-    console.log(`[WARN] ${text}`);
+  warn(text: string): void {
+    this.write(`${this.red(this.bold(`[WARN]`))} ${text}`);
   }
 
-  async info(text: string): Promise<void> {
-    console.log(`[INFO] ${text}`);
+  info(text: string): void {
+    this.write(`${this.cyan(this.bold(`[INFO]`))} ${text}`);
   }
 
-  async log(level: QueryLogLevel, sql: string, params?: any[]): Promise<void> {
+  log(level: QueryLogLevel, sql: string, params?: any[]): void {
     switch (level) {
       case QueryLogLevel.ALL:
         return this.logQuery(sql, params);
@@ -22,56 +26,111 @@ export class Logger {
     }
   }
 
-  async logQuery(sql: string, params?: any[]): Promise<void> {
+  logQuery(sql: string, params?: any[]): void {
     if (this.queryLogLevel > QueryLogLevel.ALL) {
       return;
     }
 
-    console.log("Query:");
-    console.log(sql);
+    this.write(this.cyan(this.bold("Query:")));
+    this.write(sql);
     if (params) {
-      console.log(params ?? []);
+      this.write(this.formatParams(params));
     }
   }
 
-  async logDML(sql: string, params?: any[]): Promise<void> {
+  logDML(sql: string, params?: any[]): void {
     if (this.queryLogLevel > QueryLogLevel.DML) {
       return;
     }
 
-    console.log("DML:");
-    console.log(sql);
+    this.write(this.yellow(this.bold("DML:")));
+    this.write(sql);
     if (params) {
-      console.log(params ?? []);
+      this.write(this.formatParams(params));
     }
   }
 
-  async logDDL(sql: string, params?: any[]): Promise<void> {
+  logDDL(sql: string, params?: any[]): void {
     if (this.queryLogLevel > QueryLogLevel.DDL) {
       return;
     }
 
-    console.log("DDL:");
-    console.log(sql);
+    this.write(this.magenta(this.bold("DDL:")));
+    this.write(sql);
     if (params) {
-      console.log(params ?? []);
+      this.write(this.formatParams(params));
     }
   }
 
-  async logQueryError(
-    error: Error,
-    sql: string,
-    params?: any[]
-  ): Promise<void> {
+  logQueryError(error: Error, sql: string, params?: any[]): void {
     if (this.queryLogLevel > QueryLogLevel.ERRORS) {
       return;
     }
 
-    console.log("Query error:");
-    console.log(sql);
+    this.write(this.red(this.bold("Query error:")));
+    this.write(sql);
     if (params) {
-      console.log(params ?? []);
+      this.write(this.formatParams(params));
     }
-    console.log(error);
+    this.write(error.message);
+  }
+
+  private write(input: string): void {
+    process.stdout.write(input);
+    process.stdout.write("\n");
+  }
+
+  //
+  // Colors
+  //
+
+  private bold(input: string): string {
+    return this.style(input, "bold");
+  }
+
+  private red(input: string): string {
+    return this.style(input, "red");
+  }
+
+  private green(input: string): string {
+    return this.style(input, "green");
+  }
+
+  private yellow(input: string): string {
+    return this.style(input, "yellow");
+  }
+
+  private magenta(input: string): string {
+    return this.style(input, "magenta");
+  }
+
+  private cyan(input: string): string {
+    return this.style(input, "cyan");
+  }
+
+  private style(input: string, styleName: keyof typeof STYLE): string {
+    if (!this.colors) {
+      return input;
+    }
+
+    const style = STYLE[styleName];
+
+    return `\u001B[${style[0]}m${input}\u001B[${style[1]}m`;
+  }
+
+  private formatParams(params: any[]): string {
+    return `[${params.map((e) => this.green(this.formatParam(e))).join(", ")}]`;
+  }
+
+  private formatParam(param: any): string {
+    if (param instanceof Buffer) {
+      return `/${param.toString("hex")}/`;
+    }
+
+    if (param instanceof Object) {
+      return JSON.stringify(param);
+    }
+
+    return param.toString();
   }
 }

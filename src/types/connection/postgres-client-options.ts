@@ -19,6 +19,9 @@ export type PostgresClientOptions = {
   // What types of statements to log, default: ALL
   queryLogLevel?: QueryLogLevel;
 
+  // If set to true logs will be colored for TTY output, default: true
+  logColors?: boolean;
+
   entities: AnEntity[];
 
   // Path to file(s) containing migrations
