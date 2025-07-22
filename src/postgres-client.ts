@@ -35,6 +35,7 @@ export class PostgresClient {
     ssl,
     defaultConnectionOptions,
     queryLogLevel,
+    logColors = true,
     entities,
     migrationFolders,
   }: PostgresClientOptions) {
@@ -48,7 +49,7 @@ export class PostgresClient {
 
     this.defaultConnectionSettings = defaultConnectionOptions;
 
-    this.logger = new Logger(queryLogLevel ?? QueryLogLevel.ALL);
+    this.logger = new Logger(queryLogLevel ?? QueryLogLevel.ALL, logColors);
 
     this.migrationFolders = migrationFolders;
     this.entities = entities;
