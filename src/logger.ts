@@ -108,10 +108,6 @@ export class Logger {
     return this.style(input, "cyan");
   }
 
-  private white(input: string): string {
-    return this.style(input, "white");
-  }
-
   private style(input: string, styleName: keyof typeof STYLE): string {
     if (!this.colors) {
       return input;
@@ -123,6 +119,18 @@ export class Logger {
   }
 
   private formatParams(params: any[]): string {
-    return params.map((e) => this.green(e.toString())).join(", ");
+    return `[${params.map((e) => this.green(this.formatParam(e))).join(", ")}]`;
+  }
+
+  private formatParam(param: any): string {
+    if (param instanceof Buffer) {
+      return `/${param.toString("hex")}/`;
+    }
+
+    if (param instanceof Object) {
+      return JSON.stringify(param);
+    }
+
+    return param.toString();
   }
 }
