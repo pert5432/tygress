@@ -3,15 +3,15 @@ import { QueryLogLevel } from "./enums";
 export class Logger {
   constructor(private queryLogLevel: QueryLogLevel) {}
 
-  async warn(text: string): Promise<void> {
-    console.log(`[WARN] ${text}`);
+  warn(text: string): void {
+    this.write(`[WARN] ${text}`);
   }
 
-  async info(text: string): Promise<void> {
-    console.log(`[INFO] ${text}`);
+  info(text: string): void {
+    this.write(`[INFO] ${text}`);
   }
 
-  async log(level: QueryLogLevel, sql: string, params?: any[]): Promise<void> {
+  log(level: QueryLogLevel, sql: string, params?: any[]): void {
     switch (level) {
       case QueryLogLevel.ALL:
         return this.logQuery(sql, params);
@@ -22,56 +22,57 @@ export class Logger {
     }
   }
 
-  async logQuery(sql: string, params?: any[]): Promise<void> {
+  logQuery(sql: string, params?: any[]): void {
     if (this.queryLogLevel > QueryLogLevel.ALL) {
       return;
     }
 
-    console.log("Query:");
-    console.log(sql);
+    this.write("Query:");
+    this.write(sql);
     if (params) {
-      console.log(params ?? []);
+      this.write(params.toString());
     }
   }
 
-  async logDML(sql: string, params?: any[]): Promise<void> {
+  logDML(sql: string, params?: any[]): void {
     if (this.queryLogLevel > QueryLogLevel.DML) {
       return;
     }
 
-    console.log("DML:");
-    console.log(sql);
+    this.write("DML:");
+    this.write(sql);
     if (params) {
-      console.log(params ?? []);
+      this.write(params.toString());
     }
   }
 
-  async logDDL(sql: string, params?: any[]): Promise<void> {
+  logDDL(sql: string, params?: any[]): void {
     if (this.queryLogLevel > QueryLogLevel.DDL) {
       return;
     }
 
-    console.log("DDL:");
-    console.log(sql);
+    this.write("DDL:");
+    this.write(sql);
     if (params) {
-      console.log(params ?? []);
+      this.write(params.toString());
     }
   }
 
-  async logQueryError(
-    error: Error,
-    sql: string,
-    params?: any[]
-  ): Promise<void> {
+  logQueryError(error: Error, sql: string, params?: any[]): void {
     if (this.queryLogLevel > QueryLogLevel.ERRORS) {
       return;
     }
 
-    console.log("Query error:");
-    console.log(sql);
+    this.write("Query error:");
+    this.write(sql);
     if (params) {
-      console.log(params ?? []);
+      this.write(params.toString());
     }
-    console.log(error);
+    this.write(error.message);
+  }
+
+  private write(input: string): void {
+    process.stdout.write(input);
+    process.stdout.write("\n");
   }
 }
