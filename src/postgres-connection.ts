@@ -68,6 +68,20 @@ export class PostgresConnection {
   }
 
   /**
+   * Executes the same query as `select`, returning the first entity
+   *
+   * This does **not** add a `LIMIT 1` to your SQL query so the whole result will be retrieved
+   */
+  public async selectOne<T extends AnEntity>(
+    entity: T,
+    args: SelectArgs<InstanceType<T>>
+  ): Promise<InstanceType<T> | null> {
+    this.ensureReadiness();
+
+    return (await this.select(entity, args))[0] ?? null;
+  }
+
+  /**
     Runs an INSERT statement using the provided values
     Optionally returns inserted rows as entities
   */
