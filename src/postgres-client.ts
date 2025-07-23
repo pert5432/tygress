@@ -212,7 +212,7 @@ export class PostgresClient {
     UpdateFields extends keyof InstanceType<T>
   >(
     entity: T,
-    values: InsertPayload<T>[],
+    values: InsertPayload<T>[] | InsertPayload<T>,
     options?: InsertOptions<T, ReturnedFields, ConflictFields, UpdateFields>
   ): Promise<InsertResult<T>> {
     return this.withConnection((conn) =>

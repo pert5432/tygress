@@ -19,7 +19,7 @@ import {
   SelectTargetSqlBuilderFactory,
   TableIdentifierSqlBuilderFactory,
 } from "../factories";
-import { entityNameToAlias } from "../utils";
+import { arrayify, entityNameToAlias } from "../utils";
 import {
   ComparisonSqlBuilder,
   ParamBuilder,
@@ -46,7 +46,7 @@ export abstract class Repository {
   >(
     client: PostgresConnection,
     entity: T,
-    values: InsertPayload<T>[],
+    values: InsertPayload<T>[] | InsertPayload<T>,
     {
       returning,
       onConflict,
@@ -56,9 +56,11 @@ export abstract class Repository {
   ): Promise<InsertResult<T>> {
     const tableMeta = METADATA_STORE.getTable(entity);
 
+    const payload = arrayify(values);
+
     // Collect all fields that have a value provided in the input
     const insertedFields = new Set<string>();
-    for (const value of values) {
+    for (const value of payload) {
       for (const key of Object.keys(value)) {
         insertedFields.add(key);
       }
@@ -105,7 +107,7 @@ export abstract class Repository {
     //
     const insert = new InsertSqlBuilder({
       entity: tableMeta,
-      values,
+      values: payload,
       columns,
       paramBuilder: new ParamBuilder(),
 
