@@ -190,7 +190,7 @@ export class PostgresClient {
   }
 
   /**
-   * Executes the same query as `select`, returning the first entity
+   * Executes the same query as `select`, returning the first entity or null
    *
    * This does **not** add a `LIMIT 1` to your SQL query so the whole result will be retrieved
    */

@@ -2322,6 +2322,15 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   }
 
   /**
+   * Executes the query and returns the first entity or null
+   *
+   * This does **not** add a `LIMIT 1` to the query so the whole result will be retrieved
+   */
+  public async getOneEntity(): Promise<InstanceType<G["RootEntity"]> | null> {
+    return (await this.getEntities())[0] ?? null;
+  }
+
+  /**
    * Executes the query and returns the raw result the way it comes from the pg client
    */
   public async getRaw(): Promise<Pretty<G["ExplicitSelects"]>[]> {
@@ -2333,5 +2342,14 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
           (await conn.query(query.sql, query.params)).rows
         ) as any
     );
+  }
+
+  /**
+   * Executes the query and returns the first row or null
+   *
+   * This does **not** add a `LIMIT 1` to the query so the whole result will be retrieved
+   */
+  public async getOneRaw(): Promise<Pretty<G["ExplicitSelects"]> | null> {
+    return (await this.getRaw())[0] ?? null;
   }
 }
