@@ -9,3 +9,4 @@ export { parsePgColumnDefault } from "./parse-column-default";
 export { fkActionsEqual } from "./fk-actions-equal";
 export { FKActionConverter } from "./fk-action-converter";
 export { STYLE } from "./tty-styles";
+export { arrayify } from "./arrayify";

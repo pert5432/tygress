@@ -221,4 +221,46 @@ describe("select", async () => {
       expect(res).toStrictEqual([]);
     });
   });
+
+  describe("selectOne", async () => {
+    test("basic", async () => {
+      const res = await TEST_DB.selectOne(Users, {});
+
+      expect(res).toStrictEqual(user1);
+    });
+
+    test("order", async () => {
+      const res = await TEST_DB.selectOne(Users, {
+        order: {
+          username: "ASC",
+        },
+      });
+
+      expect(res).toStrictEqual(user2);
+    });
+
+    test("join", async () => {
+      const res = await TEST_DB.selectOne(Users, {
+        joins: {
+          pets: true,
+        },
+        order: {
+          username: "ASC",
+          pets: {
+            name: "ASC",
+          },
+        },
+      });
+
+      expect(res!.pets).toStrictEqual([]);
+    });
+
+    test("no result", async () => {
+      const res = await TEST_DB.selectOne(Users, {
+        offset: 10,
+      });
+
+      expect(res).toStrictEqual(null);
+    });
+  });
 });

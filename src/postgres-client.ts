@@ -190,6 +190,18 @@ export class PostgresClient {
   }
 
   /**
+   * Executes the same query as `select`, returning the first entity or null
+   *
+   * This does **not** add a `LIMIT 1` to your SQL query so the whole result will be retrieved
+   */
+  public async selectOne<T extends AnEntity>(
+    entity: T,
+    args: SelectArgs<InstanceType<T>>
+  ): Promise<InstanceType<T> | null> {
+    return (await this.select(entity, args))[0] ?? null;
+  }
+
+  /**
     Runs an INSERT statement using the provided values
     Optionally returns inserted rows as entities
   */
@@ -200,7 +212,7 @@ export class PostgresClient {
     UpdateFields extends keyof InstanceType<T>
   >(
     entity: T,
-    values: InsertPayload<T>[],
+    values: InsertPayload<T>[] | InsertPayload<T>,
     options?: InsertOptions<T, ReturnedFields, ConflictFields, UpdateFields>
   ): Promise<InsertResult<T>> {
     return this.withConnection((conn) =>
