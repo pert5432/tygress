@@ -1,5 +1,5 @@
 import { TEST_DB } from "../client";
-import { beforeAll, describe, expect, test } from "vitest";
+import { describe, expect, test } from "vitest";
 import { Users } from "../entities/users";
 import { TestHelper } from "../helpers";
 import { Pets } from "../entities/pets";
@@ -648,5 +648,39 @@ describe("QueryBuilder", async () => {
       .getRaw();
 
     expect(res2).toEqual([]);
+  });
+
+  describe("getOneEntity", async () => {
+    test("basic", async () => {
+      const res = await TEST_DB.queryBuilder("u", Users).getOneEntity();
+
+      expect(res).toStrictEqual(user1);
+    });
+
+    test("no result", async () => {
+      const res = await TEST_DB.queryBuilder("u", Users)
+        .where("1=0")
+        .getOneEntity();
+
+      expect(res).toStrictEqual(null);
+    });
+  });
+
+  describe("getOneRaw", async () => {
+    test("basic", async () => {
+      const res = await TEST_DB.queryBuilder("u", Users)
+        .setSelect("u", "id", "id")
+        .getOneRaw();
+
+      expect(res).toStrictEqual({ id: user1.id });
+    });
+
+    test("no result", async () => {
+      const res = await TEST_DB.queryBuilder("u", Users)
+        .where("1=0")
+        .getOneRaw();
+
+      expect(res).toStrictEqual(null);
+    });
   });
 });
