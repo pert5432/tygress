@@ -2,13 +2,20 @@ import "reflect-metadata";
 import { Relation } from "../enums";
 import {
   ColumnMetadataFactory,
+  IndexMetadataFactory,
   RelationMetadataFactory,
   TableMetadataFactory,
   UniqueConstraintMetadataFactory,
 } from "../factories";
-import { RelationMetadata, TableMetadata, ColumnMetadata } from ".";
+import {
+  RelationMetadata,
+  TableMetadata,
+  ColumnMetadata,
+  IndexMetadata,
+} from ".";
 import {
   ColumnMetadataArgs,
+  IndexMetadataArgs,
   RelationMetadataArgs,
   TableMetadataArgs,
   UniqueConstraintMetadataArgs,
@@ -19,6 +26,7 @@ import { UniqueConstraintMetadata } from "./unique-constraint";
 class MetadataStore {
   public tables = new Map<AnEntity, TableMetadata>();
   public columns = new Map<AnEntity, ColumnMetadata[]>();
+  public indexes = new Map<string, IndexMetadata>();
 
   public relations: RelationMetadata[] = [];
 
@@ -32,6 +40,7 @@ class MetadataStore {
 
   private relationArgs: RelationMetadataArgs[] = [];
   private tableArgs = new Map<AnEntity, TableMetadataArgs>();
+  private indexArgs = new Map<string, IndexMetadataArgs>();
 
   //
   // Getters
@@ -97,6 +106,16 @@ class MetadataStore {
     }
 
     this.tableArgs.set(args.klass, args);
+  }
+
+  public addIndexArgs(args: IndexMetadataArgs): void {
+    const existing = this.indexArgs.get(args.name);
+
+    if (existing) {
+      throw new Error(`An index with name ${args.name} already exists`);
+    }
+
+    this.indexArgs.set(args.name, args);
   }
 
   public addTable(entity: AnEntity): void {
@@ -175,6 +194,19 @@ class MetadataStore {
     this.registerRelationsToEntities();
 
     this.registerArrayFields();
+
+    this.createIndexes();
+  }
+
+  private createIndexes(): void {
+    for (const args of this.indexArgs.values()) {
+      const index = IndexMetadataFactory.create(args);
+
+      this.indexes.set(index.name, index);
+
+      // Register the index to the table it belongs to
+      index.table.indexes.push(index);
+    }
   }
 
   // Creates relation metadata from relation args

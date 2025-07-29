@@ -28,6 +28,8 @@ export abstract class TableMetadataFactory {
 
     e.primaryKey = uniqueConstraint;
 
+    e.indexes = [];
+
     return e;
   }
 }

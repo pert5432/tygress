@@ -12,3 +12,4 @@ export { ColumnIdentifierSqlBuilderFactory } from "./column-identifier";
 export { TableIdentifierSqlBuilderFactory } from "./table-identifier";
 export { OrderByExpressionSqlBuilderFactory } from "./order-by-expression-sql-builder";
 export { ConditionFactory } from "./condition";
+export { IndexMetadataFactory } from "./index-metadata";

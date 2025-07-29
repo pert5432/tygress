@@ -3,6 +3,7 @@ import { RelationMetadata } from "./relation-metadata";
 import { AnEntity } from "../types/entity";
 import { UniqueConstraintMetadata } from "./unique-constraint";
 import { TableIdentifierSqlBuilderFactory } from "../factories";
+import { IndexMetadata } from "./index-metadata";
 
 export class TableMetadata {
   tablename: string;
@@ -39,4 +40,6 @@ export class TableMetadata {
   relations: Map<string, RelationMetadata> = new Map();
 
   arrayFields: Set<string> = new Set();
+
+  indexes: IndexMetadata[];
 }
