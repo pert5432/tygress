@@ -7,10 +7,7 @@ type ColumnArg<F> = {
   nulls?: "FIRST" | "LAST";
 };
 
-export const Index = <
-  K extends Object & { [key: string]: any },
-  F extends keyof K
->(
+export const Index = <K extends AnEntity, F extends keyof InstanceType<K>>(
   name: string,
   args: {
     columns: F[] | ColumnArg<F>[];
@@ -26,7 +23,7 @@ export const Index = <
     }
 
     METADATA_STORE.addIndexArgs({
-      klass: target.constructor as AnEntity,
+      klass: target as AnEntity,
       name,
 
       columns:
