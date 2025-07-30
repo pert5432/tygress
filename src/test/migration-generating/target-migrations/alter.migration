@@ -1,6 +1,6 @@
 import { PostgresConnection } from "tygress";
 
-export const name: string = "1751919867alter";
+export const name: string = "1753895656alter";
 
 export const up = async (conn: PostgresConnection): Promise<void> => {
   await conn.query(`
@@ -8,6 +8,14 @@ export const up = async (conn: PostgresConnection): Promise<void> => {
         ALTER COLUMN username DROP NOT NULL,
         ALTER COLUMN username SET DEFAULT 'user'::TEXT,
         ALTER COLUMN group_id SET DATA TYPE BIGINT;`
+    );
+
+  await conn.query(`
+      DROP INDEX members_main`
+    );
+
+  await conn.query(`
+      DROP INDEX members_username_unique`
     );
 
   await conn.query(`
@@ -34,6 +42,14 @@ export const down = async (conn: PostgresConnection): Promise<void> => {
       ALTER TABLE groups
         ALTER COLUMN id SET DATA TYPE INTEGER,
         ALTER COLUMN name SET DATA TYPE CHARACTER VARYING (256);`
+    );
+
+  await conn.query(`
+      CREATE UNIQUE INDEX members_username_unique ON public.members USING btree (username)`
+    );
+
+  await conn.query(`
+      CREATE INDEX members_main ON public.members USING btree (id) INCLUDE (username, group_id)`
     );
 
   await conn.query(`

@@ -1,7 +1,16 @@
-import { Column, ManyToOne, PrimaryKey, Table } from "../../..";
+import { Column, ManyToOne, PrimaryKey, Table, Index } from "../../..";
 import { Groups } from "./groups";
 
 @Table("members")
+@Index("members_username_unique", {
+  columns: ["username"],
+  unique: true,
+  nullsDistinct: true,
+})
+@Index("members_main", {
+  columns: ["id"],
+  includeColumns: ["username", "groupId"],
+})
 export class Members {
   @PrimaryKey({ name: "id", type: "UUID", default: () => "gen_random_uuid()" })
   id: string;

@@ -13,6 +13,14 @@ export const up = async (conn: PostgresConnection): Promise<void> => {
     );
 
   await conn.query(`
+      CREATE INDEX members_main ON members (id) INCLUDE (username, group_id)`
+    );
+
+  await conn.query(`
+      CREATE UNIQUE INDEX members_username_unique ON members (username) NULLS DISTINCT`
+    );
+
+  await conn.query(`
       CREATE TABLE groups (
         id INT NOT NULL,
         name VARCHAR (256) NOT NULL,
@@ -34,6 +42,14 @@ export const down = async (conn: PostgresConnection): Promise<void> => {
 
   await conn.query(`
       DROP TABLE groups`
+    );
+
+  await conn.query(`
+      DROP INDEX members_username_unique`
+    );
+
+  await conn.query(`
+      DROP INDEX members_main`
     );
 
   await conn.query(`

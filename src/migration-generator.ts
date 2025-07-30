@@ -4,7 +4,9 @@ import { PostgresClient } from "./postgres-client";
 import { AnEntity } from "./types";
 import {
   AlterTableSqlBuilder,
+  CreateIndexSqlBuilder,
   CreateTableSqlBuilder,
+  DropIndexSqlBuilder,
   DropTableSqlBuilder,
 } from "./sql-builders/structure";
 import { ColumnMetadata, METADATA_STORE, TableMetadata } from "./metadata";
@@ -15,7 +17,11 @@ import {
   pad,
   parsePgColumnDefault,
 } from "./utils";
-import { PostgresColumnDefinition, PostgresForeignKey } from "./types/postgres";
+import {
+  PostgresColumnDefinition,
+  PostgresForeignKey,
+  PostgresIndexes,
+} from "./types/postgres";
 import { ColumnMetadataFactory } from "./factories";
 import { QueryLogLevel, Relation } from "./enums";
 import { Logger } from "./logger";
@@ -62,9 +68,12 @@ export class MigrationGenerator {
         // Make sure table has the exact columns desired with the exact parameters if table already exists
         await this.ensureTableColumns(table);
       }
+
+      await this.ensureTableIndexes(table);
     }
 
     // Ensure foreign keys
+    // This is done after all tables are ensured to exist to prevent trying to create an FK to a not-yet-existing table
     for (const table of tables) {
       await this.ensureForeignKeys(table);
     }
@@ -236,6 +245,41 @@ export class MigrationGenerator {
     }
   }
 
+  private async ensureTableIndexes(table: TableMetadata): Promise<void> {
+    const { indexes } = table;
+    const pgIndexes = await this.getTableIndexes(table);
+
+    for (const index of indexes) {
+      const pgIndex = pgIndexes.find((e) => e.indexname === index.name);
+
+      // Index exists in pg already, move on
+      if (pgIndex) {
+        continue;
+      }
+
+      // Create index
+      this.upStatements.push(new CreateIndexSqlBuilder(index).sql());
+      this.downStatements.push(new DropIndexSqlBuilder(index.name).sql());
+    }
+
+    for (const pgIndex of pgIndexes) {
+      // This index is most likely an auto-generate primary key so we won't try to drop it
+      if (pgIndex.indexname === `${table.tablename}_pk`) {
+        continue;
+      }
+
+      const index = indexes.find((e) => pgIndex.indexname === e.name);
+
+      // Index exists in Tygress schema, move on
+      if (index) {
+        continue;
+      }
+
+      this.upStatements.push(new DropIndexSqlBuilder(pgIndex.indexname).sql());
+      this.downStatements.push(pgIndex.indexdef);
+    }
+  }
+
   private async entityExists(table: TableMetadata): Promise<boolean> {
     return !!(
       await this.client.withConnection({ logger: this.logger }, (conn) =>
@@ -307,6 +351,20 @@ export class MigrationGenerator {
         )
       )
     ).rows;
+  }
+
+  private async getTableIndexes(
+    table: TableMetadata
+  ): Promise<PostgresIndexes[]> {
+    return this.client.withConnection(
+      async (conn) =>
+        (
+          await conn.query<PostgresIndexes>(
+            "SELECT * FROM pg_indexes WHERE tablename = $1 AND schemaname = $2",
+            [table.tablename, table.schemaname ?? "public"]
+          )
+        ).rows
+    );
   }
 
   private writeMigration(): void {
