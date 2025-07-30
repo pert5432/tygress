@@ -200,6 +200,11 @@ class MetadataStore {
 
   private createIndexes(): void {
     for (const args of this.indexArgs.values()) {
+      // Ignore duplicate indexes
+      if (this.indexes.get(args.name)) {
+        continue;
+      }
+
       const index = IndexMetadataFactory.create(args);
 
       this.indexes.set(index.name, index);
