@@ -10,5 +10,7 @@ export class IndexMetadata {
 
   includeColumns: ColumnMetadata[];
 
+  unique: boolean;
+
   nullsDistinct?: boolean;
 }

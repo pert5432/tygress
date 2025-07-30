@@ -12,11 +12,12 @@ export const Index = <K extends AnEntity, F extends keyof InstanceType<K>>(
   args: {
     columns: F[] | ColumnArg<F>[];
     includeColumns?: F[];
+    unique?: boolean;
     nullsDistinct?: boolean;
   }
 ) => {
   return function (target: K) {
-    const { columns, includeColumns, nullsDistinct } = args;
+    const { columns, includeColumns, unique, nullsDistinct } = args;
 
     if (!columns.length) {
       throw new Error("No columns supplied to index definition");
@@ -35,7 +36,7 @@ export const Index = <K extends AnEntity, F extends keyof InstanceType<K>>(
           : (columns as F[]).map((e) => ({ fieldName: e.toString() })),
 
       includeColumns: (includeColumns ?? []).map((e) => e.toString()),
-
+      unique,
       nullsDistinct,
     });
   };

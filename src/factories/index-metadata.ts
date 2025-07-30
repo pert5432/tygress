@@ -19,6 +19,7 @@ export abstract class IndexMetadataFactory {
       METADATA_STORE.getColumn(args.klass, c)
     );
 
+    e.unique = args.unique ?? false;
     e.nullsDistinct = args.nullsDistinct;
 
     return e;

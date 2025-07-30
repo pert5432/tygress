@@ -13,5 +13,6 @@ export type IndexMetadataArgs = {
 
   includeColumns?: string[];
 
+  unique?: boolean;
   nullsDistinct?: boolean;
 };
