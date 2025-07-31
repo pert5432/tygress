@@ -11,6 +11,7 @@ import { Groups } from "./groups";
   columns: ["id"],
   includeColumns: ["username", "groupId"],
 })
+@Index("members_group_id_brin", { columns: ["groupId"], method: "brin" })
 export class Members {
   @PrimaryKey({ name: "id", type: "UUID", default: () => "gen_random_uuid()" })
   id: string;

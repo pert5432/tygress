@@ -1,4 +1,5 @@
 import { AnEntity } from "../entity";
+import { IndexMethod } from "../structure";
 
 export type IndexMetadataArgs = {
   klass: AnEntity;
@@ -15,4 +16,5 @@ export type IndexMetadataArgs = {
 
   unique?: boolean;
   nullsDistinct?: boolean;
+  method?: IndexMethod;
 };

@@ -1,5 +1,6 @@
 import { METADATA_STORE } from "../metadata";
 import { AnEntity } from "../types";
+import { IndexMethod } from "../types/structure";
 
 type ColumnArg<F> = {
   field: F;
@@ -14,10 +15,11 @@ export const Index = <K extends AnEntity, F extends keyof InstanceType<K>>(
     includeColumns?: F[];
     unique?: boolean;
     nullsDistinct?: boolean;
+    method?: IndexMethod;
   }
 ) => {
   return function (target: K) {
-    const { columns, includeColumns, unique, nullsDistinct } = args;
+    const { columns, includeColumns, unique, nullsDistinct, method } = args;
 
     if (!columns.length) {
       throw new Error("No columns supplied to index definition");
@@ -38,6 +40,7 @@ export const Index = <K extends AnEntity, F extends keyof InstanceType<K>>(
       includeColumns: (includeColumns ?? []).map((e) => e.toString()),
       unique,
       nullsDistinct,
+      method,
     });
   };
 };

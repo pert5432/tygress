@@ -16,7 +16,7 @@ export class CreateIndexSqlBuilder {
 
     const nullsDistinct = this.meta.nullsDistinct ? ` NULLS DISTINCT` : "";
 
-    return `CREATE${unique} INDEX ${this.meta.name} ON ${this.meta.table.tablename} (${keyColumns})${include}${nullsDistinct}`;
+    return `CREATE${unique} INDEX ${this.meta.name} ON ${this.meta.table.tablename} USING ${this.meta.method} (${keyColumns})${include}${nullsDistinct}`;
   }
 
   private keyColumn(c: IndexColumnMetadata): string {
