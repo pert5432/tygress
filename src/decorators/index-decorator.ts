@@ -1,22 +1,10 @@
 import { METADATA_STORE } from "../metadata";
 import { AnEntity } from "../types";
-import { IndexMethod } from "../types/structure";
-
-type ColumnArg<F> = {
-  field: F;
-  order?: "ASC" | "DESC";
-  nulls?: "FIRST" | "LAST";
-};
+import { IndexColumnArgs, IndexDecoratorArgs } from "../types/decorators";
 
 export const Index = <K extends AnEntity, F extends keyof InstanceType<K>>(
   name: string,
-  args: {
-    columns: F[] | ColumnArg<F>[];
-    includeColumns?: F[];
-    unique?: boolean;
-    nullsDistinct?: boolean;
-    method?: IndexMethod;
-  }
+  args: IndexDecoratorArgs<K, F>
 ) => {
   return function (target: K) {
     const { columns, includeColumns, unique, nullsDistinct, method } = args;
@@ -31,7 +19,7 @@ export const Index = <K extends AnEntity, F extends keyof InstanceType<K>>(
 
       columns:
         typeof columns[0] === "object"
-          ? (columns as ColumnArg<F>[]).map((e: ColumnArg<F>) => ({
+          ? (columns as IndexColumnArgs<F>[]).map((e) => ({
               fieldName: e.field.toString(),
               ...e,
             }))
