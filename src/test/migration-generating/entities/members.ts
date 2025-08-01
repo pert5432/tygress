@@ -1,4 +1,4 @@
-import { Column, ManyToOne, PrimaryKey, Table, Index } from "../../..";
+import { Column, ManyToOne, PrimaryKey, Table, Index, IsNull } from "../../..";
 import { Groups } from "./groups";
 
 @Table("members")
@@ -11,7 +11,11 @@ import { Groups } from "./groups";
   columns: ["id"],
   includeColumns: ["username", "groupId"],
 })
-@Index("members_group_id_brin", { columns: ["groupId"], method: "brin" })
+@Index("members_group_id_brin", {
+  columns: ["groupId"],
+  method: "brin",
+  where: { groupId: IsNull() },
+})
 export class Members {
   @PrimaryKey({ name: "id", type: "UUID", default: () => "gen_random_uuid()" })
   id: string;

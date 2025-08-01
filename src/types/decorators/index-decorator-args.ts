@@ -2,6 +2,7 @@ import { AnEntity } from "../entity";
 import { OneOf } from "../one-of";
 import { Pretty } from "../pretty";
 import { IndexMethod } from "../structure";
+import { IndexWheres } from "../where-args";
 
 export type IndexDecoratorArgs<
   K extends AnEntity,
@@ -22,6 +23,8 @@ export type IndexDecoratorArgs<
   unique?: boolean;
   nullsDistinct?: boolean;
   method?: IndexMethod;
+
+  where?: IndexWheres<InstanceType<K>>;
 };
 
 export type IndexColumnArgs<F> = Pretty<

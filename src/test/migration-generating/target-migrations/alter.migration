@@ -61,7 +61,7 @@ export const down = async (conn: PostgresConnection): Promise<void> => {
     );
 
   await conn.query(`
-      CREATE INDEX members_group_id_brin ON public.members USING brin (group_id)`
+      CREATE INDEX members_group_id_brin ON public.members USING brin (group_id) WHERE (group_id IS NULL)`
     );
 
   await conn.query(`

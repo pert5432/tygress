@@ -23,6 +23,7 @@ export abstract class IndexMetadataFactory {
     e.method = args.method ?? "btree";
     e.unique = args.unique ?? false;
     e.nullsDistinct = args.nullsDistinct;
+    e.where = args.where;
 
     return e;
   }

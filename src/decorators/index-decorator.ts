@@ -14,7 +14,8 @@ export const Index = <K extends AnEntity, F extends keyof InstanceType<K>>(
   args: IndexDecoratorArgs<K, F>
 ) => {
   return function (target: K) {
-    const { columns, includeColumns, unique, nullsDistinct, method } = args;
+    const { columns, includeColumns, unique, nullsDistinct, method, where } =
+      args;
 
     if (!columns.length) {
       throw new Error("No columns supplied to index definition");
@@ -33,6 +34,7 @@ export const Index = <K extends AnEntity, F extends keyof InstanceType<K>>(
       unique,
       nullsDistinct,
       method,
+      where,
     });
   };
 };

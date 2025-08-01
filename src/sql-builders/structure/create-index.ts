@@ -1,4 +1,14 @@
-import { IndexColumnMetadata, IndexMetadata } from "../../metadata";
+import {
+  ColumnIdentifierSqlBuilderFactory,
+  ComparisonFactory,
+} from "../../factories";
+import {
+  IndexColumnMetadata,
+  IndexMetadata,
+  METADATA_STORE,
+} from "../../metadata";
+import { ComparisonWrapper } from "../comparison";
+import { ParamBuilder } from "../param-builder";
 
 export class CreateIndexSqlBuilder {
   constructor(private meta: IndexMetadata) {}
@@ -16,7 +26,9 @@ export class CreateIndexSqlBuilder {
 
     const nullsDistinct = this.meta.nullsDistinct ? ` NULLS DISTINCT` : "";
 
-    return `CREATE${unique} INDEX ${this.meta.name} ON ${this.meta.table.tablename} USING ${this.meta.method} (${keyColumns})${include}${nullsDistinct}`;
+    const where = this.where();
+
+    return `CREATE${unique} INDEX ${this.meta.name} ON ${this.meta.table.tablename} USING ${this.meta.method} (${keyColumns})${include}${nullsDistinct}${where}`;
   }
 
   private keyColumn(c: IndexColumnMetadata): string {
@@ -26,5 +38,25 @@ export class CreateIndexSqlBuilder {
       .join("");
 
     return `${c.column ? c.column.name : c.expression}${options}`;
+  }
+
+  private where(): string {
+    if (!this.meta.where) {
+      return "";
+    }
+
+    const predicate = new ComparisonWrapper(
+      Object.entries(this.meta.where).map(([fieldName, condition]) =>
+        ComparisonFactory.createFromConditionIdentifier(
+          ColumnIdentifierSqlBuilderFactory.createNaked(
+            METADATA_STORE.getColumn(this.meta.table.klass, fieldName)
+          ),
+          condition
+        )
+      ),
+      "AND"
+    ).sql(new ParamBuilder());
+
+    return ` WHERE ${predicate}`;
   }
 }
