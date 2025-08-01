@@ -11,6 +11,10 @@ export const up = async (conn: PostgresConnection): Promise<void> => {
     );
 
   await conn.query(`
+      CREATE INDEX members_lower_username ON members USING btree (LOWER(username) DESC NULLS LAST)`
+    );
+
+  await conn.query(`
       DROP INDEX members_group_id_brin`
     );
 
@@ -58,6 +62,10 @@ export const down = async (conn: PostgresConnection): Promise<void> => {
 
   await conn.query(`
       CREATE INDEX members_group_id_brin ON public.members USING brin (group_id)`
+    );
+
+  await conn.query(`
+      DROP INDEX members_lower_username`
     );
 
   await conn.query(`

@@ -19,11 +19,8 @@ export const Index = <K extends AnEntity, F extends keyof InstanceType<K>>(
 
       columns:
         typeof columns[0] === "object"
-          ? (columns as IndexColumnArgs<F>[]).map((e) => ({
-              fieldName: e.field.toString(),
-              ...e,
-            }))
-          : (columns as F[]).map((e) => ({ fieldName: e.toString() })),
+          ? (columns as IndexColumnArgs<F>[])
+          : (columns as F[]).map((e) => ({ field: e.toString() })),
 
       includeColumns: (includeColumns ?? []).map((e) => e.toString()),
       unique,

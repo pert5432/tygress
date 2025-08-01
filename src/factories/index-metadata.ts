@@ -3,8 +3,9 @@ import {
   IndexMetadata,
   METADATA_STORE,
 } from "../metadata";
-import { AnEntity } from "../types";
+import { AnEntity, ObjectKey } from "../types";
 import { IndexMetadataArgs } from "../types/create-args";
+import { IndexColumnArgs } from "../types/decorators";
 
 export abstract class IndexMetadataFactory {
   static create(args: IndexMetadataArgs): IndexMetadata {
@@ -28,15 +29,19 @@ export abstract class IndexMetadataFactory {
 
   private static createKeyColumn(
     klass: AnEntity,
-    args: {
-      fieldName: string;
-      order?: "ASC" | "DESC";
-      nulls?: "FIRST" | "LAST";
-    }
+    args: IndexColumnArgs<ObjectKey>
   ): IndexColumnMetadata {
+    if (!args.expression && !args.field) {
+      throw new Error(`Index column has to have a field or an expression`);
+    }
+
     const e = new IndexColumnMetadata();
 
-    e.column = METADATA_STORE.getColumn(klass, args.fieldName);
+    e.column = args.field
+      ? METADATA_STORE.getColumn(klass, args.field.toString())
+      : undefined;
+    e.expression = args.expression;
+
     e.order = args.order;
     e.nulls = args.nulls;
 

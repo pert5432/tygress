@@ -1,4 +1,6 @@
+import { IndexColumnArgs } from "../decorators";
 import { AnEntity } from "../entity";
+import { ObjectKey } from "../object-key";
 import { IndexMethod } from "../structure";
 
 export type IndexMetadataArgs = {
@@ -6,11 +8,7 @@ export type IndexMetadataArgs = {
 
   name: string;
 
-  columns: {
-    fieldName: string;
-    order?: "ASC" | "DESC";
-    nulls?: "FIRST" | "LAST";
-  }[];
+  columns: IndexColumnArgs<ObjectKey>[];
 
   includeColumns?: string[];
 

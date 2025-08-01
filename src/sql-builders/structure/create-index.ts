@@ -25,6 +25,6 @@ export class CreateIndexSqlBuilder {
       .map((e) => ` ${e}`)
       .join("");
 
-    return `${c.column.name}${options}`;
+    return `${c.column ? c.column.name : c.expression}${options}`;
   }
 }
