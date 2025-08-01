@@ -1,7 +1,7 @@
 import { JoinType } from "../../enums";
 import {
   ComparisonSqlBuilder,
-  ParamBuilder,
+  ConstantBuilder,
   TableIdentifierSqlBuilder,
 } from "../../sql-builders";
 import { AnEntity } from "../entity";
@@ -27,17 +27,17 @@ export class JoinArg {
   select?: boolean;
   map?: boolean;
 
-  sql(paramBuilder: ParamBuilder): string {
+  sql(constBuilder: ConstantBuilder): string {
     if (!this.type) {
       throw new Error(`Can't construct SQL of a join with no type`);
     }
 
     if (this.type === JoinType.CROSS) {
-      return `CROSS JOIN ${this.identifier.sql(paramBuilder)}`;
+      return `CROSS JOIN ${this.identifier.sql(constBuilder)}`;
     }
 
     return `${this.type} JOIN ${this.identifier.sql(
-      paramBuilder
-    )} ON ${this.comparison!.sql(paramBuilder)}`;
+      constBuilder
+    )} ON ${this.comparison!.sql(constBuilder)}`;
   }
 }

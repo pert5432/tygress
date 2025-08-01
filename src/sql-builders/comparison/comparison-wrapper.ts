@@ -1,4 +1,4 @@
-import { ParamBuilder } from "../param-builder";
+import { ConstantBuilder } from "../constant-builder";
 import { ComparisonSqlBuilder } from "./comparison-builder";
 
 export class ComparisonWrapper extends ComparisonSqlBuilder {
@@ -9,9 +9,9 @@ export class ComparisonWrapper extends ComparisonSqlBuilder {
     super();
   }
 
-  public sql(paramBuilder: ParamBuilder): string {
+  public sql(constBuilder: ConstantBuilder): string {
     return `(${this.comparisons
-      .map((e) => e.sql(paramBuilder))
+      .map((e) => e.sql(constBuilder))
       .join(` ${this.logicalOperator} `)})`;
   }
 }
@@ -21,7 +21,7 @@ export class NotComparisonWrapper extends ComparisonSqlBuilder {
     super();
   }
 
-  public sql(paramBuilder: ParamBuilder): string {
-    return `NOT (${this.comparisons.sql(paramBuilder)})`;
+  public sql(constBuilder: ConstantBuilder): string {
+    return `NOT (${this.comparisons.sql(constBuilder)})`;
   }
 }

@@ -24,5 +24,8 @@ export {
   SubQueryTableIdentifierSqlBuilder,
   TablenameTableIdentifierSqlBuilder,
 } from "./table-identifier";
-export { ParamBuilder } from "./param-builder";
+export {
+  ConstantBuilder,
+  ParametrizedConstantBuilder,
+} from "./constant-builder";
 export { PseudoSQLReplacer } from "./pseudo-sql-replacer";

@@ -7,15 +7,15 @@ import {
 import { AnEntity } from "../types";
 import { TargetNode } from "../types/query";
 import { Update, UpdateSqlArgs } from "../types/update";
-import { ParamBuilder } from "./param-builder";
+import { ConstantBuilder } from "./constant-builder";
 
 export class UpdateSqlBuilder {
-  private paramBuilder: ParamBuilder;
+  private constBuilder: ConstantBuilder;
 
   private targetNode: TargetNode<AnEntity>;
 
   constructor(private args: UpdateSqlArgs) {
-    this.paramBuilder = args.paramBuilder;
+    this.constBuilder = args.constBuilder;
   }
 
   sql(): Update {
@@ -24,7 +24,7 @@ export class UpdateSqlBuilder {
       this.args.entity.entityMeta.klass
     );
 
-    let sql = `UPDATE ${tableIdentifier.sql(this.paramBuilder)}`;
+    let sql = `UPDATE ${tableIdentifier.sql(this.constBuilder)}`;
 
     sql += ` SET `;
 
@@ -39,7 +39,7 @@ export class UpdateSqlBuilder {
       sql += ` WHERE `;
 
       sql += `${this.args.wheres
-        .map((e) => e.sql(this.paramBuilder))
+        .map((e) => e.sql(this.constBuilder))
         .join(" AND ")}`;
     }
 
@@ -54,7 +54,7 @@ export class UpdateSqlBuilder {
       );
 
       sql += ` RETURNING ${targets
-        .map((e) => e.sql(this.paramBuilder))
+        .map((e) => e.sql(this.constBuilder))
         .join(", ")}`;
 
       this.targetNode = TargetNodeFactory.createRoot(
@@ -67,7 +67,7 @@ export class UpdateSqlBuilder {
 
     return {
       sql,
-      params: this.paramBuilder.params,
+      params: this.constBuilder.params,
 
       targetNode: this.targetNode,
     };
@@ -82,6 +82,6 @@ export class UpdateSqlBuilder {
       return "NULL";
     }
 
-    return `$${this.paramBuilder.addParam(value)}`;
+    return this.constBuilder.addConst(value);
   }
 }

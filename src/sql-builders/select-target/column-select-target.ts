@@ -1,6 +1,6 @@
 import { dQ } from "../../utils";
 import { ColumnIdentifierSqlBuilder } from "../column-identifier";
-import { ParamBuilder } from "../param-builder";
+import { ConstantBuilder } from "../constant-builder";
 import { SelectTargetSqlBuilder } from "./select-target";
 
 export class ColumnSelectTargetSqlBuilder extends SelectTargetSqlBuilder {
@@ -11,7 +11,7 @@ export class ColumnSelectTargetSqlBuilder extends SelectTargetSqlBuilder {
   nodeAlias: string;
   fieldName: string;
 
-  public override sql(_paramBuilder: ParamBuilder): string {
+  public override sql(_constBuilder: ConstantBuilder): string {
     return `${this.columnIdentifier.sql()} AS ${dQ(this.as)}`;
   }
 }

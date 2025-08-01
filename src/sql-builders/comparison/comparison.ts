@@ -7,7 +7,7 @@ import {
 } from "../../types/create-args/comparison";
 import { ComparisonSqlBuilder } from "./comparison-builder";
 import { WhereComparator } from "../../types";
-import { ParamBuilder } from "../param-builder";
+import { ConstantBuilder } from "../constant-builder";
 import { ColumnIdentifierSqlBuilder } from "../column-identifier";
 import { TableIdentifierSqlBuilder } from "../table-identifier";
 
@@ -51,10 +51,10 @@ export class ColParamComparison extends Comparison {
   params: any[];
   rightCast?: string;
 
-  public sql(paramBuilder: ParamBuilder): string {
+  public sql(constBuilder: ConstantBuilder): string {
     const right = this.params
-      ?.map((val) => paramBuilder.addParam(val))
-      .map((pNum) => `$${pNum}${this.rightCast ? `::${this.rightCast}` : ""}`);
+      ?.map((val) => constBuilder.addConst(val))
+      .map((param) => `${param}${this.rightCast ? `::${this.rightCast}` : ""}`);
 
     return `${this.left.sql()} ${this.comparatorF(right)}`;
   }
@@ -99,9 +99,9 @@ export class ColTableIdentifierComparison extends Comparison {
 
   tableIdentifier: TableIdentifierSqlBuilder;
 
-  public sql(paramBuilder: ParamBuilder): string {
+  public sql(constBuilder: ConstantBuilder): string {
     return `${this.left.sql()} ${this.comparatorF([
-      this.tableIdentifier.sql(paramBuilder),
+      this.tableIdentifier.sql(constBuilder),
     ])}`;
   }
 }

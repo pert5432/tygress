@@ -1,28 +1,28 @@
 import { PostgresClient } from "./postgres-client";
 import { QueryBuilder } from "./query-builder";
-import { ParamBuilder } from "./sql-builders";
+import { ConstantBuilder } from "./sql-builders";
 import { AnEntity } from "./types";
 import { QueryBuilderGenerics, SourcesContext } from "./types/query-builder";
 
 export type QueryBuilderFactoryArgs<G extends QueryBuilderGenerics> = {
   client: PostgresClient;
   sourcesContext?: SourcesContext<G>;
-  paramBuilder?: ParamBuilder;
+  constBuilder?: ConstantBuilder;
 };
 
 export class QueryBuilderFactory<G extends QueryBuilderGenerics> {
   private client: PostgresClient;
   private sourcesContext?: SourcesContext<G>;
-  private paramBuilder?: ParamBuilder;
+  private constBuilder?: ConstantBuilder;
 
   constructor({
     client,
     sourcesContext,
-    paramBuilder,
+    constBuilder,
   }: QueryBuilderFactoryArgs<G>) {
     this.client = client;
     this.sourcesContext = sourcesContext;
-    this.paramBuilder = paramBuilder;
+    this.constBuilder = constBuilder;
   }
 
   // Create from a simple entity select
@@ -61,7 +61,7 @@ export class QueryBuilderFactory<G extends QueryBuilderGenerics> {
         alias,
         { type: "entity", source: entity },
         sourcesContext,
-        this.paramBuilder
+        this.constBuilder
       ) as any;
     }
 
@@ -81,7 +81,7 @@ export class QueryBuilderFactory<G extends QueryBuilderGenerics> {
       alias.toString(),
       { type: "cte", name: alias, source: Object },
       this.sourcesContext,
-      this.paramBuilder
+      this.constBuilder
     ) as any;
   }
 }
