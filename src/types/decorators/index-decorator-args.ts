@@ -10,10 +10,15 @@ export type IndexDecoratorArgs<
   /**
    * A column can either be an entity field (`"firstName"`)
    *   or an object that can specify an entity field (`{field: "firstName"}`)
-   *   or an object specifying an expression (`{expression: "LOWER(field_name)"}`)
+   *   or an object specifying an `SQL` expression (`{expression: "LOWER(field_name)"}`)
    */
   columns: F[] | IndexColumnArgs<F>[];
+
+  /**
+   * Columns to be included in the index using the `INCLUDE` keyword
+   */
   includeColumns?: F[];
+
   unique?: boolean;
   nullsDistinct?: boolean;
   method?: IndexMethod;

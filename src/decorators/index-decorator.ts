@@ -2,6 +2,13 @@ import { METADATA_STORE } from "../metadata";
 import { AnEntity } from "../types";
 import { IndexColumnArgs, IndexDecoratorArgs } from "../types/decorators";
 
+/**
+ * Defines an index on a table
+ *
+ * https://www.postgresql.org/docs/current/sql-createindex.html
+ *
+ * @param name name of the index
+ */
 export const Index = <K extends AnEntity, F extends keyof InstanceType<K>>(
   name: string,
   args: IndexDecoratorArgs<K, F>
