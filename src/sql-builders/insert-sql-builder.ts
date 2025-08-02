@@ -9,7 +9,7 @@ import { Insert, InsertSqlArgs } from "../types/insert";
 import { TargetNode } from "../types/query";
 import { dQ, entityNameToAlias } from "../utils";
 import { NakedColumnIdentifierSqlBuilder } from "./column-identifier";
-import { ParamBuilder } from "./param-builder";
+import { ConstantBuilder } from "./constant-builder";
 
 export class InsertSqlBuilder {
   private args: InsertSqlArgs;
@@ -20,21 +20,21 @@ export class InsertSqlBuilder {
 
   private returning: ColumnMetadata[];
 
-  private paramBuilder: ParamBuilder;
+  private constBuilder: ConstantBuilder;
 
   private targetNode: TargetNode<AnEntity>;
 
   private columnIdentifiers: NakedColumnIdentifierSqlBuilder[];
 
   constructor(args: InsertSqlArgs) {
-    const { entity, columns, values, paramBuilder, returning } = args;
+    const { entity, columns, values, constBuilder, returning } = args;
 
     this.args = args;
 
     this.entity = entity;
     this.columns = columns;
     this.values = values;
-    this.paramBuilder = paramBuilder;
+    this.constBuilder = constBuilder;
 
     this.returning = returning;
 
@@ -104,7 +104,7 @@ export class InsertSqlBuilder {
       );
 
       sql += ` RETURNING ${targets
-        .map((e) => e.sql(this.paramBuilder))
+        .map((e) => e.sql(this.constBuilder))
         .join(", ")}`;
 
       this.targetNode = TargetNodeFactory.createRoot(this.entity.klass, alias);
@@ -114,7 +114,7 @@ export class InsertSqlBuilder {
 
     return {
       sql,
-      params: this.paramBuilder.params,
+      params: this.constBuilder.params,
       targetNode: this.targetNode,
     };
   }
@@ -134,6 +134,6 @@ export class InsertSqlBuilder {
       return "NULL";
     }
 
-    return `$${this.paramBuilder.addParam(value)}`;
+    return this.constBuilder.addConst(value);
   }
 }

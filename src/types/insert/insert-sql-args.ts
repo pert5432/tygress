@@ -1,8 +1,8 @@
 import { ColumnMetadata, TableMetadata } from "../../metadata";
-import { ParamBuilder } from "../../sql-builders";
+import { ConstantBuilder } from "../../sql-builders";
 
 export type InsertSqlArgs = {
-  paramBuilder: ParamBuilder;
+  constBuilder: ConstantBuilder;
 
   entity: TableMetadata;
   columns: ColumnMetadata[];

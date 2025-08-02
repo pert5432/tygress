@@ -8,15 +8,15 @@ import { AnEntity } from "../types";
 import { Delete, DeleteSqlArgs } from "../types/delete";
 import { TargetNode } from "../types/query";
 import { entityNameToAlias } from "../utils";
-import { ParamBuilder } from "./param-builder";
+import { ConstantBuilder } from "./constant-builder";
 
 export class DeleteSqlBuilder {
-  private paramBuilder: ParamBuilder;
+  private constBuilder: ConstantBuilder;
 
   private targetNode: TargetNode<AnEntity>;
 
   constructor(private args: DeleteSqlArgs) {
-    this.paramBuilder = args.paramBuilder;
+    this.constBuilder = args.constBuilder;
   }
 
   sql(): Delete {
@@ -25,13 +25,13 @@ export class DeleteSqlBuilder {
       this.args.entity.entityMeta.klass
     );
 
-    let sql = `DELETE FROM ${tableIdentifier.sql(this.paramBuilder)}`;
+    let sql = `DELETE FROM ${tableIdentifier.sql(this.constBuilder)}`;
 
     if (this.args.wheres.length) {
       sql += ` WHERE `;
 
       sql += `${this.args.wheres
-        .map((e) => e.sql(this.paramBuilder))
+        .map((e) => e.sql(this.constBuilder))
         .join(" AND ")}`;
     }
 
@@ -47,7 +47,7 @@ export class DeleteSqlBuilder {
       );
 
       sql += ` RETURNING ${targets
-        .map((e) => e.sql(this.paramBuilder))
+        .map((e) => e.sql(this.constBuilder))
         .join(", ")}`;
 
       this.targetNode = TargetNodeFactory.createRoot(
@@ -60,7 +60,7 @@ export class DeleteSqlBuilder {
 
     return {
       sql,
-      params: this.paramBuilder.params,
+      params: this.constBuilder.params,
 
       targetNode: this.targetNode,
     };

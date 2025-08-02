@@ -12,7 +12,8 @@ import { QueryResultEntitiesParser } from "./entities-query-result-parser";
 import {
   ComparisonSqlBuilder,
   PseudoSQLReplacer,
-  ParamBuilder,
+  ConstantBuilder,
+  ParametrizedConstantBuilder,
   SelectSqlBuilder,
   SelectTargetSqlBuilder,
   ColumnIdentifierSqlBuilder,
@@ -60,14 +61,14 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
   private _limit?: number;
   private _offset?: number;
 
-  private paramBuilder: ParamBuilder;
+  private constBuilder: ConstantBuilder;
 
   constructor(
     client: PostgresClient,
     alias: string,
     selectSource: SelectSourceContext,
     sourcesContext: SourcesContext<G>,
-    paramBuilder?: ParamBuilder
+    constBuilder?: ConstantBuilder
   ) {
     this.client = client;
 
@@ -86,7 +87,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
       }),
     ];
 
-    this.paramBuilder = paramBuilder ?? new ParamBuilder();
+    this.constBuilder = constBuilder ?? new ParametrizedConstantBuilder();
 
     // Ensure the source entity is selected
     const tableMeta = METADATA_STORE.getTable_(selectSource.source);
@@ -160,7 +161,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
     return new QueryBuilderFactory<G>({
       client: this.client,
       sourcesContext: this.sourcesContext,
-      paramBuilder: this.paramBuilder,
+      constBuilder: this.constBuilder,
     });
   }
 
@@ -2280,11 +2281,11 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
    * Returns SQL + params array of the query
    *
    * @param resultType specifies whether query is supposed to return entities or raw results
-   * @param paramBuilder
+   * @param constBuilder
    */
   public getQuery(
     resultType: QueryResultType,
-    paramBuilder?: ParamBuilder
+    constBuilder?: ConstantBuilder
   ): Query {
     return new SelectSqlBuilder<G["RootEntity"]>(
       {
@@ -2303,7 +2304,7 @@ export class QueryBuilder<G extends QueryBuilderGenerics> {
         distinct: this._distinct,
         distinctOn: this._distinctOn,
       },
-      paramBuilder ?? this.paramBuilder
+      constBuilder ?? this.constBuilder
     ).buildSelect();
   }
 

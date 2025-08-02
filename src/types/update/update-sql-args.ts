@@ -1,9 +1,9 @@
-import { ColumnMetadata, TableMetadata } from "../../metadata";
+import { ColumnMetadata } from "../../metadata";
 import { JoinNode } from "../../repository";
-import { ComparisonSqlBuilder, ParamBuilder } from "../../sql-builders";
+import { ComparisonSqlBuilder, ConstantBuilder } from "../../sql-builders";
 
 export type UpdateSqlArgs = {
-  paramBuilder: ParamBuilder;
+  constBuilder: ConstantBuilder;
 
   entity: JoinNode;
 

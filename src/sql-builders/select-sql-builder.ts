@@ -7,7 +7,7 @@ import { METADATA_STORE, TableMetadata } from "../metadata";
 import { SelectQueryArgs, AnEntity } from "../types";
 import { TargetNode, Query } from "../types/query";
 import { JoinArg } from "../types/query/join-arg";
-import { ParamBuilder } from "./param-builder";
+import { ConstantBuilder } from "./constant-builder";
 import {
   ColumnSelectTargetSqlBuilder,
   SelectTargetSqlBuilder,
@@ -18,7 +18,7 @@ import { QueryResultType } from "../enums";
 export class SelectSqlBuilder<T extends AnEntity> {
   constructor(
     private args: SelectQueryArgs,
-    private paramBuilder: ParamBuilder
+    private constBuilder: ConstantBuilder
   ) {
     this.rootJoinArg = args.joins[0]! as JoinArg;
 
@@ -62,7 +62,7 @@ export class SelectSqlBuilder<T extends AnEntity> {
 
     if (this.args.with?.length) {
       sql += `WITH ${this.args.with
-        .map((e) => e.sql(this.paramBuilder))
+        .map((e) => e.sql(this.constBuilder))
         .join(", ")} `;
     }
 
@@ -77,10 +77,10 @@ export class SelectSqlBuilder<T extends AnEntity> {
     }
 
     sql += `${this.selectTargetSqlBuilders
-      .map((e) => e.sql(this.paramBuilder))
+      .map((e) => e.sql(this.constBuilder))
       .join(", ")}`;
 
-    sql += ` FROM ${this.rootJoinArg.identifier.sql(this.paramBuilder)}`;
+    sql += ` FROM ${this.rootJoinArg.identifier.sql(this.constBuilder)}`;
 
     if (this.sqlJoins.length) {
       sql += ` ${this.sqlJoins.join(" ")}`;
@@ -116,7 +116,7 @@ export class SelectSqlBuilder<T extends AnEntity> {
 
     return {
       sql,
-      params: this.paramBuilder.params,
+      params: this.constBuilder.params,
       joinNodes: this.targetNodes,
     };
   }
@@ -127,7 +127,7 @@ export class SelectSqlBuilder<T extends AnEntity> {
     }
 
     for (const comparison of this.args.wheres) {
-      this.whereConditions.push(comparison.sql(this.paramBuilder));
+      this.whereConditions.push(comparison.sql(this.constBuilder));
     }
   }
 
@@ -138,7 +138,7 @@ export class SelectSqlBuilder<T extends AnEntity> {
 
     // Skip first node since its the root
     for (const join of this.args.joins.slice(1)) {
-      this.sqlJoins.push(join.sql(this.paramBuilder));
+      this.sqlJoins.push(join.sql(this.constBuilder));
 
       // Don't need to build target nodes if we aren't planning on returning entities
       if (!this.returningEntities()) {

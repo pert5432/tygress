@@ -1,7 +1,7 @@
 import { QueryResultType } from "../../enums";
 import { QueryBuilder } from "../../query-builder";
 import { dQ } from "../../utils";
-import { ParamBuilder } from "../param-builder";
+import { ConstantBuilder } from "../constant-builder";
 import { TableIdentifierSqlBuilder } from "./builder";
 
 export class CteTableIdentifierSqlBuilder extends TableIdentifierSqlBuilder {
@@ -10,8 +10,8 @@ export class CteTableIdentifierSqlBuilder extends TableIdentifierSqlBuilder {
 
   columnList?: string[];
 
-  override sql(paramBuilder: ParamBuilder): string {
-    const innerQuery = this.qb.getQuery(QueryResultType.RAW, paramBuilder).sql;
+  override sql(constBuilder: ConstantBuilder): string {
+    const innerQuery = this.qb.getQuery(QueryResultType.RAW, constBuilder).sql;
 
     const columnList = this.columnList?.length
       ? `(${this.columnList.map((e) => dQ(e)).join(", ")})`
