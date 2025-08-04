@@ -2,22 +2,18 @@ import { dQ } from "./double-quote";
 import { isNull } from "./is-null";
 
 export abstract class ConstantSerializer {
+  // These values should not be put in "s or 's
+  private static UNESCAPEABLE_VALUES: string[] = ["NULL", "TRUE", "FALSE"];
+
   static serialize(val: any): string {
-    if (typeof val === "function") {
-      throw new Error(`Can't serialize a function as Postgres input`);
+    const serialized = this._serialize(val);
+
+    if (this.UNESCAPEABLE_VALUES.includes(serialized)) {
+      return serialized;
     }
 
-    if (isNull(val)) {
-      return "NULL";
-    }
-
-    // TRUE or FALSE literals should not be escaped so handling them in this function
-    if (typeof val === "boolean") {
-      return val ? "TRUE" : "FALSE";
-    }
-
-    // Serialize value, turn all 's into ''s and \s into \\s
-    return `E'${this._serialize(val).replace(/['\\]/g, (m) => m + m)}'`;
+    // Serialize value, turn all 's into ''s
+    return `'${this._serialize(val).replace(/[']/g, (m) => m + m)}'`;
   }
 
   private static _serialize(val: any): string {
@@ -45,15 +41,31 @@ export abstract class ConstantSerializer {
     }
 
     if (val instanceof Buffer) {
-      return val.toString("hex");
+      return "\\x" + val.toString("hex");
     }
 
     if (Array.isArray(val)) {
-      const childValues = val.map((e) => dQ(this._serialize(e)));
+      const childValues = val.map((e) =>
+        this.escapeArrayElement(this._serialize(e))
+      );
 
       return `{${childValues.join(", ")}}`;
     }
 
     return JSON.stringify(val);
+  }
+
+  private static escapeArrayElement(e: string): string {
+    if (this.UNESCAPEABLE_VALUES.includes(e)) {
+      return e;
+    }
+
+    // e is an array, we don't want to quote it
+    if (e[0] === "{") {
+      return e;
+    }
+
+    // Replace all \s with \\ and "s with \" and double quote
+    return dQ(e.replace(/[\\"]/g, (m) => `\\${m}`));
   }
 }
