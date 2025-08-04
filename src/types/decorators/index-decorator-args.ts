@@ -1,4 +1,5 @@
 import { AnEntity } from "../entity";
+import { EntityColumns } from "../entity-columns";
 import { OneOf } from "../one-of";
 import { Pretty } from "../pretty";
 import { IndexMethod } from "../structure";
@@ -6,7 +7,7 @@ import { IndexWheres } from "../where-args";
 
 export type IndexDecoratorArgs<
   K extends AnEntity,
-  F extends keyof InstanceType<K>
+  F extends keyof EntityColumns<InstanceType<K>>
 > = {
   /**
    * A column can either be an entity field (`"firstName"`)

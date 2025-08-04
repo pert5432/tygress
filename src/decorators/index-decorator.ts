@@ -1,5 +1,5 @@
 import { METADATA_STORE } from "../metadata";
-import { AnEntity } from "../types";
+import { AnEntity, EntityColumns } from "../types";
 import { IndexColumnArgs, IndexDecoratorArgs } from "../types/decorators";
 
 /**
@@ -9,7 +9,10 @@ import { IndexColumnArgs, IndexDecoratorArgs } from "../types/decorators";
  *
  * @param name name of the index
  */
-export const Index = <K extends AnEntity, F extends keyof InstanceType<K>>(
+export const Index = <
+  K extends AnEntity,
+  F extends keyof EntityColumns<InstanceType<K>>
+>(
   name: string,
   args: IndexDecoratorArgs<K, F>
 ) => {
