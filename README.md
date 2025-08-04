@@ -53,6 +53,11 @@ And from there you can run queries based on the examples below :)
   - Returning raw results or class instances
 
 - Simple selects with `WHERE`, `JOIN`, `ORDER`, `LIMIT` / `OFFSET`
+- Migration management
+
+  - Generating migrations to manage schema changes; including foreign keys and indexes
+  - Execute and rollback migrations
+
 - Inserts, Upserts via `ON CONFLICT`
 - Updates
 - Deletes
@@ -61,10 +66,8 @@ And from there you can run queries based on the examples below :)
 
 ## Upcoming features (ordered by priority) 🚧
 
-- Migration support
-  - Index management
-  - Table config overrides (for ex. vacuum settings)
-  - Managing views and materialized views
+- Table config overrides (for ex. vacuum settings)
+- Managing views and materialized views
 - Inserts/Updates/Deletes using query builder
   - To support `INSERT INTO a SELECT ...`
   - Or `DELETE FROM a WHERE id IN(SELECT ...)` etc...
@@ -72,7 +75,7 @@ And from there you can run queries based on the examples below :)
 
 ## Feedback 🗣️
 
-Do you have feedback, suggestions or feature requests? Feel free to open an issue or a discussion in this repo.
+Do you have feedback, suggestions or feature requests? Feel free to open an issue in this repo.
 
 ## Example usage
 

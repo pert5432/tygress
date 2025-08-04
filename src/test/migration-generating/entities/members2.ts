@@ -1,7 +1,10 @@
-import { Column, ManyToOne, PrimaryKey, Table } from "../../..";
+import { Column, Index, ManyToOne, PrimaryKey, Table } from "../../..";
 import { Groups2 } from "./groups2";
 
 @Table("members")
+@Index("members_lower_username", {
+  columns: [{ expression: "LOWER(username)", nulls: "LAST", order: "DESC" }],
+})
 export class Members2 {
   @PrimaryKey({ name: "id", type: "UUID", default: () => "gen_random_uuid()" })
   id: string;

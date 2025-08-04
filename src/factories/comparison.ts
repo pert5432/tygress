@@ -21,7 +21,6 @@ import {
   IsNotNullCondition,
   IsNullCondition,
   NotConditionWrapper,
-  ParameterArgs,
   ParametrizedCondition,
   ParametrizedConditionWrapper,
 } from "../types/where-args";

@@ -52,3 +52,11 @@ export type Where<Property> = Property extends Parametrizable
 export type Wheres<E extends InstanceType<AnEntity>> = {
   [K in keyof E]?: Where<E[K]>;
 };
+
+export type IndexWhere<Property> = Property extends Parametrizable
+  ? Condition<Property> | Property | NullCondition
+  : never;
+
+export type IndexWheres<E extends InstanceType<AnEntity>> = {
+  [K in keyof E]?: IndexWhere<E[K]>;
+};

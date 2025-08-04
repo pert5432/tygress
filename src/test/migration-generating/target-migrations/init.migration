@@ -13,6 +13,18 @@ export const up = async (conn: PostgresConnection): Promise<void> => {
     );
 
   await conn.query(`
+      CREATE INDEX members_group_id_brin ON members USING brin (group_id) WHERE (("group_id" >= '5' AND "group_id" <> '15') AND "username" <> 'admin')`
+    );
+
+  await conn.query(`
+      CREATE INDEX members_main ON members USING btree (id) INCLUDE (username, group_id)`
+    );
+
+  await conn.query(`
+      CREATE UNIQUE INDEX members_username_unique ON members USING btree (username) NULLS DISTINCT`
+    );
+
+  await conn.query(`
       CREATE TABLE groups (
         id INT NOT NULL,
         name VARCHAR (256) NOT NULL,
@@ -34,6 +46,18 @@ export const down = async (conn: PostgresConnection): Promise<void> => {
 
   await conn.query(`
       DROP TABLE groups`
+    );
+
+  await conn.query(`
+      DROP INDEX members_username_unique`
+    );
+
+  await conn.query(`
+      DROP INDEX members_main`
+    );
+
+  await conn.query(`
+      DROP INDEX members_group_id_brin`
     );
 
   await conn.query(`
