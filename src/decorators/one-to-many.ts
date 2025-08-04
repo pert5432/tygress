@@ -7,7 +7,7 @@ export const OneToMany = <Foreign extends AnEntity>(
   foreignField: keyof InstanceType<Foreign>
 ) => {
   return function (target: Object, propertyName: string) {
-    METADATA_STORE.addRelation({
+    METADATA_STORE.addRelationArgs({
       type: Relation.ONE_TO_MANY,
       foreign: foreignFn,
       foreignField: foreignField.toString(),

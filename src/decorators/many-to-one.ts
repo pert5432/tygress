@@ -10,7 +10,7 @@ export const ManyToOne = <Foreign extends Object, Primary extends AnEntity>(
   args?: RelationForeignSideArgs<Primary>
 ) => {
   return function (target: Foreign, propertyName: string) {
-    METADATA_STORE.addRelation({
+    METADATA_STORE.addRelationArgs({
       type: Relation.MANY_TO_ONE,
 
       foreign: () => target.constructor as AnEntity,
