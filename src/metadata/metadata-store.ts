@@ -96,7 +96,8 @@ class MetadataStore {
   }
 
   //
-  // Modifiers
+  // Register args for tables, columns, relations etc...
+  // Duplicate args for the same object throw errors
   //
   public addTableArgs(args: TableMetadataArgs): void {
     if (this.tableArgs.get(args.klass)) {
@@ -116,35 +117,6 @@ class MetadataStore {
     }
 
     this.indexArgs.set(args.name, args);
-  }
-
-  public addTable(entity: AnEntity): void {
-    if (this.tables.get(entity)) {
-      return;
-    }
-
-    const args = this.tableArgs.get(entity);
-    if (!args) {
-      throw new Error(`No args found for klass ${entity.name}`);
-    }
-
-    const uniqueConstraint = this.uniqueConstraints.get(args.klass);
-    if (!uniqueConstraint) {
-      throw new Error(`No unique constraint found for table ${args.klass}`);
-    }
-
-    const columns = this.columns.get(args.klass);
-    if (!columns) {
-      throw new Error(`No columns found for table ${args.klass}`);
-    }
-
-    const metadata = TableMetadataFactory.create(
-      args,
-      columns,
-      uniqueConstraint
-    );
-
-    this.tables.set(metadata.klass, metadata);
   }
 
   public addColumn<T>(args: ColumnMetadataArgs<T>): void {
@@ -180,14 +152,15 @@ class MetadataStore {
     this.fields.set(klass, newFields);
   }
 
-  public addRelation(args: RelationMetadataArgs) {
+  public addRelationArgs(args: RelationMetadataArgs) {
     this.relationArgs.push(args);
   }
 
+  // Should be called when initialiting PostgresClient, after all entity classes have been loaded
+  // Creates metadata from already registered arguments
+  // Propagates created metadata
   public finalize(entities: AnEntity[]): void {
-    for (const entity of entities) {
-      this.addTable(entity);
-    }
+    this.createTables(entities);
 
     this.createRelations();
 
@@ -196,6 +169,43 @@ class MetadataStore {
     this.registerArrayFields();
 
     this.createIndexes();
+  }
+
+  //
+  // Creating metadata from args
+  // Ignore duplicate tables, relations etc... due to possibility of having multiple data sources
+  // Only finalize metadata for entities passed to finalize
+  //
+
+  private createTables(entities: AnEntity[]): void {
+    for (const entity of entities) {
+      if (this.tables.get(entity)) {
+        return;
+      }
+
+      const args = this.tableArgs.get(entity);
+      if (!args) {
+        throw new Error(`No args found for klass ${entity.name}`);
+      }
+
+      const uniqueConstraint = this.uniqueConstraints.get(args.klass);
+      if (!uniqueConstraint) {
+        throw new Error(`No unique constraint found for table ${args.klass}`);
+      }
+
+      const columns = this.columns.get(args.klass);
+      if (!columns) {
+        throw new Error(`No columns found for table ${args.klass}`);
+      }
+
+      const metadata = TableMetadataFactory.create(
+        args,
+        columns,
+        uniqueConstraint
+      );
+
+      this.tables.set(metadata.klass, metadata);
+    }
   }
 
   private createIndexes(): void {
