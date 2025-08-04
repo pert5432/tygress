@@ -1,6 +1,7 @@
 import { dQ } from "./double-quote";
 import { isNull } from "./is-null";
 
+// Serializes a value int Postgres input
 export abstract class ConstantSerializer {
   // These values should not be put in "s or 's
   private static UNESCAPEABLE_VALUES: string[] = ["NULL", "TRUE", "FALSE"];
@@ -55,6 +56,7 @@ export abstract class ConstantSerializer {
     return JSON.stringify(val);
   }
 
+  // By default array elements should be enclosed in "s but there are some exceptions
   private static escapeArrayElement(e: string): string {
     if (this.UNESCAPEABLE_VALUES.includes(e)) {
       return e;
