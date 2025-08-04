@@ -22,7 +22,7 @@ import {
 import { arrayify, entityNameToAlias } from "../utils";
 import {
   ComparisonSqlBuilder,
-  ParamBuilder,
+  ParametrizedConstantBuilder,
   SelectTargetSqlBuilder,
 } from "../sql-builders";
 import { JoinNodeFactory } from "../factories/repository";
@@ -109,7 +109,7 @@ export abstract class Repository {
       entity: tableMeta,
       values: payload,
       columns,
-      paramBuilder: new ParamBuilder(),
+      constBuilder: new ParametrizedConstantBuilder(),
 
       returning: returningColumns,
       onConflict,
@@ -169,7 +169,7 @@ export abstract class Repository {
         : (returning ?? []).map((e) => tableMeta.getColumn(e.toString()));
 
     const update = new UpdateSqlBuilder({
-      paramBuilder: new ParamBuilder(),
+      constBuilder: new ParametrizedConstantBuilder(),
       entity: rootNode,
 
       values: columnValues,
@@ -213,7 +213,7 @@ export abstract class Repository {
         : (returning ?? []).map((e) => tableMeta.getColumn(e.toString()));
 
     const del = new DeleteSqlBuilder({
-      paramBuilder: new ParamBuilder(),
+      constBuilder: new ParametrizedConstantBuilder(),
       entity: rootNode,
 
       wheres: wheresResult,
@@ -250,7 +250,7 @@ export abstract class Repository {
     // Generate SQL
     const query = new SelectSqlBuilder<T>(
       queryArgs,
-      new ParamBuilder()
+      new ParametrizedConstantBuilder()
     ).buildSelect();
 
     if (!query.joinNodes) {

@@ -1,5 +1,5 @@
 import { dQ } from "../../utils";
-import { ParamBuilder } from "../param-builder";
+import { ConstantBuilder } from "../constant-builder";
 import { SelectTargetSqlBuilder } from "./select-target";
 
 export class ColumNameSelectTargetSqlBuilder extends SelectTargetSqlBuilder {
@@ -8,7 +8,7 @@ export class ColumNameSelectTargetSqlBuilder extends SelectTargetSqlBuilder {
 
   as?: string;
 
-  public override sql(_paramBuilder: ParamBuilder): string {
+  public override sql(_constBuilder: ConstantBuilder): string {
     let _sql = `${dQ(this.alias)}.${dQ(this.columnName)}`;
 
     if (this.as?.length) {

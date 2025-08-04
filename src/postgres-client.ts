@@ -1,7 +1,7 @@
 import { Pool, QueryResult } from "pg";
 import { AnEntity, SelectArgs, Wheres } from "./types";
 import { PostgresConnection } from "./postgres-connection";
-import { ParamBuilder } from "./sql-builders";
+import { ConstantBuilder } from "./sql-builders";
 import { QueryBuilder } from "./query-builder";
 import { InsertPayload, InsertResult, InsertOptions } from "./types/insert";
 import { DeleteOptions, DeleteResult } from "./types/delete";
@@ -160,7 +160,7 @@ export class PostgresClient {
   public queryBuilder<A extends string, E extends AnEntity>(
     alias: A,
     entity: E,
-    paramBuilder?: ParamBuilder
+    constBuilder?: ConstantBuilder
   ): QueryBuilder<{
     RootEntity: E;
     JoinedEntities: Record<A, E>;
@@ -177,7 +177,7 @@ export class PostgresClient {
       alias,
       { type: "entity", source: entity },
       { [alias]: { type: "entity", source: entity } } as any,
-      paramBuilder
+      constBuilder
     );
   }
 

@@ -1,9 +1,9 @@
 import { ColumnMetadata } from "../../metadata";
 import { JoinNode } from "../../repository";
-import { ComparisonSqlBuilder, ParamBuilder } from "../../sql-builders";
+import { ComparisonSqlBuilder, ConstantBuilder } from "../../sql-builders";
 
 export type DeleteSqlArgs = {
-  paramBuilder: ParamBuilder;
+  constBuilder: ConstantBuilder;
 
   entity: JoinNode;
 

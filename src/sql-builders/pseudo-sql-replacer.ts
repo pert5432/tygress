@@ -1,9 +1,8 @@
 import { METADATA_STORE } from "../metadata";
-import { AnEntity } from "../types";
 import { NamedParams } from "../types/named-params";
 import { QueryBuilderGenerics, SourcesContext } from "../types/query-builder";
 import { dQ } from "../utils";
-import { ParamBuilder } from "./param-builder";
+import { ConstantBuilder } from "./constant-builder";
 
 type Replacement = {
   originalStart: number;
@@ -14,7 +13,7 @@ type Replacement = {
 export abstract class PseudoSQLReplacer {
   // Takes in SQL snippet which uses actual aliases from a query and fieldNames from an entity class
   // Returns the snippet with proper quotation and fieldNames replaced by column_names
-  // Ignores any input in parentheses
+  // Ignores any input in quotes
   public static replaceIdentifiers<G extends QueryBuilderGenerics>(
     input: string,
     sourcesContext: SourcesContext<G>
@@ -43,7 +42,7 @@ export abstract class PseudoSQLReplacer {
   public static replaceParams(
     input: string,
     paramValues: NamedParams,
-    paramBuilder: ParamBuilder
+    constBuilder: ConstantBuilder
   ): string {
     const replacements: Replacement[] = [];
 
@@ -51,7 +50,7 @@ export abstract class PseudoSQLReplacer {
       const replacement = this.paramReplacement(
         word,
         paramValues,
-        paramBuilder
+        constBuilder
       );
 
       if (replacement) {
@@ -123,7 +122,7 @@ export abstract class PseudoSQLReplacer {
   private static paramReplacement(
     { word, index }: { word: string; index: number },
     paramValues: NamedParams,
-    paramBuilder: ParamBuilder
+    constBuilder: ConstantBuilder
   ): Replacement | undefined {
     if (word[0] !== ":") {
       return;
@@ -137,14 +136,14 @@ export abstract class PseudoSQLReplacer {
       return;
     }
 
-    const paramNumbers: number[] = Array.isArray(value)
-      ? value.map((v) => paramBuilder.addParam(v))
-      : [paramBuilder.addParam(value)];
+    const consts: string[] = Array.isArray(value)
+      ? value.map((v) => constBuilder.addConst(v))
+      : [constBuilder.addConst(value)];
 
     return {
       originalStart: index,
       originalEnd: index + word.length,
-      replacement: paramNumbers.map((e) => `$${e}`).join(", "),
+      replacement: consts.join(", "),
     };
   }
 

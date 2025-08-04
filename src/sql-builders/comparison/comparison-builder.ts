@@ -1,5 +1,5 @@
-import { ParamBuilder } from "../param-builder";
+import { ConstantBuilder } from "../constant-builder";
 
 export abstract class ComparisonSqlBuilder {
-  public abstract sql(paramBuilder: ParamBuilder): string;
+  public abstract sql(constBuilder: ConstantBuilder): string;
 }

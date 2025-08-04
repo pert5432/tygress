@@ -1,5 +1,5 @@
-import { ParamBuilder } from "../param-builder";
+import { ConstantBuilder } from "../constant-builder";
 
 export abstract class TableIdentifierSqlBuilder {
-  abstract sql(paramBuilder: ParamBuilder): string;
+  abstract sql(constBuilder: ConstantBuilder): string;
 }
