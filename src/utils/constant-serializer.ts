@@ -4,12 +4,12 @@ import { isNull } from "./is-null";
 // Serializes a value int Postgres input
 export abstract class ConstantSerializer {
   // These values should not be put in "s or 's
-  private static UNESCAPEABLE_VALUES: string[] = ["NULL", "TRUE", "FALSE"];
+  private static INESCAPABLE_VALUES: string[] = ["NULL", "TRUE", "FALSE"];
 
   static serialize(val: any): string {
     const serialized = this._serialize(val);
 
-    if (this.UNESCAPEABLE_VALUES.includes(serialized)) {
+    if (this.INESCAPABLE_VALUES.includes(serialized)) {
       return serialized;
     }
 
@@ -58,7 +58,7 @@ export abstract class ConstantSerializer {
 
   // By default array elements should be enclosed in "s but there are some exceptions
   private static escapeArrayElement(e: string): string {
-    if (this.UNESCAPEABLE_VALUES.includes(e)) {
+    if (this.INESCAPABLE_VALUES.includes(e)) {
       return e;
     }
 
