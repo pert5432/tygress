@@ -1,8 +1,8 @@
 import { JoinStrategy, JoinType } from "../enums";
 import { TygressEntityMarker } from "../tygress-entity";
 import { AnEntity } from "./entity";
+import { IsPrimitive } from "./";
 import { NamedParams } from "./named-params";
-import { Parametrizable } from "./parametrizable";
 import { WhereComparator } from "./where-comparator";
 
 export type QueryBuilderGenerics = {
@@ -70,18 +70,6 @@ export type JoinImplArgs = {
       }
     | { strategy: JoinStrategy.CROSS; type: JoinType.CROSS }
   );
-
-type IsPrimitive<T> = T extends Parametrizable
-  ? true
-  : T extends { [TygressEntityMarker]: true }
-  ? false
-  : T extends Function
-  ? false
-  : T extends { new (...args: any[]): any }
-  ? false
-  : T extends Array<infer I>
-  ? IsPrimitive<I>
-  : true;
 
 export type FlattenRawSelectSources<
   T extends { [key: string]: SelectSource },
