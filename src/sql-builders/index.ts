@@ -27,5 +27,6 @@ export {
 export {
   ConstantBuilder,
   ParametrizedConstantBuilder,
+  InlineConstantBuilder,
 } from "./constant-builder";
 export { PseudoSQLReplacer } from "./pseudo-sql-replacer";

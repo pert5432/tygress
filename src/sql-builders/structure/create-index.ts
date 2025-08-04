@@ -8,7 +8,7 @@ import {
   METADATA_STORE,
 } from "../../metadata";
 import { ComparisonWrapper } from "../comparison";
-import { ParamBuilder } from "../param-builder";
+import { InlineConstantBuilder } from "..";
 
 export class CreateIndexSqlBuilder {
   constructor(private meta: IndexMetadata) {}
@@ -55,7 +55,7 @@ export class CreateIndexSqlBuilder {
         )
       ),
       "AND"
-    ).sql(new ParamBuilder());
+    ).sql(new InlineConstantBuilder());
 
     return ` WHERE ${predicate}`;
   }

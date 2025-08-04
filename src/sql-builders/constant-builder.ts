@@ -1,3 +1,5 @@
+import { ConstantSerializer } from "../utils";
+
 export abstract class ConstantBuilder {
   /**
    * Returns params that should be sent alongside the SQL statement
@@ -27,5 +29,19 @@ export class ParametrizedConstantBuilder extends ConstantBuilder {
     this._params.push(val);
 
     return `$${this._params.length}`;
+  }
+}
+
+/**
+ * Returns the constants in Postgres friendly input format
+ * Params returns an empty array since all the constants should get inlined into the query
+ */
+export class InlineConstantBuilder extends ConstantBuilder {
+  public get params(): any[] {
+    return [];
+  }
+
+  public addConst(val: any): string {
+    return ConstantSerializer.serialize(val);
   }
 }
