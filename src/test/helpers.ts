@@ -5,7 +5,7 @@ import { TygressEntityMarker } from "../tygress-entity";
 export abstract class TestHelper {
   static validateObject(a: Record<string, any>, b: Record<string, any>) {
     for (const key of Object.keys(b)) {
-      if (key === TygressEntityMarker) {
+      if (key === TygressEntityMarker.toString()) {
         continue;
       }
 
