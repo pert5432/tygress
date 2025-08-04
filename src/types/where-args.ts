@@ -1,4 +1,4 @@
-import { WhereComparator } from ".";
+import { Defined, WhereComparator } from ".";
 import { AnEntity } from "./entity";
 import { Parametrizable } from "./parametrizable";
 
@@ -57,6 +57,6 @@ export type IndexWhere<Property> = Property extends Parametrizable
   ? Condition<Property> | Property | NullCondition
   : never;
 
-export type IndexWheres<E extends InstanceType<AnEntity>> = {
+export type IndexWheres<E extends InstanceType<AnEntity>> = Defined<{
   [K in keyof E]?: IndexWhere<E[K]>;
-};
+}>;

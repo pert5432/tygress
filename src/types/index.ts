@@ -15,5 +15,6 @@ export { OneOf } from "./one-of";
 export { RelationForeignSideArgs } from "./relation-foreign-side-args";
 export { Pretty } from "./pretty";
 export { ObjectKey } from "./object-key";
+export { Defined } from "./defined";
 
 export * from "./conditions";
