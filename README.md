@@ -77,7 +77,9 @@ And from there you can run queries based on the examples below :)
 
 Do you have feedback, suggestions or feature requests? Feel free to open an issue in this repo.
 
-## Example usage
+## Example usage 💪
+
+You can find a repository with examples [here](https://github.com/pert5432/tygress-examples)
 
 You need to define your tables as classes and decorate them with Tygress decorators:
 
