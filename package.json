@@ -1,6 +1,6 @@
 {
   "name": "tygress",
-  "version": "0.1.0",
+  "version": "0.2.1",
   "author": "pert5432",
   "license": "MIT",
   "repository": "https://github.com/pert5432/tygress",
@@ -11,10 +11,15 @@
   ],
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc && cp ./src/cli.ts ./dist/cli.ts",
-    "start": "ts-node ./src/index.ts",
-    "test": "vitest"
+    "test": "vitest",
+    "prepublishOnly": "rm -r -f ./dist && yarn build"
   },
   "bin": {
     "tygress": "dist/cli.ts"
