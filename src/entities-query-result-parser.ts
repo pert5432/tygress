@@ -11,37 +11,8 @@ export abstract class QueryResultEntitiesParser {
       return [];
     }
 
-    let paths: TargetNode<AnEntity>[][] = [];
-
-    const buildPath = (parent: TargetNode<AnEntity>[]): void => {
-      let node: TargetNode<AnEntity> = parent[parent.length - 1]!;
-
-      const keys = Object.keys(node.joins);
-
-      if (!keys.length) {
-        return;
-      }
-
-      // Build new paths from first n-1 keys
-      for (let i = 0; i < keys.length - 1; i += 1) {
-        const newPath = [...parent, node.joins[keys[i]!]!];
-        paths.push(newPath);
-
-        buildPath(newPath);
-      }
-
-      // Extend this path using the last join in this node
-      parent.push(node.joins[keys[keys.length - 1]!]!);
-      return buildPath(parent);
-    };
-
-    const path = [joinNodes];
-    paths.push(path);
-
-    buildPath(path);
-
-    // Reverse paths so we can go from leaves up with a simple for ... of loop
-    paths = paths.map((e) => e.reverse());
+    // Build join node paths to map entity results to
+    const paths = this.buildJoinNodePaths(joinNodes);
 
     // This just might not be needed, idk, refactor later
     const rootEntities = new Map<string, InstanceType<AnEntity>>();
@@ -50,16 +21,11 @@ export abstract class QueryResultEntitiesParser {
     for (const row of rows) {
       for (const path of paths) {
         for (const node of path) {
-          const ids = node.idKeys.map((key) => row[key]);
-          const fullIdPath = ids.join("-");
-          const parentsIdPath = ids.slice(0, -1).join("-");
+          const [ids, fullIdPath, parentsIdPath] = this.getRowIds(row, node);
 
           // Ensure array of entities by parent path
-          if (
-            ids.length > 1 &&
-            !node.entitiesByParentsIdPath.get(parentsIdPath)
-          ) {
-            node.entitiesByParentsIdPath.set(parentsIdPath, []);
+          if (ids.length > 1) {
+            this.ensureEntitiesByParentPath(node, parentsIdPath);
           }
 
           // Id of this node is null in this row
@@ -72,15 +38,11 @@ export abstract class QueryResultEntitiesParser {
             break;
           }
 
-          // Construct entity
-          const e = new node.klass() as AnEntity;
-          for (const { fieldName, selectTarget } of node.selectedFields) {
-            e[fieldName] = row[selectTarget];
-          }
+          const e = this.constructEntity(row, node);
 
           // Is root entity
           if (ids.length === 1) {
-            rootEntities.set(ids[0].toString(), e as T);
+            rootEntities.set(fullIdPath.toString(), e as T);
 
             continue;
           }
@@ -118,6 +80,36 @@ export abstract class QueryResultEntitiesParser {
     return Array.from(rootEntities.values()) as InstanceType<T>[];
   }
 
+  private static ensureEntitiesByParentPath(
+    node: TargetNode<AnEntity>,
+    parentsIdPath: string
+  ): void {
+    if (!node.entitiesByParentsIdPath.has(parentsIdPath)) {
+      node.entitiesByParentsIdPath.set(parentsIdPath, []);
+    }
+  }
+
+  private static getRowIds(
+    row: any,
+    node: TargetNode<AnEntity>
+  ): [string[], string, string] {
+    const ids = node.idKeys.map((key) => row[key]);
+
+    return [ids, ids.join("-"), ids.slice(0, -1).join("-")];
+  }
+
+  private static constructEntity(
+    row: any,
+    node: TargetNode<AnEntity>
+  ): InstanceType<AnEntity> {
+    const e = new node.klass();
+    for (const { fieldName, selectTarget } of node.selectedFields) {
+      e[fieldName] = row[selectTarget];
+    }
+
+    return e;
+  }
+
   // Util to propagate entity instances into relation fields on its parent
   private static propagateEntitiesToParent = <
     P extends AnEntity,
@@ -135,4 +127,40 @@ export abstract class QueryResultEntitiesParser {
         : entities[0];
     }
   };
+
+  private static buildJoinNodePaths(
+    joinNodes: TargetNode<AnEntity>
+  ): TargetNode<AnEntity>[][] {
+    let paths: TargetNode<AnEntity>[][] = [];
+
+    const buildPath = (parent: TargetNode<AnEntity>[]): void => {
+      let node: TargetNode<AnEntity> = parent[parent.length - 1]!;
+
+      const keys = Object.keys(node.joins);
+
+      if (!keys.length) {
+        return;
+      }
+
+      // Build new paths from first n-1 keys
+      for (let i = 0; i < keys.length - 1; i += 1) {
+        const newPath = [...parent, node.joins[keys[i]!]!];
+        paths.push(newPath);
+
+        buildPath(newPath);
+      }
+
+      // Extend this path using the last join in this node
+      parent.push(node.joins[keys[keys.length - 1]!]!);
+      return buildPath(parent);
+    };
+
+    const path = [joinNodes];
+    paths.push(path);
+
+    buildPath(path);
+
+    // Reverse paths so we can go from leaves up with a simple for ... of loop
+    return paths.map((e) => e.reverse());
+  }
 }
