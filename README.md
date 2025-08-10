@@ -1,4 +1,4 @@
-Tygress is an ORM connecting NodeJS and Postgres.
+Typescript ORM for Postgres, runs on Node.js
 
 ## Main goals 🎯
 

@@ -162,7 +162,9 @@ export class PostgresConnection {
     }
   }
 
-  // Starts a transaction
+  /**
+   * Starts a transaction
+   */
   public async begin(): Promise<void> {
     this.ensureReadiness();
 
@@ -171,7 +173,9 @@ export class PostgresConnection {
     this.inTransaction = true;
   }
 
-  // Commits a transaction
+  /**
+   * Commits a transaction
+   */
   public async commit(): Promise<void> {
     this.ensureReadiness();
 
@@ -180,7 +184,9 @@ export class PostgresConnection {
     this.inTransaction = false;
   }
 
-  // Rolls back a transaction
+  /**
+   * Rolls back a transaction
+   */
   public async rollback(): Promise<void> {
     this.ensureReadiness();
 
@@ -189,17 +195,23 @@ export class PostgresConnection {
     this.inTransaction = false;
   }
 
-  // Starts a transaction
+  /**
+   * Starts a transaction
+   */
   public async startTransaction(): Promise<void> {
     await this.begin();
   }
 
-  // Commits a transaction
+  /**
+   * Commits a transaction
+   */
   public async commitTransaction(): Promise<void> {
     await this.commit();
   }
 
-  // Rolls back a transaction
+  /**
+   * Rolls back a transaction
+   */
   public async rollbackTransaction(): Promise<void> {
     await this.rollback();
   }
@@ -253,6 +265,7 @@ export class PostgresConnection {
       return;
     }
 
+    // If the connection is in transaction we need to make sure to not put it back in the pool
     if (this.inTransaction) {
       this.logger.warn(
         `Tried to release a connection with an active transaction. Closing corresponding Postgres connection.`

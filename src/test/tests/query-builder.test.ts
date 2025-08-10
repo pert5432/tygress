@@ -155,7 +155,7 @@ describe("QueryBuilder", async () => {
     });
 
     // This currently passes but shouldn't
-    // Need to move selecting fields await from SelectSqlBuilder to fix
+    // Need to move selecting fields away from SelectSqlBuilder to fix
     // test("right and select", async () => {
     //   const res = await TEST_DB.queryBuilder("p", Pets)
     //     .rightJoinAndSelect("u", Users, "p", "user")

@@ -156,7 +156,9 @@ export class PostgresClient {
     }
   }
 
-  // Creates a new instance of a query builder for the given entity
+  /**
+   * Creates a new instance of a query builder for the given entity
+   */
   public queryBuilder<A extends string, E extends AnEntity>(
     alias: A,
     entity: E,
@@ -181,7 +183,9 @@ export class PostgresClient {
     );
   }
 
-  // Runs a SELECT query, returning entitites as a result
+  /**
+   * Executes a SELECT query, returning entitites as a result
+   */
   public async select<T extends AnEntity>(
     entity: T,
     args: SelectArgs<InstanceType<T>>
@@ -190,9 +194,9 @@ export class PostgresClient {
   }
 
   /**
-   * Executes the same query as `select`, returning the first entity or null
+   * Executes a SELECT query, returning the first entity or null
    *
-   * This does **not** add a `LIMIT 1` to your SQL query so the whole result will be retrieved
+   * This does **not** add a `LIMIT 1` to your SQL query so the whole result will be retrieved from Postgres
    */
   public async selectOne<T extends AnEntity>(
     entity: T,
@@ -255,7 +259,14 @@ export class PostgresClient {
     );
   }
 
-  // Executes an SQL statement
+  /**
+   * Executes an SQL statement, returning the result from the pg driver
+   *
+   * @param sql Statement to be executed
+   * @param params Array of parameters to be passed to the query, referenced with $1, $2... in the statement
+   * @param type Used only to determine whether to log the execution of the statement
+   * @returns
+   */
   public async query<T extends { [key: string]: any } = any>(
     sql: string,
     params?: any[],

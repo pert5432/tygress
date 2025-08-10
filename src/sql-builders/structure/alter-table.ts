@@ -78,7 +78,6 @@ export class AlterTableSqlBuilder {
 
     const primaryMeta = METADATA_STORE.getTable(relation.primary);
 
-    // ADD CONSTRAINT "campaign_email_customers_campaign_email_id_fkey" FOREIGN KEY ("campaign_email_id") REFERENCES "campaign_emails"("id") ON DELETE NO ACTION ON UPDATE NO ACTION
     this.do(
       `ADD CONSTRAINT "${name}" FOREIGN KEY ("${
         relation.foreignColumn.name

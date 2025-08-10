@@ -12,7 +12,7 @@ export class TableMetadata {
 
   schemaname?: string;
 
-  // TODO: ✂️
+  // TODO: ✂️, this should be handled by some SQL builder class
   get dmlIdentifier() {
     return TableIdentifierSqlBuilderFactory.createDML(this.tablename);
   }
