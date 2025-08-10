@@ -2,11 +2,9 @@ import { PostgresConfigSettings } from ".";
 import { Logger } from "../../logger";
 
 export type PostgresConnectionOptions = {
-  // If set to true the connection will collect all SQL ran in an array
-  // This is mostly usefull for debugging/testing, you most likely do not want to have this on
-  collectSql?: boolean;
-
-  // Optionally supply your own logger instance
+  /**
+   * Optionally supply your own logger instance
+   */
   logger?: Logger;
 
   /**
@@ -15,9 +13,18 @@ export type PostgresConnectionOptions = {
     for ex. passing `{work_mem: '512MB'}` will execute `SET work_mem = '512MB'`
   */
   postgresConfig?: Partial<PostgresConfigSettings>;
+
+  /**
+   * If set to true the connection will collect all SQL ran in an array
+   * This is mostly usefull for debugging/testing, you most likely do not want to have this on
+   */
+  collectSql?: boolean;
 };
 
 export type WithConnectionOptions = PostgresConnectionOptions & {
-  // If set to true the connection will be closed after execution of the withConnection function is done
+  /**
+   * If set to true the connection to Postgres will be terminated after execution of the withConnection function is done
+   * Otherwise the connection will be released back to the pool, default: false
+   */
   closeConnection?: boolean;
 };

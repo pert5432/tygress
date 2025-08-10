@@ -10,6 +10,12 @@ export type QueryBuilderFactoryArgs<G extends QueryBuilderGenerics> = {
   constBuilder?: ConstantBuilder;
 };
 
+/**
+ * Factory for creating query builders for subqueries
+ * Takes in the parent query builder's sourcesContext to be able to reference tables from parent query in the subquery
+ *
+ * Takes in the parent query builder's constBuilder to maintain unique param numbers between parent and child queries
+ */
 export class QueryBuilderFactory<G extends QueryBuilderGenerics> {
   private client: PostgresClient;
   private sourcesContext?: SourcesContext<G>;
@@ -25,8 +31,10 @@ export class QueryBuilderFactory<G extends QueryBuilderGenerics> {
     this.constBuilder = constBuilder;
   }
 
-  // Create from a simple entity select
-  // Maintaining JoinedEntities and CTEs of parent query builder
+  /**
+   * Simple entity select
+   * Adds the entity to JoinedEntities
+   */
   public from<A extends string, E extends AnEntity>(
     alias: A,
     entity: E
@@ -37,8 +45,10 @@ export class QueryBuilderFactory<G extends QueryBuilderGenerics> {
     ExplicitSelects: {};
   }>;
 
-  // Create from a select from CTE from outer query
-  // Maintaining JoinedEntities and CTEs of parent query builder and adding the selected CTE to JoinedEntities
+  /**
+   * `SELECT` from a CTE from outer query
+   * Adds the selected CTE to JoinedEntities
+   */
   public from<C extends keyof G["CTEs"]>(
     cteAlias: C
   ): QueryBuilder<{

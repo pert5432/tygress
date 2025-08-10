@@ -22,7 +22,7 @@ export class SelectSqlBuilder<T extends AnEntity> {
   ) {
     this.rootJoinArg = args.joins[0]! as JoinArg;
 
-    // Only create target nodes when selecting entities as their are useless otherwise
+    // Only create target nodes when selecting entities as they are useless otherwise
     if (this.rootJoinArg.childType === "entity") {
       const rootTargetNode = TargetNodeFactory.createRoot(
         this.rootJoinArg.klass,

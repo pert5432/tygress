@@ -26,12 +26,12 @@ export abstract class ConditionWrapperFactory {
   public static createNot<V>(
     condition: ParametrizedConditionWrapper<V> | ParametrizedCondition<V>
   ): NotConditionWrapper<V> {
+    // Create a wrapper with one condition if the argument is a simple condition
+    // The logicalOperator here does not matter because its only one condition
     const wrapper =
       condition instanceof ParametrizedConditionWrapper
         ? condition
-        : // Create a wrapper with one condition if the argument is simply a condition
-          // The logicalOperator here does not matter because its only one condition
-          this.createParametrized([condition], "AND");
+        : this.createParametrized([condition], "AND");
 
     const e = new NotConditionWrapper<V>();
 
