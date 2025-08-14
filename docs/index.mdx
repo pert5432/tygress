@@ -1,0 +1,46 @@
+---
+title: "Getting started"
+---
+
+# Installation
+
+`npm i tygress` or `yarn add tygress`
+
+Make sure you have decorators enabled in your `tsconfig.json`
+```json
+{
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  }
+}
+```
+
+# Usage
+
+Define a table:
+```typescript
+@Table("users")
+export class Users {
+  @PrimaryKey({ name: "id", type: "UUID" })
+  id: string;
+
+  @Column({ name: "username", type: "TEXT" })
+  username: string;
+}
+```
+
+Initialize a client:
+```typescript
+import { PostgresClient } from "tygress";
+
+export const DB = new PostgresClient({
+  databaseUrl: "postgres://username:password@host:5432/database",
+  entities: [Users],
+});
+```
+
+Run queries:
+```typescript
+const users = await DB.select(Users, { where: { username: 'batman' }})
+```
