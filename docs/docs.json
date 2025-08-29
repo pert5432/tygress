@@ -1,5 +1,4 @@
 {
-  "$schema": "https://mintlify.com/docs.json",
   "name": "Tygress",
   "theme": "mint",
   "colors": {
@@ -8,6 +7,11 @@
     "dark": "#15803D"
   },
   "navigation": {
+    "groups": [
+      { "group": "Concepts", "pages": ["getting-started", "defining-tables"] },
+      { "group": "API Reference", "pages": ["api-reference/select"] }
+    ],
+    "pages": ["getting-started", "index", "api-reference/select"],
     "languages": [{ "language": "en" }]
   }
 }

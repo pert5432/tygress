@@ -1,0 +1,55 @@
+---
+title: "Defining tables"
+---
+
+You need to create a class and decorate it with the `@Table` decorator.
+
+To define columns you need to create fields in the class and decorate them with the `@Column` decorator.
+
+Example:
+```typescript
+@Table("users")
+export class Users {
+  @PrimaryKey({ name: "id", type: "UUID" })
+  id: string;
+
+  @Column({ name: "username", type: "TEXT" })
+  username: string;
+}
+```
+
+The `@Column` allows you to specify column attributes such as nullability, precision or max length.
+```typescript
+...
+@Column({ name: 'post_code', type: 'VARCHAR', maxLength: 8 })
+postCode: string;
+
+@Column({
+  name: "average_temperature",
+  type: "DECIMAL",
+  precision: 12,
+  scale: 8,
+})
+averageTemperature: number;
+...
+```
+
+# Indexes
+
+To define an index on a table use the `@Index` class decorator:
+
+```typescript
+@Index("users_username_idx", { columns: ["username"] })
+@Table("users")
+class Users {
+...
+```
+
+This decorator also allows you to make the index as unique, specify include columns, a where condition or a different index method:
+```typescript
+@Index("users_average_temperature_brin", {
+  columns: ["averageTemperature"],
+  method: "brin",
+  where: { averageTemperature: Gte(12.5), username: NotEq("admin") },
+})
+```
