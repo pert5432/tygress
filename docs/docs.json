@@ -1,4 +1,5 @@
 {
+  "$schema": "https://mintlify.com/docs.json",
   "name": "Tygress",
   "theme": "mint",
   "colors": {
@@ -8,10 +9,22 @@
   },
   "navigation": {
     "groups": [
-      { "group": "Concepts", "pages": ["getting-started", "defining-tables"] },
+      {
+        "group": "Concepts",
+        "pages": ["getting-started", "guides/defining-tables"]
+      },
       { "group": "API Reference", "pages": ["api-reference/select"] }
-    ],
-    "pages": ["getting-started", "index", "api-reference/select"],
-    "languages": [{ "language": "en" }]
+    ]
+  },
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/pert5432/tygress"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/pert5432/tygress"
+    }
   }
 }
