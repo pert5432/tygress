@@ -20,7 +20,6 @@ export class Users {
 
 The `@Column` allows you to specify column attributes such as nullability, precision or max length.
 ```typescript
-...
 @Column({ name: 'post_code', type: 'VARCHAR', maxLength: 8 })
 postCode: string;
 
@@ -31,7 +30,6 @@ postCode: string;
   scale: 8,
 })
 averageTemperature: number;
-...
 ```
 
 # Indexes
@@ -42,7 +40,6 @@ To define an index on a table use the `@Index` class decorator:
 @Index("users_username_idx", { columns: ["username"] })
 @Table("users")
 class Users {
-...
 ```
 
 This decorator also allows you to make the index as unique, specify include columns, a where condition or a different index method:
