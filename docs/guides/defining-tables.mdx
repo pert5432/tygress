@@ -42,7 +42,7 @@ To define an index on a table use the `@Index` class decorator:
 class Users {
 ```
 
-This decorator also allows you to make the index as unique, specify include columns, a where condition or a different index method:
+This decorator also allows you to make the index unique and specify include columns, where conditions or a different index method:
 ```typescript
 @Index("users_average_temperature_brin", {
   columns: ["averageTemperature"],

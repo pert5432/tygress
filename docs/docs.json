@@ -10,10 +10,13 @@
   "navigation": {
     "groups": [
       {
-        "group": "Concepts",
-        "pages": ["getting-started", "guides/defining-tables"]
+        "group": "Quickstart",
+        "pages": ["quickstart/index"]
       },
-      { "group": "API Reference", "pages": ["api-reference/select"] }
+      {
+        "group": "Concepts",
+        "pages": ["guides/defining-tables", "guides/migrations"]
+      }
     ]
   },
   "navbar": {
