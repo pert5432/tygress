@@ -10,7 +10,8 @@ export default new PostgresClient({
   databaseUrl: "postgres://username:password@host:5432/database",
   entities: [Users],
 
-  migrationFolders: [path.join(__dirname, "migrations")], // Needed for migrations to work
+  // Needed for migrations to work
+  migrationFolders: [path.join(__dirname, "migrations")],
 });
 ```
 
