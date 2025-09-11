@@ -16,7 +16,8 @@ export type PostgresClientOptions = {
   entities: AnEntity[];
 
   /**
-   * Maximum number of connections to the database at one time, default: 20
+   * Maximum number of connections to the database at one time
+   * @defaultValue 20
    */
   maxConnectionPoolSize?: number;
 

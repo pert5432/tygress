@@ -56,23 +56,27 @@ export class PostgresClient {
   }
 
   /**
-    Creates an instance of an entity
-    Does *not* save the entity to the database
-  */
+   * Creates an instance of an entity
+   * Does *not* run any queries
+   */
   public instantiate<T extends AnEntity>(
     entity: T,
     payload: Partial<InstanceType<T>>
   ): InstanceType<T>;
 
   /**
-    Creates multiple instances of an entity
-    Does *not* save them to the database
-  */
+   * Creates multiple instances of an entity
+   * Does *not* run any queries
+   */
   public instantiate<T extends AnEntity>(
     entity: T,
     payload: Partial<InstanceType<T>>[]
   ): InstanceType<T>[];
 
+  /**
+   * Creates multiple instances of an entity
+   * Does *not* run any queries
+   */
   public instantiate<T extends AnEntity>(
     entity: T,
     payload: Partial<InstanceType<T>> | Partial<InstanceType<T>>[]
@@ -93,9 +97,9 @@ export class PostgresClient {
   }
 
   /**
-    Gets a connection from the pool and returns it 
-    Keep in mind you need to release the connection when you don't want to use it anymore
-  */
+   * Gets a connection from the pool and returns it
+   * You need to release the connection when you don't want to use it anymore
+   */
   public async getConnection(
     settings?: PostgresConnectionOptions
   ): Promise<PostgresConnection> {
@@ -107,28 +111,35 @@ export class PostgresClient {
   }
 
   /**
-    Gets a connection from the pool and executes your function, passing the connection as an argument
-    You need to use the connection passed as an argument to your function for your queries to run on that connection
-
-    The connection is automatically released back to the pool after you function finishes executing
-    You can also supply `closeConnection: true` in the settings to close the connection instead of putting it back in the pool
-  */
+   * Gets a connection from the pool and executes your function, passing the connection as an argument
+   * You need to use the connection passed as an argument to your function for your queries to run on that connection
+   *
+   * The connection is automatically released back to the pool after you function finishes executing
+   * You can also supply `closeConnection: true` in the settings to close the connection instead of putting it back in the pool
+   */
   public async withConnection<T>(
     settings: WithConnectionOptions,
     fn: (connection: PostgresConnection) => T
   ): Promise<T>;
 
   /**
-    Gets a connection from the pool and executes your function, passing the connection as an argument
-    You need to use the connection passed as an argument to your function for your queries to run on that connection
-
-    The connection is automatically released back to the pool after you function finishes executing
-    You can also supply `closeConnection: true` in the settings to close the connection instead of putting it back in the pool
-  */
+   * Gets a connection from the pool and executes your function, passing the connection as an argument
+   * You need to use the connection passed as an argument to your function for your queries to run on that connection
+   *
+   * The connection is automatically released back to the pool after you function finishes executing
+   * You can also supply `closeConnection: true` in the settings to close the connection instead of putting it back in the pool
+   */
   public async withConnection<T>(
     fn: (connection: PostgresConnection) => T
   ): Promise<T>;
 
+  /**
+   * Gets a connection from the pool and executes your function, passing the connection as an argument
+   * You need to use the connection passed as an argument to your function for your queries to run on that connection
+   *
+   * The connection is automatically released back to the pool after you function finishes executing
+   * You can also supply `closeConnection: true` in the settings to close the connection instead of putting it back in the pool
+   */
   public async withConnection<T>(
     settingsOrFn:
       | WithConnectionOptions
@@ -157,7 +168,7 @@ export class PostgresClient {
   }
 
   /**
-   * Creates a new instance of a query builder for the given entity
+   * Creates a new instance of {@link QueryBuilder} for the given entity
    */
   public queryBuilder<A extends string, E extends AnEntity>(
     alias: A,
@@ -194,9 +205,9 @@ export class PostgresClient {
   }
 
   /**
-   * Executes a SELECT query, returning the first entity or null
+   * Executes a SELECT query, returning the first entity or `null`.
    *
-   * This does **not** add a `LIMIT 1` to your SQL query so the whole result will be retrieved from Postgres
+   * Does **not** add a `LIMIT 1` to your SQL query so the whole result will be retrieved from Postgres
    */
   public async selectOne<T extends AnEntity>(
     entity: T,
@@ -206,9 +217,9 @@ export class PostgresClient {
   }
 
   /**
-    Runs an INSERT statement using the provided values
-    Optionally returns inserted rows as entities
-  */
+   * Executes an INSERT statement using the provided values
+   * Optionally returns inserted rows as entities
+   */
   public async insert<
     T extends AnEntity,
     ReturnedFields extends keyof InstanceType<T>,
@@ -225,9 +236,9 @@ export class PostgresClient {
   }
 
   /**
-    Runs an UPDATE statement using the provided values and WHERE condition
-    Optionally returns updated rows as entities
-  */
+   * Executes an UPDATE statement using the provided values and WHERE condition
+   * Optionally returns updated rows as entities
+   */
   public async update<
     T extends AnEntity,
     ReturnedFields extends keyof InstanceType<T>
@@ -243,9 +254,9 @@ export class PostgresClient {
   }
 
   /**
-    Runs a DELETE statement using the provided WHERE condition
-    Optionally returns deleted rows as entities
-  */
+   * Executes a DELETE statement using the provided WHERE condition
+   * Optionally returns deleted rows as entities
+   */
   public async delete<
     T extends AnEntity,
     ReturnedFields extends keyof InstanceType<T>
@@ -339,6 +350,7 @@ export class PostgresClient {
   //
   // PRIVATE
   //
+
   private connectionSettings(
     options?: PostgresConnectionOptions
   ): PostgresConnectionOptions | undefined {

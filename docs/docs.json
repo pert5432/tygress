@@ -15,7 +15,11 @@
       },
       {
         "group": "Concepts",
-        "pages": ["guides/defining-tables", "guides/migrations"]
+        "pages": [
+          "guides/defining-tables",
+          "guides/client-methods",
+          "guides/migrations"
+        ]
       }
     ]
   },

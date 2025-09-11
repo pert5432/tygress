@@ -1,0 +1,34 @@
+---
+title: "Client methods"
+---
+
+
+# select
+
+Executes a SELECT query, returning entitites as a result
+
+# selectOne
+
+Executes a SELECT query, returning the first entity or `null`.\
+Does **not** add a `LIMIT 1` to your SQL query so the whole result will be retrieved from Postgres.
+
+# insert
+
+Runs an INSERT statement using the provided values.\
+Optionally returns inserted rows as entities.
+
+
+# update
+
+Executes an UPDATE statement using the provided values and WHERE condition. \
+Optionally returns updated rows as entities
+  
+# delete
+
+Executes a DELETE statement using the provided WHERE condition. \
+Optionally returns deleted rows as entities
+
+
+# query
+
+Executes an SQL statement, returning the result from the pg driver.
