@@ -1,0 +1,49 @@
+---
+title: "Existing database"
+---
+
+# Defining tables
+
+For each table in your database you need to create a class and decorate it with the `@Table` decorator.
+
+For each column in each table create a field in the class and decorate it with the `@Column` decorator. Make sure the arguments passed to the `@Column` decorator match the column attributes in the database.
+
+Example:
+```typescript /entities/users.ts
+@Table("users")
+export class Users {
+  @PrimaryKey({ name: "id", type: "UUID" })
+  id: string;
+
+  @Column({ name: "username", type: "TEXT" })
+  username: string;
+}
+```
+
+You can read more about defining tables [here](/guides/defining-tables)
+
+# Client
+
+Initialize a client:
+```typescript tygress-client.ts
+import { Users } from "./entities";
+import { PostgresClient } from "tygress";
+
+export default new PostgresClient({
+  databaseUrl: "postgres://username:password@host:5432/database",
+  entities: [Users], // List all your tables here
+});
+```
+
+# Usage
+
+Elsewhere in your application you can run queries like this:
+```typescript index.ts
+import DB from 'tygress-client.ts'
+
+const users = await DB.select(Users, { where: { username: 'batman' }})
+```
+
+# Migrations
+
+If you want to manage your schema using Tygress you should read [more about migrations ->](/guides/migrations)

@@ -1,0 +1,47 @@
+---
+title: Changing Postgres config
+---
+
+When you acquire a connection either using `withConnection` or `getConnection` you can specify config options which will be applied to the connection.
+
+```typescript
+await DB.withConnection(
+  {
+      postgresConfig: { work_mem: "512MB" },
+  },
+  async (conn) => {
+    await conn.begin();
+
+    await conn.query("SELECT 1;");
+
+    await conn.commit();
+  }
+);
+```
+
+The SQL executed on the connection would be 
+```SQL
+SET work_mem = '512MB';
+
+BEGIN;
+
+SELECT 1;
+
+COMMIT;
+```
+
+
+These settings will stay on the Postgres connection after it gets released back to the pool so they might affect connections you will acquire in the future.
+
+# Default connection settings
+
+You can specify default options that should be passed to every connection when its acquired from the pool.
+
+```typescript
+new PostgresClient({
+  defaultConnectionOptions: {
+    collectSql: true,
+    postgresConfig: { work_mem: "512MB" },
+  },
+});
+```

@@ -1,0 +1,39 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "name": "Tygress",
+  "theme": "mint",
+  "colors": {
+    "primary": "#16A34A",
+    "light": "#07C983",
+    "dark": "#15803D"
+  },
+  "navigation": {
+    "groups": [
+      {
+        "group": "Quickstart",
+        "pages": ["quickstart/index"]
+      },
+      {
+        "group": "Concepts",
+        "pages": [
+          "guides/defining-tables",
+          "guides/client-methods",
+          "guides/migrations",
+          "guides/connections",
+          "guides/postgres-config"
+        ]
+      }
+    ]
+  },
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/pert5432/tygress"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/pert5432/tygress"
+    }
+  }
+}

@@ -1,0 +1,56 @@
+---
+title: "New database"
+---
+
+# Defining tables
+
+For each table you want to have in your database you need to create a class and decorate it with the `@Table` decorator.
+
+To define columns you need to create fields in the class and decorate them with the `@Column` decorator.
+
+Example:
+```typescript /entities/users.ts
+@Table("users")
+export class Users {
+  @PrimaryKey({ name: "id", type: "UUID" })
+  id: string;
+
+  @Column({ name: "username", type: "TEXT" })
+  username: string;
+}
+```
+
+You can read more about defining tables [here](/guides/defining-tables)
+
+# Client
+
+Initialize a client:
+```typescript tygress-client.ts
+import { Users } from "./entities";
+import { PostgresClient } from "tygress";
+
+export default new PostgresClient({
+  databaseUrl: "postgres://username:password@host:5432/database",
+  entities: [Users], // List all your tables here
+  migrationFolders: [path.join(__dirname, "migrations")], // Needed for migrations to work
+});
+```
+
+# Database setup
+
+Create your database `yarn tygress db:create`
+
+Generate your initial migration: `yarn tygress migration:generate InitialMigration`
+
+Run the migration: `yarn tygress migration:run`
+
+[More about migrations ->](/guides/migrations)
+
+# Usage
+
+Elsewhere in your application you can run queries like this:
+```typescript index.ts
+import DB from 'tygress-client.ts'
+
+const users = await DB.select(Users, { where: { username: 'batman' }})
+```

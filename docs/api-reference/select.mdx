@@ -1,0 +1,19 @@
+---
+title: "Select"
+sidebarTitle: "Select"
+---
+
+The `select` method executes a `SELECT` statement and returns the results as entities.
+
+```typescript
+await DB.select(Users, {})
+```
+
+Example:
+```typescript
+await DB.select(Users, { 
+    where: { username: 'batman' },
+    select: { id: true, pets: { id: true }},
+    order: { id: 'ASC', pets: { id: 'DESC' }},
+  })
+```

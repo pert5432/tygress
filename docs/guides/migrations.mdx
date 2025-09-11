@@ -1,0 +1,35 @@
+---
+title: "Migrations"
+---
+
+For migrations to work you need to specify a migration folder in your client:
+```typescript tygress-client.ts
+import { PostgresClient } from "tygress";
+
+export default new PostgresClient({
+  databaseUrl: "postgres://username:password@host:5432/database",
+  entities: [Users],
+
+  // Needed for migrations to work
+  migrationFolders: [path.join(__dirname, "migrations")],
+});
+```
+
+# CLI
+
+For the CLI to be able to use the `PostgresClient` you defined you can pass the path to it using `--config ./src/database.ts` or put the client in `tygress-client.ts` in your project root.
+
+
+## Commands
+
+### migration:generate Name
+Generates a migration that will make your DB schema match Tygress entities 
+
+### migration:blank Name
+Creates an empty migration
+
+### migration:run
+Runs all pending migrations
+
+### migration:rollback
+Rolls the last executed migration back
