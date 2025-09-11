@@ -5,11 +5,11 @@ Typescript ORM for Postgres, runs on Node.js
 - Support all Postgres features to get the most out of your database
   - Including changing Postgres config, per-table overrides, explicit locking, DDL etc...
 - Have minimum performance overhead and maximum control
-  - You should have full control over which columns and how many rows you select
-  - It should be clear what queries are ran where so Tygress API functions aim to only execute 1 query per call
+  - You should have full control over which columns and how many rows you `SELECT`, `INSERT` etc...
+  - It should be clear what queries are ran when and where
 - Have full type safety
-  - This includes query results, building the queries themselves and other interactions with Postgres
-- Keep simple queries simple but offer solid support for building complex ones
+  - This includes query results, building queries and other interactions with Postgres
+  - Keep simple queries simple but offer solid support for building complex ones
 
 ## Usage 💯
 

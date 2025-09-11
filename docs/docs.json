@@ -18,7 +18,9 @@
         "pages": [
           "guides/defining-tables",
           "guides/client-methods",
-          "guides/migrations"
+          "guides/migrations",
+          "guides/connections",
+          "guides/postgres-config"
         ]
       }
     ]
