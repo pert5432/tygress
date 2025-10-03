@@ -1,4 +1,4 @@
-import { Pool, QueryResult } from "pg";
+import { Client, Pool, QueryResult } from "pg";
 import { AnEntity, SelectArgs, Wheres } from "./types";
 import { PostgresConnection } from "./postgres-connection";
 import { ConstantBuilder } from "./sql-builders";
@@ -29,6 +29,8 @@ export class PostgresClient {
 
   private entities: AnEntity[];
 
+  private databaseUrl: string;
+
   constructor({
     databaseUrl,
     maxConnectionPoolSize,
@@ -51,6 +53,7 @@ export class PostgresClient {
 
     this.logger = new Logger(queryLogLevel ?? QueryLogLevel.ALL, logColors);
 
+    this.databaseUrl = databaseUrl;
     this.migrationFolders = migrationFolders;
     this.entities = entities;
   }
@@ -345,6 +348,25 @@ export class PostgresClient {
    */
   public async close(): Promise<void> {
     await this.pool.end();
+  }
+
+  public async createdb(): Promise<void> {
+    const pgDatabaseUrl = [
+      ...this.databaseUrl.split("/").slice(0, -1),
+      "postgres",
+    ].join("/");
+
+    const connection = new Client({ connectionString: pgDatabaseUrl });
+
+    try {
+      await connection.connect();
+
+      await connection.query(
+        `CREATE DATABASE ${this.databaseUrl.split("/").at(-1)}`
+      );
+    } finally {
+      await connection.end();
+    }
   }
 
   //

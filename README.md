@@ -212,6 +212,7 @@ export default new PostgresClient({
 });
 ```
 
+`tygress db:create` to create your database \
 `tygress migration:generate Name` to generate a migration that will make your DB schema match Tygress entities \
 `tygress migration:blank Name` to create an empty migration \
 `tygress migration:run` to run all pending migrations \
@@ -223,6 +224,7 @@ You can either put the `PostgresClient` you want to use for migrations in `tygre
 
 You can use functions on the `PostgresClient` to do everything you can do with the CLI.
 
+`await DB.createdb()` to create your database \
 `await DB.generateMigration(name)` to generate a migration that will make your DB schema match Tygress entities \
 `await DB.createBlankMigration("Name")` to create an empty migration \
 `await DB.runMigrations()` to run all pending migrations \

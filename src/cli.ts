@@ -30,7 +30,7 @@ abstract class CLI {
       console.log(`
         CLI usage is 'tygress [command] --options'
         
-        command is one of: migration:blank, migration:generate, migration:run, migration:rollback
+        command is one of: db:create, migration:blank, migration:generate, migration:run, migration:rollback
         `);
 
       return;
@@ -39,12 +39,19 @@ abstract class CLI {
     const client = await this.getPostgresClient(args.values.config as string);
 
     switch (command) {
+      case "db:create":
+        await client.createdb();
+        console.log("Database created");
+        break;
+
       case "migration:run":
         await client.runMigrations();
         break;
+
       case "migration:rollback":
         await client.rollbackLastMigration();
         break;
+
       case "migration:blank":
       case "migration:generate": {
         const name = (args.values.name as string) ?? args.positionals[1];
