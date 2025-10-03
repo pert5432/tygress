@@ -18,6 +18,7 @@
         "pages": [
           "guides/defining-tables",
           "guides/client-methods",
+          "guides/query-builder",
           "guides/migrations",
           "guides/connections",
           "guides/postgres-config"

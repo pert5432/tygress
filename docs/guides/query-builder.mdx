@@ -1,0 +1,135 @@
+---
+title: Query builder
+---
+
+You can use the query builder to create complex `SELECT` queries; including joins, subqueries and CTEs.
+
+First create a query builder instance:
+
+```typescript
+// SQL: SELECT u.* FROM users u 
+const query = DB.queryBuilder('u', Users)
+```
+
+Then continue building your query:
+
+# where
+
+Adds a `WHERE` condition. Multiple calls to this method result in the conditions `AND`-ed together.
+
+```typescript
+// SQL: SELECT u.* FROM users u 
+//      WHERE u.username = u.lastName AND NOT(u.id = 5)
+const query = DB.queryBuilder('u', Users)
+  .where("u", "username", "=", "u", "lastName")
+  .where("u", "id", Not(Eq(5)))
+```
+
+
+## subquery
+```typescript
+// SQL: SELECT u.* FROM users u 
+//      WHERE u.id IN(
+//        SELECT p.user_id FROM pets p
+//        WHERE p.name = 'dog'
+//      )
+const query = DB.queryBuilder('u', Users)
+  .where("u", "id", "IN", (qb) =>
+    qb.from("p", Pets).where("p", "name", Eq("dog"))
+  )
+```
+
+
+# innerJoin
+
+`INNER JOIN`s a table. **Does not select** columns from the joined table. Supports joining by relation, condition or sql.
+
+```typescript
+// SQL: SELECT u.* FROM users u 
+//      INNER JOIN pets p ON p.user_id = u.id
+const query = DB.queryBuilder('u', Users)
+  .innerJoin("p", Pets, "u", "pets")
+```
+
+
+# innerJoinAndSelect
+
+`INNER JOIN`s a table. **Selects** columns from the joined table. Supports joining by relation, condition or sql.
+
+```typescript
+// SQL: SELECT u.*, p.* FROM users u 
+//      INNER JOIN pets p ON p.user_id = u.id
+const query = DB.queryBuilder('u', Users)
+  .innerJoinAndSelect("p", Pets, "u", "pets")
+```
+
+
+# innerJoinAndMap
+
+`INNER JOIN`s a table. **Selects and maps** columns from the joined table into entity result. Supports joining by relation, condition or sql.
+
+```typescript
+// SQL: SELECT u.*, p.* FROM users u 
+//      INNER JOIN pets p ON p.user_id = u.id
+const query = DB.queryBuilder('u', Users)
+  .innerJoinAndMap("p", Pets, "u", "pets")
+```
+
+# with
+
+Adds a CTE which you can reference later in your query. First argument is CTE name, second is CTE query.
+```typescript
+// SQL: WITH p AS (
+//        SELECT pet.user_id AS uid FROM pets p
+//      )
+//      SELECT u.* FROM users u 
+//      WHERE u.id IN(
+//        SELECT p.uid FROM p
+//      )
+const query = DB.queryBuilder('u', Users)
+  .with("p", (qb) => qb.from("pet", Pets).select("pet", "userId", "uid"))
+  .where("u", "id", "IN", (qb) => qb.from("p").select("p", "uid"))
+```
+
+
+# orderBy
+
+Adds `ORDER BY` clause. Default is `ASC`.
+
+```typescript
+// SQL: SELECT u.* FROM users u 
+//      ORDER BY u.last_name ASC
+const query = DB.queryBuilder('u', Users)
+  .orderBy("u", "lastName")
+```
+
+# getEntities
+
+Returns result parsed into entities.
+
+```typescript
+// [
+//   Users {
+//    id: 5,
+//    firstName: 'John',
+//    lastName: 'Doe',
+//  }
+// ]
+const query = DB.queryBuilder('u', Users)
+  .getEntities()
+```
+
+# getRaw
+
+Returns result as plain objects. Field names are column name as from the `SQL` query. Return type is automatically generated.
+```typescript
+// [
+//  {
+//    "u.id": 5,
+//    "u.firstName": 'John',
+//    "u.lastName": 'Doe',
+//  }
+// ]
+const query = DB.queryBuilder('u', Users)
+  .getRaw()
+```
