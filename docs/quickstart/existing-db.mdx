@@ -2,11 +2,13 @@
 title: "Existing database"
 ---
 
-# Defining tables
-
 For each table in your database you need to create a class and decorate it with the `@Table` decorator.
 
+Once you do this we call the class an <Tooltip tip="Classes and decorators that define your schema">entity</Tooltip>.
+
 For each column in each table create a field in the class and decorate it with the `@Column` decorator. Make sure the arguments passed to the `@Column` decorator match the column attributes in the database.
+
+Every <Tooltip tip="Classes and decorators that define your schema">entity</Tooltip> needs to have a <Tooltip tip="Column with a Postgres primary key on it">Primary Key</Tooltip>.
 
 Example:
 ```typescript /entities/users.ts
@@ -24,7 +26,7 @@ You can read more about defining tables [here](/guides/defining-tables)
 
 # Client
 
-Initialize a client:
+Initialize a <Tooltip tip="PostgresClient class, main interface with Tygress">client</Tooltip>:
 ```typescript tygress-client.ts
 import { Users } from "./entities";
 import { PostgresClient } from "tygress";
@@ -46,4 +48,8 @@ const users = await DB.select(Users, { where: { username: 'batman' }})
 
 # Migrations
 
-If you want to manage your schema using Tygress you should read [more about migrations ->](/guides/migrations)
+If you want to manage your database using Tygress you should read [more about migrations ->](/guides/migrations)
+
+<Card title="Continue reading" href="/guides/defining-tables" icon="arrow-right">
+  Keep learning how to use Tygress
+</Card>

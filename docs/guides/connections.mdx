@@ -2,19 +2,19 @@
 title: Connections
 ---
 
-The client keeps a connection pool internally. The size of the pool is configurable using `maxConnectionPoolSize`.
+The <Tooltip tip="PostgresClient class, main interface with Tygress">client</Tooltip> keeps a connection pool internally. The size of the pool is configurable using `maxConnectionPoolSize`.
 
-When you use methods such as `select` or `insert` on the client, the client gets a connection from its pool, executes your query and releases the connection back into the pool so it can be used again later.
+When you use methods such as `select` or `insert` on the <Tooltip tip="PostgresClient class, main interface with Tygress">client</Tooltip>, the <Tooltip tip="PostgresClient class, main interface with Tygress">client</Tooltip> gets a connection from its pool, executes your query and releases the connection back into the pool so it can be used again later.
 
 # Manually handling connections
 
-You can also get a connection from the client using the `getConnection` method. If you do this you have to make sure to release the connection when you don't need it anymore otherwise it will never become available again.
+You can also get a connection from the <Tooltip tip="PostgresClient class, main interface with Tygress">client</Tooltip> using the `getConnection` method. If you do this you have to make sure to release the connection when you don't need it anymore otherwise it will never become available again.
 
 You probably don't need to use this method unless you have a very specific use-case where you need to control the lifecycle of a connection yourself.
 
 # withConnection
 
-If you want to perform multiple operations on one connection (for example in one transaction) you should probably use the `withConnection` method of the client. This method acquires a connection, passes it to your function and releases the connection when your function returns or throws an error.
+If you want to perform multiple operations on one connection (for example in one transaction) you should probably use the `withConnection` method of the <Tooltip tip="PostgresClient class, main interface with Tygress">client</Tooltip>. This method acquires a connection, passes it to your function and releases the connection when your function returns or throws an error.
 
 It is important to `await` all the queries on the connection to prevent the connection from being released before all queries in your function run.
 

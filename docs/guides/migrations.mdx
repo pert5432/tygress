@@ -2,7 +2,7 @@
 title: "Migrations"
 ---
 
-For migrations to work you need to specify a migration folder in your client:
+For migrations to work you need to specify a migration folder in your <Tooltip tip="PostgresClient class, main interface with Tygress">client</Tooltip>:
 ```typescript tygress-client.ts
 import { PostgresClient } from "tygress";
 
@@ -17,22 +17,22 @@ export default new PostgresClient({
 
 # CLI
 
-For the CLI to be able to use the `PostgresClient` you defined you can pass the path to it using `--config ./src/database.ts` or put the client in `tygress-client.ts` in your project root.
+For the CLI to be able to use the `PostgresClient` you defined you can pass the path to it using `--config ./src/database.ts` or put the <Tooltip tip="PostgresClient class, main interface with Tygress">client</Tooltip> in `tygress-client.ts` in your project root.
 
 
-## Commands
+# Commands
 
-### db:create
-Creates your database. Connects to postgres database with the auth provided in your client config.
+## db:create
+Creates your database. Connects to postgres database with the auth provided in your <Tooltip tip="PostgresClient class, main interface with Tygress">client</Tooltip> config.
 
-### migration:generate Name
-Generates a migration that will make your DB schema match Tygress entities 
+## migration:generate Name
+Generates a migration that will make your DB match your <Tooltip tip="Classes and decorators that define your schema">entities</Tooltip>
 
-### migration:blank Name
+## migration:blank Name
 Creates an empty migration
 
-### migration:run
+## migration:run
 Runs all pending migrations
 
-### migration:rollback
+## migration:rollback
 Rolls the last executed migration back
