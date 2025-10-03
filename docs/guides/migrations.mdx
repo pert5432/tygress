@@ -20,19 +20,19 @@ export default new PostgresClient({
 For the CLI to be able to use the `PostgresClient` you defined you can pass the path to it using `--config ./src/database.ts` or put the client in `tygress-client.ts` in your project root.
 
 
-## Commands
+# Commands
 
-### db:create
+## db:create
 Creates your database. Connects to postgres database with the auth provided in your client config.
 
-### migration:generate Name
+## migration:generate Name
 Generates a migration that will make your DB match your <Tooltip tip="Classes and decorators that define your schema">entities</Tooltip>
 
-### migration:blank Name
+## migration:blank Name
 Creates an empty migration
 
-### migration:run
+## migration:run
 Runs all pending migrations
 
-### migration:rollback
+## migration:rollback
 Rolls the last executed migration back
