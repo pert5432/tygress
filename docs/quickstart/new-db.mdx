@@ -2,11 +2,13 @@
 title: "New database"
 ---
 
-# Defining tables
-
 For each table you want to have in your database you need to create a class and decorate it with the `@Table` decorator.
 
+Once you do this we call the class an <Tooltip tip="Classes and decorators that define your schema">entity</Tooltip>.
+
 To define columns you need to create fields in the class and decorate them with the `@Column` decorator.
+
+Every <Tooltip tip="Classes and decorators that define your schema">entity</Tooltip> needs to have a <Tooltip tip="Column with a Postgres primary key on it">Primary Key</Tooltip>.
 
 Example:
 ```typescript /entities/users.ts

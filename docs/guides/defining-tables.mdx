@@ -2,9 +2,13 @@
 title: "Defining tables"
 ---
 
-You need to create a class and decorate it with the `@Table` decorator.
+To model a Postgres table in Tygress you need to create a class and decorate it with the `@Table` decorator.
+
+Once you do this we call the class an <Tooltip tip="Classes and decorators that define your schema">entity</Tooltip>.
 
 To define columns you need to create fields in the class and decorate them with the `@Column` decorator.
+
+Every <Tooltip tip="Classes and decorators that define your schema">entity</Tooltip> needs to have a <Tooltip tip="Column with a Postgres primary key on it">Primary Key</Tooltip>.
 
 Example:
 ```typescript
@@ -17,6 +21,8 @@ export class Users {
   username: string;
 }
 ```
+
+# Columns
 
 The `@Column` allows you to specify column attributes such as nullability, precision or max length.
 ```typescript
