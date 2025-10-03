@@ -2,20 +2,61 @@
 title: "Client methods"
 ---
 
+This is an overview of the basic methods available on the <Tooltip tip="PostgresClient class, main interface with Tygress">client</Tooltip>.
 
 # select
 
 Executes a SELECT query, returning entitites as a result
+
+```typescript
+// SQL: SELECT u.* FROM users u 
+await DB.select(Users, {})
+
+// [
+//   Users {
+//    id: 5,
+//    firstName: 'John',
+//    lastName: 'Doe',
+//  }
+// ]
+```
 
 # selectOne
 
 Executes a SELECT query, returning the first entity or `null`.\
 Does **not** add a `LIMIT 1` to your SQL query so the whole result will be retrieved from Postgres.
 
+```typescript
+// SQL: SELECT u.* FROM users u 
+await DB.selectOne(Users, {})
+
+// Users {
+//  id: 5,
+//  firstName: 'John',
+//  lastName: 'Doe',
+// }
+```
+
 # insert
 
 Runs an INSERT statement using the provided values.\
 Optionally returns inserted rows as <Tooltip tip="Classes and decorators that define your schema">entities</Tooltip>.
+
+```typescript
+// SQL: INSERT INTO users (first_name, last_name) (VALUES ('John', 'Doe'))
+await DB.insert(Users, [
+  {
+    firstName: "John",
+    lastName: "Doe",
+  },
+]);
+// [
+//   Users { 
+//    firstName: "John", 
+//    lastName: "Doe" 
+//   }
+// ]
+```
 
 
 # update
@@ -23,12 +64,49 @@ Optionally returns inserted rows as <Tooltip tip="Classes and decorators that de
 Executes an UPDATE statement using the provided values and WHERE condition. \
 Optionally returns updated rows as <Tooltip tip="Classes and decorators that define your schema">entities</Tooltip>
   
+```typescript
+// SQL: UPDATE users SET first_name = 'Joe' WHERE first_name = 'John'
+await DB.update(Users, [
+  {
+    firstName: "Joe",
+  },
+  {
+    firstName: "John"
+  }
+]);
+// [
+//   Users { 
+//    firstName: "Joe", 
+//    lastName: "Doe" 
+//   }
+// ]
+```
+
 # delete
 
 Executes a DELETE statement using the provided WHERE condition. \
 Optionally returns deleted rows as <Tooltip tip="Classes and decorators that define your schema">entities</Tooltip>
 
+```typescript
+// SQL: DELETE FROM users WHERE first_name = 'Joe'
+await DB.insert(Users, [
+  {
+    firstName: "Joe",
+  },
+]);
+// []
+// No rows left 😭
+```
 
 # query
+Executes the exact `SQL` string passed as argument. Supports params referenced by `$1, $2...` in `SQL`, values can be passed as second argument. 
+Returns result directly from pg driver.
 
-Executes an SQL statement, returning the result from the pg driver.
+```typescript
+await DB.query("SELECT 1 AS number");
+// {
+//   rows: [
+//     {"number": 1}
+//   ]
+// }
+```
