@@ -154,29 +154,52 @@ describe("QueryBuilder", async () => {
       ]);
     });
 
-    // This currently passes but shouldn't
-    // Need to move selecting fields away from SelectSqlBuilder to fix
-    // test("right and select", async () => {
-    //   const res = await TEST_DB.queryBuilder("p", Pets)
-    //     .rightJoinAndSelect("u", Users, "p", "user")
-    //     .orderBy("u", "id")
-    //     .orderBy("p", "id")
-    //     .getRaw();
+    test("right and select", async () => {
+      const res = await TEST_DB.queryBuilder("p", Pets)
+        .rightJoinAndSelect("u", Users, "p", "user")
+        .orderBy("u", "id")
+        .orderBy("p", "id")
+        .getRaw();
 
-    //   expect(res).toStrictEqual([
-    //     { "p.id": null, "p.userId": null, "p.name": null },
-    //     {
-    //       "p.id": "388a73d0-1dbb-45cb-b7d2-0cefea41f92b",
-    //       "p.userId": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
-    //       "p.name": "Moofis",
-    //     },
-    //     {
-    //       "p.id": "bec37141-f990-4960-a03c-d78b43bc4c8e",
-    //       "p.userId": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
-    //       "p.name": "Pootis",
-    //     },
-    //   ]);
-    // });
+      expect(res).toStrictEqual([
+        {
+          "p.id": null,
+          "p.image": null,
+          "p.meta": null,
+          "p.name": null,
+          "p.userId": null,
+          "u.birthdate": null,
+          "u.firstName": "Kyriakos",
+          "u.id": "406b635b-508e-4824-855d-fb71d77bcdac",
+          "u.lastName": "Grizzly",
+          "u.username": "AAAAAAAAAAA",
+        },
+        {
+          "p.id": "388a73d0-1dbb-45cb-b7d2-0cefea41f92b",
+          "p.image": null,
+          "p.meta": null,
+          "p.name": "Moofis",
+          "p.userId": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+          "u.birthdate": new Date("2020-01-01T00:00:00.000Z"),
+          "u.firstName": "John",
+          "u.id": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+          "u.lastName": "Doe",
+          "u.username": "JohnDoe",
+        },
+        {
+          "p.id": "bec37141-f990-4960-a03c-d78b43bc4c8e",
+          "p.image": null,
+          "p.meta": null,
+          "p.name": "Pootis",
+          "p.userId": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+          "u.birthdate": new Date("2020-01-01T00:00:00.000Z"),
+          "u.firstName": "John",
+          "u.id": "5c15d031-000b-4a87-8bb5-2e7b00679ed7",
+          "u.lastName": "Doe",
+          "u.username": "JohnDoe",
+        },
+      ]);
+    });
 
     test("full", async () => {
       const res = await TEST_DB.queryBuilder("u", Users)
