@@ -52,12 +52,17 @@ describe("connection", async () => {
 
   describe("withTransaction", () => {
     test("opens transaction, does not commit, releases connection", async () => {
-      const conn = await TEST_DB.withTransaction((c) => {
+      const conn = await TEST_DB.withTransaction(async (c) => {
+        await c.query("SELECT 1;");
+
         return c;
       });
 
       // transaction started
-      expect(conn.$sqlLog).toStrictEqual([{ params: [], sql: "BEGIN;" }]);
+      expect(conn.$sqlLog).toStrictEqual([
+        { params: [], sql: "BEGIN;" },
+        { params: [], sql: "SELECT 1;" },
+      ]);
 
       // connection is released
       await expect(conn.query("SELECT 1")).rejects.toThrowError(
@@ -71,8 +76,10 @@ describe("connection", async () => {
       let conn: PostgresConnection;
 
       await expect(
-        TEST_DB.withTransaction((c) => {
+        TEST_DB.withTransaction(async (c) => {
           conn = c;
+
+          await c.query("SELECT 1;");
 
           throw new Error("hamburger");
         })
@@ -80,8 +87,57 @@ describe("connection", async () => {
       //@ts-expect-error
       expect(conn.$sqlLog).toStrictEqual([
         { params: [], sql: "BEGIN;" },
+        { params: [], sql: "SELECT 1;" },
         { params: [], sql: "ROLLBACK;" },
       ]);
+    });
+  });
+
+  describe("withConnection", async () => {
+    test("releases connection on error, re-throws", async () => {
+      let conn: PostgresConnection;
+
+      await expect(
+        TEST_DB.withConnection(async (c) => {
+          conn = c;
+
+          await c.query("SELECT 1;");
+
+          throw new Error("hamburger");
+        })
+      ).rejects.toThrowError(new Error("hamburger"));
+
+      //@ts-expect-error
+      expect(conn.$sqlLog).toStrictEqual([{ params: [], sql: "SELECT 1;" }]);
+
+      // connection is released
+      // @ts-expect-error
+      await expect(conn.query("SELECT 1")).rejects.toThrowError(
+        new Error(
+          "Can't run more commands on this connection because its state is RELEASED but it needs to be READY"
+        )
+      );
+    });
+
+    test("releases connection on success", async () => {
+      let conn: PostgresConnection;
+
+      await TEST_DB.withConnection(async (c) => {
+        conn = c;
+
+        return c.query("SELECT 1;");
+      });
+
+      //@ts-expect-error
+      expect(conn.$sqlLog).toStrictEqual([{ params: [], sql: "SELECT 1;" }]);
+
+      // connection is released
+      // @ts-expect-error
+      await expect(conn.query("SELECT 1")).rejects.toThrowError(
+        new Error(
+          "Can't run more commands on this connection because its state is RELEASED but it needs to be READY"
+        )
+      );
     });
   });
 });
