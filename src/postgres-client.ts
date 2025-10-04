@@ -171,6 +171,68 @@ export class PostgresClient {
   }
 
   /**
+   * Same behaviour as {@link withConnection} but also starts a transaction before executing your function.
+   * The full flow is:
+   *  1. Transaction starts
+   *  2. Your function is executed and result is returned
+   *  3. If an error is caught the transaction is rolled back and error is re-thrown
+   *
+   *  This means the transaction is **never automatically commited**, it is **up to you to commit it yourself**.
+   */
+  public async withTransaction<T>(
+    settings: WithConnectionOptions,
+    fn: (connection: PostgresConnection) => T
+  ): Promise<T>;
+
+  /**
+   * Same behaviour as {@link withConnection} but also starts a transaction before executing your function.
+   * The full flow is:
+   *  1. Transaction starts
+   *  2. Your function is executed and result is returned
+   *  3. If an error is caught the transaction is rolled back and error is re-thrown
+   *
+   *  This means the transaction is **never automatically commited**, it is **up to you to commit it yourself**.
+   */
+  public async withTransaction<T>(
+    fn: (connection: PostgresConnection) => T
+  ): Promise<T>;
+
+  /**
+   * Same behaviour as {@link withConnection} but also starts a transaction before executing your function.
+   * The full flow is:
+   *  1. Transaction starts
+   *  2. Your function is executed and result is returned
+   *  3. If an error is caught the transaction is rolled back and error is re-thrown
+   *
+   *  This means the transaction is **never automatically commited**, it is **up to you to commit it yourself**.
+   */
+  public async withTransaction<T>(
+    settingsOrFn:
+      | WithConnectionOptions
+      | ((connection: PostgresConnection) => T),
+    optionalFn?: (connection: PostgresConnection) => T
+  ): Promise<T> {
+    const fn = typeof settingsOrFn === "function" ? settingsOrFn : optionalFn!;
+    const settings = typeof settingsOrFn === "object" ? settingsOrFn : {};
+
+    if (!fn) {
+      throw new Error(`No function provided to withConnection`);
+    }
+
+    return await this.withConnection(settings, async (conn) => {
+      try {
+        await conn.begin();
+
+        return await fn(conn);
+      } catch (e) {
+        await conn.rollback();
+
+        throw e;
+      }
+    });
+  }
+
+  /**
    * Creates a new instance of {@link QueryBuilder} for the given entity
    */
   public queryBuilder<A extends string, E extends AnEntity>(
