@@ -27,6 +27,13 @@
     ]
   },
   "navbar": {
+    "links": [
+      {
+        "label": "",
+        "href": "https://discord.gg/HX33FcJqv4",
+        "icon": "discord"
+      }
+    ],
     "primary": {
       "type": "github",
       "href": "https://github.com/pert5432/tygress"
