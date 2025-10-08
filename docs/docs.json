@@ -8,11 +8,16 @@
     "dark": "#15803D"
   },
   "navigation": {
+    "global": {
+      "anchors": [
+        {
+          "anchor": "Quickstart",
+          "icon": "angles-right",
+          "href": "https://tygress.io/quickstart"
+        }
+      ]
+    },
     "groups": [
-      {
-        "group": "Quickstart",
-        "pages": ["quickstart/index"]
-      },
       {
         "group": "Concepts",
         "pages": [
