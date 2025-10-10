@@ -14,9 +14,6 @@ export abstract class QueryResultEntitiesParser {
     // Build join node paths to map entity results to
     const paths = this.buildJoinNodePaths(joinNodes);
 
-    // This just might not be needed, idk, refactor later
-    const rootEntities = new Map<string, InstanceType<AnEntity>>();
-
     // Go thru all rows, creating entities and grouping them by relations
     for (const row of rows) {
       for (const path of paths) {
@@ -37,15 +34,13 @@ export abstract class QueryResultEntitiesParser {
 
           const e = this.constructEntity(row, node);
 
-          // Is root entity
-          if (ids.length === 1) {
-            rootEntities.set(fullIdPath, e as T);
-
-            continue;
-          }
-
           // Register entity by unique path
           node.entityByIdPath.set(fullIdPath, e);
+
+          // We reached the root entity in the path so there are no parent entities to push this entity to
+          if (ids.length === 1) {
+            continue;
+          }
 
           const parentsIdPath = ids.slice(0, -1).join("-");
 
@@ -64,23 +59,23 @@ export abstract class QueryResultEntitiesParser {
     // Propagate entity instances up tree of join nodes
     //
     for (const path of paths) {
-      // Propagate entities up to second to last node in path
-      // After this all nodes in the path except the root will have their joined entities filled
-      for (let i = 0; i < path.length - 2; i += 1) {
+      for (let i = 0; i < path.length - 1; i += 1) {
         const node = path[i]!;
         const parentNode = path[i + 1]!;
 
         this.propagateEntitiesToParent(parentNode.entityByIdPath, node);
       }
-
-      if (path.length >= 2) {
-        // Propagate entities to root node
-        const penultimateNode = path[path.length - 2]!;
-        this.propagateEntitiesToParent(rootEntities, penultimateNode);
-      }
     }
 
-    return Array.from(rootEntities.values()) as InstanceType<T>[];
+    // All of the paths contain the parent node, we just pick the first one
+    const path = paths[0]!;
+
+    const res = Array.from(
+      path[path.length - 1]!.entityByIdPath.values()
+    ) as InstanceType<T>;
+
+    // Return the entities from the last node in the path, these are the root entities
+    return res;
   }
 
   private static constructEntity(
@@ -96,22 +91,19 @@ export abstract class QueryResultEntitiesParser {
   }
 
   // Util to propagate entity instances into relation fields on its parent
-  private static propagateEntitiesToParent = <
+  private static propagateEntitiesToParent<
     P extends AnEntity,
     C extends AnEntity
-  >(
-    parentEntityMap: Map<string, InstanceType<P>>,
-    node: TargetNode<C>
-  ) => {
-    for (const [key, entities] of node.entitiesByParentsIdPath.entries()) {
-      const parentEntity: any = parentEntityMap.get(key)!;
+  >(parentEntityMap: Map<string, InstanceType<P>>, childNode: TargetNode<C>) {
+    for (const [parentEntityId, parentEntity] of parentEntityMap.entries()) {
+      const childEntities =
+        childNode.entitiesByParentsIdPath.get(parentEntityId) ?? [];
 
-      // Push values to parent as an array if parent field is array
-      parentEntity[node.parentField!] = node.parentFieldIsArray
-        ? entities
-        : entities[0];
+      parentEntity[childNode.parentField!] = childNode.parentFieldIsArray
+        ? childEntities
+        : childEntities[0];
     }
-  };
+  }
 
   private static buildJoinNodePaths(
     joinNodes: TargetNode<AnEntity>
