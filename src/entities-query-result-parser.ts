@@ -21,11 +21,13 @@ export abstract class QueryResultEntitiesParser {
     for (const row of rows) {
       for (const path of paths) {
         for (const node of path) {
-          const [ids, fullIdPath, parentsIdPath] = this.getRowIds(row, node);
+          const ids = node.idKeys.map((key) => row[key]);
+          const fullIdPath = ids.join("-");
 
-          // Ensure array of entities by parent path
-          if (ids.length > 1) {
-            this.ensureEntitiesByParentPath(node, parentsIdPath);
+          // Stop processing this path if the exact entity exists in the path already
+          // Since we have seen this exact chain of ids already we have seen all the upcoming entities in the rest of this path
+          if (node.entityByIdPath.has(fullIdPath)) {
+            break;
           }
 
           // Id of this node is null in this row
@@ -33,16 +35,11 @@ export abstract class QueryResultEntitiesParser {
             continue;
           }
 
-          // Stop processing this path if the exact entity exists in the path already
-          if (node.entityByIdPath.has(fullIdPath)) {
-            break;
-          }
-
           const e = this.constructEntity(row, node);
 
           // Is root entity
           if (ids.length === 1) {
-            rootEntities.set(fullIdPath.toString(), e as T);
+            rootEntities.set(fullIdPath, e as T);
 
             continue;
           }
@@ -50,9 +47,15 @@ export abstract class QueryResultEntitiesParser {
           // Register entity by unique path
           node.entityByIdPath.set(fullIdPath, e);
 
-          // Add entity to array for a parent entity
-          // Can afford to ! because the array got created before
-          node.entitiesByParentsIdPath.get(parentsIdPath)!.push(e);
+          const parentsIdPath = ids.slice(0, -1).join("-");
+
+          const parentsArray = node.entitiesByParentsIdPath.get(parentsIdPath);
+
+          if (parentsArray) {
+            parentsArray.push(e);
+          } else {
+            node.entitiesByParentsIdPath.set(parentsIdPath, [e]);
+          }
         }
       }
     }
@@ -78,24 +81,6 @@ export abstract class QueryResultEntitiesParser {
     }
 
     return Array.from(rootEntities.values()) as InstanceType<T>[];
-  }
-
-  private static ensureEntitiesByParentPath(
-    node: TargetNode<AnEntity>,
-    parentsIdPath: string
-  ): void {
-    if (!node.entitiesByParentsIdPath.has(parentsIdPath)) {
-      node.entitiesByParentsIdPath.set(parentsIdPath, []);
-    }
-  }
-
-  private static getRowIds(
-    row: any,
-    node: TargetNode<AnEntity>
-  ): [string[], string, string] {
-    const ids = node.idKeys.map((key) => row[key]);
-
-    return [ids, ids.join("-"), ids.slice(0, -1).join("-")];
   }
 
   private static constructEntity(
