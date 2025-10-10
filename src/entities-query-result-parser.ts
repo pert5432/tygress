@@ -16,8 +16,14 @@ export abstract class QueryResultEntitiesParser {
 
     // Go thru all rows, creating entities and grouping them by relations
     for (const row of rows) {
-      for (const path of paths) {
-        for (const node of path) {
+      for (let i = 0; i < paths.length; i += 1) {
+        const path = paths[i]!;
+
+        // Skip processing last node in path if this is not the first path
+        // Reason for this is that the node is the root node and it got fully processed in the first path already
+        for (let j = 0; j < path.length - (i < 1 ? 0 : 1); j += 1) {
+          const node = path[j]!;
+
           const ids = node.idKeys.map((key) => row[key]);
           const fullIdPath = ids.join("-");
 
