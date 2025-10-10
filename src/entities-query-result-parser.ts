@@ -76,12 +76,10 @@ export abstract class QueryResultEntitiesParser {
     // All of the paths contain the parent node, we just pick the first one
     const path = paths[0]!;
 
-    const res = Array.from(
+    // Return the entities from the last node in the path, these are the root entities
+    return Array.from(
       path[path.length - 1]!.entityByIdPath.values()
     ) as InstanceType<T>;
-
-    // Return the entities from the last node in the path, these are the root entities
-    return res;
   }
 
   private static constructEntity(
@@ -114,7 +112,7 @@ export abstract class QueryResultEntitiesParser {
   private static buildJoinNodePaths(
     joinNodes: TargetNode<AnEntity>
   ): TargetNode<AnEntity>[][] {
-    let paths: TargetNode<AnEntity>[][] = [];
+    let paths: TargetNode<AnEntity>[][] = [[joinNodes]];
 
     const buildPath = (parent: TargetNode<AnEntity>[]): void => {
       let node: TargetNode<AnEntity> = parent[parent.length - 1]!;
@@ -138,10 +136,7 @@ export abstract class QueryResultEntitiesParser {
       return buildPath(parent);
     };
 
-    const path = [joinNodes];
-    paths.push(path);
-
-    buildPath(path);
+    buildPath(paths[0]!);
 
     // Reverse paths so we can go from leaves up with a simple for ... of loop
     return paths.map((e) => e.reverse());
