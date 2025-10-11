@@ -19,15 +19,16 @@ export abstract class QueryResultEntitiesParser {
       for (let i = 0; i < paths.length; i += 1) {
         const path = paths[i]!;
 
+        // Collect ids for all nodes in the path by accessing the row only once
+        const ids = path[0]!.idKeys.map((key) => row[key]);
+
         // Skip processing last node in path if this is not the first path
         // Reason for this is that the node is the root node and it got fully processed in the first path already
-        for (let j = 0; j < path.length - (i < 1 ? 0 : 1); j += 1) {
+        for (let j = 0; j < path.length - (i > 1 ? 1 : 0); j += 1, ids.pop()) {
           const node = path[j]!;
 
-          const ids = node.idKeys.map((key) => row[key]);
-
           // Id of this node is null in this row so we can't return it as an entity
-          if (ids[ids.length - 1] === null) {
+          if (ids.at(-1) === null) {
             continue;
           }
 
@@ -42,21 +43,25 @@ export abstract class QueryResultEntitiesParser {
 
           const e = this.constructEntity(row, node);
 
-          node.entities.push({ idPath: ids, entity: e });
+          node.entities.push({ idPath: [...ids], entity: e });
+        }
+      }
+    }
 
-          // We reached the root entity in the path so there are no parent entities to push this entity to
-          if (ids.length === 1) {
-            continue;
-          }
+    // Collect entities in maps for parent
+    for (const path of paths) {
+      for (let j = 0; j < path.length - 1; j += 1) {
+        const node = path[j]!;
 
-          const parentsIdPath = ids.slice(0, -1);
+        for (const { idPath, entity } of node.entities) {
+          const parentsIdPath = idPath.slice(0, -1);
 
           const parentsArray = node.entitiesByParentsIdPath.get(parentsIdPath);
 
           if (parentsArray) {
-            (parentsArray as AnEntity[]).push(e);
+            (parentsArray as AnEntity[]).push(entity);
           } else {
-            node.entitiesByParentsIdPath.set(parentsIdPath, [e]);
+            node.entitiesByParentsIdPath.set(parentsIdPath, [entity]);
           }
         }
       }
