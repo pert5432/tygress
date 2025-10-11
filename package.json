@@ -25,11 +25,13 @@
     "tygress": "dist/cli.ts"
   },
   "dependencies": {
+    "imurmurhash": "^0.1.4",
     "pg": "^8.13.1",
     "reflect-metadata": "^0.2.2"
   },
   "devDependencies": {
     "@swc/core": "^1.11.20",
+    "@types/imurmurhash": "^0.1.4",
     "@types/node": "^22.10.2",
     "@types/pg": "^8.11.10",
     "ts-node": "^10.9.2",

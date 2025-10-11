@@ -1,5 +1,6 @@
 import { AnEntity } from "./types";
 import { TargetNode } from "./types/query";
+import Imurmur from "imurmurhash";
 
 export abstract class QueryResultEntitiesParser {
   public static async parse<T extends AnEntity>(
@@ -14,6 +15,8 @@ export abstract class QueryResultEntitiesParser {
     // Build join node paths to map entity results to
     const paths = this.buildJoinNodePaths(joinNodes);
 
+    const idPathHasher = new Imurmur();
+
     // Go thru all rows, creating entities and grouping them by relations
     for (const row of rows) {
       for (let i = 0; i < paths.length; i += 1) {
@@ -24,38 +27,50 @@ export abstract class QueryResultEntitiesParser {
         for (let j = 0; j < path.length - (i < 1 ? 0 : 1); j += 1) {
           const node = path[j]!;
 
+          // +1ms
           const ids = node.idKeys.map((key) => row[key]);
-          const fullIdPath = ids.join("-");
-
-          // Stop processing this path if the exact entity exists in the path already
-          // Since we have seen this exact chain of ids already we have seen all the upcoming entities in the rest of this path
-          if (node.entityByIdPath.has(fullIdPath)) {
-            break;
-          }
 
           // Id of this node is null in this row
           if (ids[ids.length - 1] === null) {
             continue;
           }
 
+          //
+          // Hash ids to get faster operations on Map
+          //
+          idPathHasher.reset();
+
+          ids.slice(0, -1).forEach((id) => idPathHasher.hash(id));
+
+          const parentsId = idPathHasher.result();
+
+          idPathHasher.hash(ids.at(-1));
+
+          // Hash to get shorter keys for Map
+          const fullId = idPathHasher.result();
+
+          // Stop processing this path if the exact entity exists in the path already
+          // Since we have seen this exact chain of ids already we have seen all the upcoming entities in the rest of this path
+          if (node.entityByIdPath.has(fullId)) {
+            break;
+          }
+
           const e = this.constructEntity(row, node);
 
           // Register entity by unique path
-          node.entityByIdPath.set(fullIdPath, e);
+          node.entityByIdPath.set(fullId, e);
 
           // We reached the root entity in the path so there are no parent entities to push this entity to
           if (ids.length === 1) {
             continue;
           }
 
-          const parentsIdPath = ids.slice(0, -1).join("-");
-
-          const parentsArray = node.entitiesByParentsIdPath.get(parentsIdPath);
+          const parentsArray = node.entitiesByParentsIdPath.get(parentsId);
 
           if (parentsArray) {
             parentsArray.push(e);
           } else {
-            node.entitiesByParentsIdPath.set(parentsIdPath, [e]);
+            node.entitiesByParentsIdPath.set(parentsId, [e]);
           }
         }
       }
@@ -98,7 +113,7 @@ export abstract class QueryResultEntitiesParser {
   private static propagateEntitiesToParent<
     P extends AnEntity,
     C extends AnEntity
-  >(parentEntityMap: Map<string, InstanceType<P>>, childNode: TargetNode<C>) {
+  >(parentEntityMap: Map<number, InstanceType<P>>, childNode: TargetNode<C>) {
     for (const [parentEntityId, parentEntity] of parentEntityMap.entries()) {
       const childEntities =
         childNode.entitiesByParentsIdPath.get(parentEntityId) ?? [];

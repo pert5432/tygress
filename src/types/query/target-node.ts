@@ -31,9 +31,9 @@ export class TargetNode<T extends AnEntity> {
   idKeys: string[] = [];
   // Instances of this entity that belong to a specific parent entity
   // Indexed by ids of all parent entities to this one
-  entitiesByParentsIdPath: Map<string, AnEntity[]> = new Map();
+  entitiesByParentsIdPath: Map<number, AnEntity[]> = new Map();
   // Instance of this entity, indexed by ids of all parents + this entity
-  entityByIdPath: Map<string, AnEntity> = new Map();
+  entityByIdPath: Map<number, AnEntity> = new Map();
 
   joins: {
     [key: string]: TargetNode<AnEntity>;
