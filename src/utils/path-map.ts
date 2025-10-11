@@ -1,4 +1,4 @@
-type PathKey = string | number;
+export type PathKey = string | number;
 
 type PathMapMap<T> = Map<PathKey, PathMapMap<T>> | { val: T };
 

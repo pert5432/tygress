@@ -1,6 +1,6 @@
 import { AnEntity } from "..";
 import { ColumnMetadata } from "../../metadata";
-import { PathMap } from "../../utils";
+import { PathKey, PathMap } from "../../utils";
 
 export class TargetNode<T extends AnEntity> {
   constructor(klass: T, alias: string) {
@@ -38,8 +38,7 @@ export class TargetNode<T extends AnEntity> {
   // Existence of this entity, indexed by ids of all parents + this entity
   entityByIdPath = new PathMap<true>();
 
-  // TODO: refactor
-  entities: { idPath: (string | number)[]; entity: InstanceType<T> }[] = [];
+  entities: { idPath: PathKey[]; entity: InstanceType<T> }[] = [];
 
   joins: {
     [key: string]: TargetNode<AnEntity>;

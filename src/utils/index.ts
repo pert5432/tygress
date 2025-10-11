@@ -11,4 +11,4 @@ export { FKActionConverter } from "./fk-action-converter";
 export { STYLE } from "./tty-styles";
 export { arrayify } from "./arrayify";
 export { ConstantSerializer } from "./constant-serializer";
-export { PathMap } from "./path-map";
+export { PathMap, PathKey } from "./path-map";

@@ -67,10 +67,10 @@ export abstract class QueryResultEntitiesParser {
     //
     for (const path of paths) {
       for (let i = 0; i < path.length - 1; i += 1) {
-        const node = path[i]!;
+        const childNode = path[i]!;
         const parentNode = path[i + 1]!;
 
-        this.propagateEntitiesToParent(parentNode.entities, node);
+        this.propagateEntitiesToParent(parentNode, childNode);
       }
     }
 
@@ -97,16 +97,13 @@ export abstract class QueryResultEntitiesParser {
 
   // Util to propagate entity instances into relation fields on its parent
   private static propagateEntitiesToParent(
-    parentEntities: {
-      idPath: (string | number)[];
-      entity: InstanceType<AnEntity>;
-    }[],
+    parentNode: TargetNode<AnEntity>,
     childNode: TargetNode<AnEntity>
   ) {
     for (const {
       idPath: parentsIdPath,
       entity: parentEntity,
-    } of parentEntities) {
+    } of parentNode.entities) {
       const childEntities = (childNode.entitiesByParentsIdPath.get(
         parentsIdPath
       ) ?? []) as AnEntity[];
