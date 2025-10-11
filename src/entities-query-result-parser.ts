@@ -25,7 +25,7 @@ export abstract class QueryResultEntitiesParser {
           const node = path[j]!;
 
           const ids = node.idKeys.map((key) => row[key]);
-          const fullIdPath = ids.join("-");
+          const fullIdPath = ids.join("");
 
           // Stop processing this path if the exact entity exists in the path already
           // Since we have seen this exact chain of ids already we have seen all the upcoming entities in the rest of this path
@@ -48,7 +48,7 @@ export abstract class QueryResultEntitiesParser {
             continue;
           }
 
-          const parentsIdPath = ids.slice(0, -1).join("-");
+          const parentsIdPath = ids.slice(0, -1).join("");
 
           const parentsArray = node.entitiesByParentsIdPath.get(parentsIdPath);
 
