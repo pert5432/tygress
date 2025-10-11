@@ -32,6 +32,7 @@
     "@swc/core": "^1.11.20",
     "@types/node": "^22.10.2",
     "@types/pg": "^8.11.10",
+    "dotenv": "^17.2.3",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.2",
     "unplugin-swc": "^1.5.1",
