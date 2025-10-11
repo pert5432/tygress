@@ -1,5 +1,6 @@
 import { AnEntity } from "..";
 import { ColumnMetadata } from "../../metadata";
+import { PathMap } from "../../utils";
 
 export class TargetNode<T extends AnEntity> {
   constructor(klass: T, alias: string) {
@@ -29,11 +30,16 @@ export class TargetNode<T extends AnEntity> {
 
   // Keys of ids of all parent nodes, aliased
   idKeys: string[] = [];
+
   // Instances of this entity that belong to a specific parent entity
   // Indexed by ids of all parent entities to this one
-  entitiesByParentsIdPath: Map<string, AnEntity[]> = new Map();
-  // Instance of this entity, indexed by ids of all parents + this entity
-  entityByIdPath: Map<string, AnEntity> = new Map();
+  entitiesByParentsIdPath = new PathMap<AnEntity[]>();
+
+  // Existence of this entity, indexed by ids of all parents + this entity
+  entityByIdPath = new PathMap<true>();
+
+  // TODO: refactor
+  entities: { idPath: (string | number)[]; entity: InstanceType<T> }[] = [];
 
   joins: {
     [key: string]: TargetNode<AnEntity>;
