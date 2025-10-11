@@ -1,4 +1,3 @@
-import { AnEntity } from "../entity";
 import { TargetNode } from "../query";
 
 export type Update = {
@@ -6,5 +5,5 @@ export type Update = {
 
   params: any[];
 
-  targetNode?: TargetNode<AnEntity>;
+  targetNode?: TargetNode;
 };

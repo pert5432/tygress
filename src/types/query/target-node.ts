@@ -2,14 +2,14 @@ import { AnEntity } from "..";
 import { ColumnMetadata } from "../../metadata";
 import { PathKey, PathMap } from "../../utils";
 
-export class TargetNode<T extends AnEntity> {
-  constructor(klass: T, alias: string) {
+export class TargetNode {
+  constructor(klass: AnEntity, alias: string) {
     this.klass = klass;
     this.alias = alias;
   }
 
   // The class that is joined-in
-  klass: T;
+  klass: AnEntity;
   // Alias of the joined-in class
   alias: string;
 
@@ -38,10 +38,10 @@ export class TargetNode<T extends AnEntity> {
   // Existence of this entity, indexed by ids of all parents + this entity
   entityByIdPath = new PathMap<true>();
 
-  entities: { idPath: PathKey[]; entity: InstanceType<T> }[] = [];
+  entities: { idPath: PathKey[]; entity: InstanceType<AnEntity> }[] = [];
 
   joins: {
-    [key: string]: TargetNode<AnEntity>;
+    [key: string]: TargetNode;
   } = {};
 
   public selectField(fieldName: string, selectTarget: string): void {

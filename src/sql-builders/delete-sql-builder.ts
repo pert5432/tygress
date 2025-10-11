@@ -4,7 +4,6 @@ import {
   TableIdentifierSqlBuilderFactory,
   TargetNodeFactory,
 } from "../factories";
-import { AnEntity } from "../types";
 import { Delete, DeleteSqlArgs } from "../types/delete";
 import { TargetNode } from "../types/query";
 import { entityNameToAlias } from "../utils";
@@ -13,7 +12,7 @@ import { ConstantBuilder } from "./constant-builder";
 export class DeleteSqlBuilder {
   private constBuilder: ConstantBuilder;
 
-  private targetNode: TargetNode<AnEntity>;
+  private targetNode: TargetNode;
 
   constructor(private args: DeleteSqlArgs) {
     this.constBuilder = args.constBuilder;

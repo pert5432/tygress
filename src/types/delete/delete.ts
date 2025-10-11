@@ -1,4 +1,3 @@
-import { AnEntity } from "../entity";
 import { TargetNode } from "../query";
 
 export type Delete = {
@@ -6,5 +5,5 @@ export type Delete = {
 
   params: any[];
 
-  targetNode?: TargetNode<AnEntity>;
+  targetNode?: TargetNode;
 };

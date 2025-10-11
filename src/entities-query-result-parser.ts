@@ -4,7 +4,7 @@ import { TargetNode } from "./types/query";
 export abstract class QueryResultEntitiesParser {
   public static async parse<T extends AnEntity>(
     rows: any[],
-    joinNodes: TargetNode<AnEntity>
+    joinNodes: TargetNode
   ): Promise<InstanceType<T>[]> {
     // Don't bother doing anything when we know we won't return anything
     if (!rows.length) {
@@ -85,7 +85,7 @@ export abstract class QueryResultEntitiesParser {
 
   private static constructEntity(
     row: any,
-    node: TargetNode<AnEntity>
+    node: TargetNode
   ): InstanceType<AnEntity> {
     const e = new node.klass();
     for (const { fieldName, selectTarget } of node.selectedFields) {
@@ -97,8 +97,8 @@ export abstract class QueryResultEntitiesParser {
 
   // Util to propagate entity instances into relation fields on its parent
   private static propagateEntitiesToParent(
-    parentNode: TargetNode<AnEntity>,
-    childNode: TargetNode<AnEntity>
+    parentNode: TargetNode,
+    childNode: TargetNode
   ) {
     for (const {
       idPath: parentsIdPath,
@@ -114,13 +114,11 @@ export abstract class QueryResultEntitiesParser {
     }
   }
 
-  private static buildJoinNodePaths(
-    joinNodes: TargetNode<AnEntity>
-  ): TargetNode<AnEntity>[][] {
-    let paths: TargetNode<AnEntity>[][] = [[joinNodes]];
+  private static buildJoinNodePaths(joinNodes: TargetNode): TargetNode[][] {
+    let paths: TargetNode[][] = [[joinNodes]];
 
-    const buildPath = (parent: TargetNode<AnEntity>[]): void => {
-      let node: TargetNode<AnEntity> = parent[parent.length - 1]!;
+    const buildPath = (parent: TargetNode[]): void => {
+      let node: TargetNode = parent[parent.length - 1]!;
 
       const keys = Object.keys(node.joins);
 

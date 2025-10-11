@@ -4,7 +4,6 @@ import {
   TableIdentifierSqlBuilderFactory,
   TargetNodeFactory,
 } from "../factories";
-import { AnEntity } from "../types";
 import { TargetNode } from "../types/query";
 import { Update, UpdateSqlArgs } from "../types/update";
 import { ConstantBuilder } from "./constant-builder";
@@ -12,7 +11,7 @@ import { ConstantBuilder } from "./constant-builder";
 export class UpdateSqlBuilder {
   private constBuilder: ConstantBuilder;
 
-  private targetNode: TargetNode<AnEntity>;
+  private targetNode: TargetNode;
 
   constructor(private args: UpdateSqlArgs) {
     this.constBuilder = args.constBuilder;

@@ -5,11 +5,11 @@ import { TargetNode } from "../types/query";
 export abstract class TargetNodeFactory {
   public static create<T extends AnEntity>(
     alias: string,
-    parentNode: TargetNode<AnEntity>,
+    parentNode: TargetNode,
     klass: T,
     fieldName: string,
     select?: boolean
-  ): TargetNode<T> {
+  ): TargetNode {
     const e = new TargetNode(klass, alias);
 
     const primaryKey = METADATA_STORE.getTablePrimaryKey(klass);
@@ -36,7 +36,7 @@ export abstract class TargetNodeFactory {
     klass: T,
     alias: string,
     select?: boolean
-  ): TargetNode<T> {
+  ): TargetNode {
     const e = new TargetNode(klass, alias);
 
     const primaryKey = METADATA_STORE.getTablePrimaryKey(klass);
@@ -50,7 +50,7 @@ export abstract class TargetNodeFactory {
     return e;
   }
 
-  public static createCTE(alias: string): TargetNode<AnEntity> {
+  public static createCTE(alias: string): TargetNode {
     return new TargetNode(Object, alias);
   }
 }

@@ -3,7 +3,6 @@ import {
   SelectTargetSqlBuilderFactory,
   TargetNodeFactory,
 } from "../factories";
-import { METADATA_STORE, TableMetadata } from "../metadata";
 import { SelectQueryArgs, AnEntity } from "../types";
 import { TargetNode, Query } from "../types/query";
 import { JoinArg } from "../types/query/join-arg";
@@ -29,7 +28,7 @@ export class SelectSqlBuilder<T extends AnEntity> {
         this.rootJoinArg.alias
       );
 
-      this.targetNodes = rootTargetNode as TargetNode<T>;
+      this.targetNodes = rootTargetNode;
       this.targetNodesByAlias.set(this.rootJoinArg.alias, rootTargetNode);
     }
   }
@@ -40,8 +39,8 @@ export class SelectSqlBuilder<T extends AnEntity> {
 
   private selectTargetSqlBuilders: SelectTargetSqlBuilder[] = [];
 
-  private targetNodes?: TargetNode<T>;
-  private targetNodesByAlias = new Map<string, TargetNode<AnEntity>>();
+  private targetNodes?: TargetNode;
+  private targetNodesByAlias = new Map<string, TargetNode>();
 
   public buildSelect(): Query {
     if (this.args.distinct && this.args.distinctOn?.length) {
@@ -145,7 +144,7 @@ export class SelectSqlBuilder<T extends AnEntity> {
         continue;
       }
 
-      let nextTargetNode: TargetNode<AnEntity>;
+      let nextTargetNode: TargetNode;
 
       if (join.childType === "cte") {
         nextTargetNode = TargetNodeFactory.createCTE(join.alias);
@@ -205,7 +204,7 @@ export class SelectSqlBuilder<T extends AnEntity> {
   }
 
   // Make sure primary keys of entities we want to select are selected (if we need them)
-  private ensurePrimaryKeySelection(node?: TargetNode<AnEntity>): void {
+  private ensurePrimaryKeySelection(node?: TargetNode): void {
     // No desire to enforce selecing primary keys for raw results
     // Can't enforce selecting all primary keys when GROUP BY is used
     if (!this.returningEntities() || this.args.groupBys?.length || !node) {

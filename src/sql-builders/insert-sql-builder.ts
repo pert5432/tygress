@@ -4,10 +4,9 @@ import {
   TargetNodeFactory,
 } from "../factories";
 import { ColumnMetadata, TableMetadata } from "../metadata";
-import { AnEntity } from "../types";
 import { Insert, InsertSqlArgs } from "../types/insert";
 import { TargetNode } from "../types/query";
-import { dQ, entityNameToAlias } from "../utils";
+import { entityNameToAlias } from "../utils";
 import { NakedColumnIdentifierSqlBuilder } from "./column-identifier";
 import { ConstantBuilder } from "./constant-builder";
 
@@ -22,7 +21,7 @@ export class InsertSqlBuilder {
 
   private constBuilder: ConstantBuilder;
 
-  private targetNode: TargetNode<AnEntity>;
+  private targetNode: TargetNode;
 
   private columnIdentifiers: NakedColumnIdentifierSqlBuilder[];
 
