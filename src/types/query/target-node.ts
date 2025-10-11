@@ -1,6 +1,6 @@
 import { AnEntity } from "..";
 import { ColumnMetadata } from "../../metadata";
-import { PathKey, PathMap } from "../../utils";
+import { PathMap } from "../../utils";
 
 export class TargetNode {
   constructor(klass: AnEntity, alias: string) {
@@ -31,14 +31,8 @@ export class TargetNode {
   // Keys of ids of all parent nodes, aliased
   idKeys: string[] = [];
 
-  // Instances of this entity that belong to a specific parent entity
-  // Indexed by ids of all parent entities to this one
-  entitiesByParentsIdPath = new PathMap<AnEntity[]>();
-
   // Existence of this entity, indexed by ids of all parents + this entity
-  entityByIdPath = new PathMap<true>();
-
-  entities: { idPath: PathKey[]; entity: InstanceType<AnEntity> }[] = [];
+  entityByIdPath = new PathMap<InstanceType<AnEntity>>();
 
   joins: {
     [key: string]: TargetNode;

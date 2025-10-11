@@ -1,5 +1,6 @@
 import { AnEntity } from "./types";
 import { TargetNode } from "./types/query";
+import { PathKey } from "./utils";
 
 export abstract class QueryResultEntitiesParser {
   public static async parse<T extends AnEntity>(
@@ -14,18 +15,22 @@ export abstract class QueryResultEntitiesParser {
     // Build join node paths to map entity results to
     const paths = this.buildJoinNodePaths(joinNodes);
 
+    const result: InstanceType<T>[] = [];
+
     // Go thru all rows, creating entities and grouping them by relations
     for (const row of rows) {
       for (let i = 0; i < paths.length; i += 1) {
         const path = paths[i]!;
 
         // Collect ids for all nodes in the path by accessing the row only once
-        const ids = path[0]!.idKeys.map((key) => row[key]);
+        const ids: PathKey[] = [];
 
-        // Skip processing last node in path if this is not the first path
-        // Reason for this is that the node is the root node and it got fully processed in the first path already
-        for (let j = 0; j < path.length - (i > 1 ? 1 : 0); j += 1, ids.pop()) {
+        // Skip processing root node in path if this is not the first path
+        // Reason for this is that the root node got fully processed in the first path already
+        for (let j = i > 1 ? 1 : 0; j < path.length; j += 1) {
           const node = path[j]!;
+
+          ids.push(row[node.idKeys.at(-1)!]);
 
           // Id of this node is null in this row so we can't return it as an entity
           if (ids.at(-1) === null) {
@@ -35,57 +40,36 @@ export abstract class QueryResultEntitiesParser {
           // Stop processing this path if the exact entity exists in the path already
           // Since we have seen this exact chain of ids already we have seen all the upcoming entities in the rest of this path
           if (node.entityByIdPath.has(ids)) {
-            break;
+            continue;
           }
+
+          const entity = this.constructEntity(row, node);
 
           // Register entity by unique path
-          node.entityByIdPath.set(ids, true);
+          node.entityByIdPath.set(ids, entity);
 
-          const e = this.constructEntity(row, node);
-
-          node.entities.push({ idPath: [...ids], entity: e });
-        }
-      }
-    }
-
-    // Collect entities in maps for parent
-    for (const path of paths) {
-      for (let j = 0; j < path.length - 1; j += 1) {
-        const node = path[j]!;
-
-        for (const { idPath, entity } of node.entities) {
-          const parentsIdPath = idPath.slice(0, -1);
-
-          const parentsArray = node.entitiesByParentsIdPath.get(parentsIdPath);
-
-          if (parentsArray) {
-            (parentsArray as AnEntity[]).push(entity);
+          // Push root entity to result array
+          if (j === 0) {
+            result.push(entity);
+            // Or child entity to parent entity
           } else {
-            node.entitiesByParentsIdPath.set(parentsIdPath, [entity]);
+            if (node.parentFieldIsArray) {
+              (
+                path[j - 1]!.entityByIdPath.get(ids.slice(0, -1))![
+                  node.parentField!
+                ] as any[]
+              ).push(entity);
+            } else {
+              path[j - 1]!.entityByIdPath.get(ids.slice(0, -1))![
+                node.parentField!
+              ] = entity;
+            }
           }
         }
       }
     }
 
-    //
-    // Propagate entity instances up tree of join nodes
-    //
-    for (const path of paths) {
-      for (let i = 0; i < path.length - 1; i += 1) {
-        const childNode = path[i]!;
-        const parentNode = path[i + 1]!;
-
-        this.propagateEntitiesToParent(parentNode, childNode);
-      }
-    }
-
-    // All of the paths contain the parent node, we just pick the first one
-    const path = paths[0]!;
-
-    // Return the entities from the last node in the path, these are the root entities
-    return path[path.length - 1]!.entities.map(
-      (e) => e.entity
-    ) as InstanceType<T>;
+    return result;
   }
 
   private static constructEntity(
@@ -93,30 +77,19 @@ export abstract class QueryResultEntitiesParser {
     node: TargetNode
   ): InstanceType<AnEntity> {
     const e = new node.klass();
+
     for (const { fieldName, selectTarget } of node.selectedFields) {
       e[fieldName] = row[selectTarget];
     }
 
-    return e;
-  }
-
-  // Util to propagate entity instances into relation fields on its parent
-  private static propagateEntitiesToParent(
-    parentNode: TargetNode,
-    childNode: TargetNode
-  ) {
-    for (const {
-      idPath: parentsIdPath,
-      entity: parentEntity,
-    } of parentNode.entities) {
-      const childEntities = (childNode.entitiesByParentsIdPath.get(
-        parentsIdPath
-      ) ?? []) as AnEntity[];
-
-      parentEntity[childNode.parentField!] = childNode.parentFieldIsArray
-        ? childEntities
-        : childEntities[0];
+    // Initialize all relation fields that are arrays to empty arrays
+    for (const [key, childNode] of Object.entries(node.joins)) {
+      if (childNode.parentFieldIsArray) {
+        e[key] = [];
+      }
     }
+
+    return e;
   }
 
   private static buildJoinNodePaths(joinNodes: TargetNode): TargetNode[][] {
@@ -146,7 +119,6 @@ export abstract class QueryResultEntitiesParser {
 
     buildPath(paths[0]!);
 
-    // Reverse paths so we can go from leaves up with a simple for ... of loop
-    return paths.map((e) => e.reverse());
+    return paths;
   }
 }
