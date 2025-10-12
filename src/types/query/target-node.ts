@@ -32,7 +32,7 @@ export class TargetNode {
   idKeys: string[] = [];
 
   // Existence of this entity, indexed by ids of all parents + this entity
-  entityByIdPath = new PathMap<InstanceType<AnEntity>>();
+  entityByIdPath: PathMap<InstanceType<AnEntity>>;
 
   joins: {
     [key: string]: TargetNode;

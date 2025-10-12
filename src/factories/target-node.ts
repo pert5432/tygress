@@ -1,6 +1,7 @@
 import { METADATA_STORE } from "../metadata";
 import { AnEntity } from "../types";
 import { TargetNode } from "../types/query";
+import { PathMap } from "../utils";
 
 export abstract class TargetNodeFactory {
   public static create<T extends AnEntity>(
@@ -29,6 +30,8 @@ export abstract class TargetNodeFactory {
       e.parentFieldIsArray = true;
     }
 
+    e.entityByIdPath = new PathMap<InstanceType<AnEntity>>(e.idKeys.length);
+
     return e;
   }
 
@@ -46,6 +49,8 @@ export abstract class TargetNodeFactory {
     e.primaryKeyColumn = METADATA_STORE.getColumn(klass, primaryKey.fieldName);
 
     e.select = select === false ? false : true;
+
+    e.entityByIdPath = new PathMap<InstanceType<AnEntity>>(e.idKeys.length);
 
     return e;
   }
