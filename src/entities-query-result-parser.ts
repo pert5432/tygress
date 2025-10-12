@@ -24,17 +24,24 @@ export abstract class QueryResultEntitiesParser {
 
         // Collect ids for all nodes in the path by accessing the row only once
         const ids: PathKey[] = [];
+        // Think of this array as one iteration behind ids
+        const parentIds: PathKey[] = [];
 
         // Skip processing root node in path if this is not the first path
         // Reason for this is that the root node got fully processed in the first path already
-        for (let j = i > 1 ? 1 : 0; j < path.length; j += 1) {
+        for (
+          let j = i > 1 ? 1 : 0;
+          j < path.length;
+          j += 1, parentIds.push(ids.at(-1)!)
+        ) {
           const node = path[j]!;
 
           ids.push(row[node.idKeys.at(-1)!]);
 
           // Id of this node is null in this row so we can't return it as an entity
+          // This means we can't return any of this nodes child relations as entities either so we stop processing this path
           if (ids.at(-1) === null) {
-            continue;
+            break;
           }
 
           // Stop processing this path if the exact entity exists in the path already
@@ -55,14 +62,13 @@ export abstract class QueryResultEntitiesParser {
           } else {
             if (node.parentFieldIsArray) {
               (
-                path[j - 1]!.entityByIdPath.get(ids.slice(0, -1))![
+                path[j - 1]!.entityByIdPath.get(parentIds)![
                   node.parentField!
                 ] as any[]
               ).push(entity);
             } else {
-              path[j - 1]!.entityByIdPath.get(ids.slice(0, -1))![
-                node.parentField!
-              ] = entity;
+              path[j - 1]!.entityByIdPath.get(parentIds)![node.parentField!] =
+                entity;
             }
           }
         }
