@@ -27,16 +27,16 @@ export abstract class QueryResultEntitiesParser {
         // Think of this array as one iteration behind ids
         const parentIds: PathKey[] = [];
 
-        // Skip processing root node in path if this is not the first path
-        // Reason for this is that the root node got fully processed in the first path already
-        for (
-          let j = i > 1 ? 1 : 0;
-          j < path.length;
-          j += 1, parentIds.push(ids.at(-1)!)
-        ) {
+        for (let j = 0; j < path.length; j += 1, parentIds.push(ids.at(-1)!)) {
           const node = path[j]!;
 
           ids.push(row[node.idKeys.at(-1)!]);
+
+          // Skip processing root node in path if this is not the first path
+          // Reason for this is that the root node got fully processed in the first path already
+          if (j === 0 && i < 0) {
+            continue;
+          }
 
           // Id of this node is null in this row so we can't return it as an entity
           // This means we can't return any of this nodes child relations as entities either so we stop processing this path
