@@ -10,13 +10,11 @@ export class PathMap<Payload> {
 
     // Traverse path backwards
     for (let i = this.depth - 1; i > 0; i -= 1) {
-      const value = currentMap.get(keys[i]!);
+      currentMap = currentMap.get(keys[i]!);
 
-      if (!value) {
-        return value;
+      if (!currentMap) {
+        return undefined;
       }
-
-      currentMap = value;
     }
 
     return currentMap.get(keys[0]);
@@ -27,13 +25,11 @@ export class PathMap<Payload> {
 
     // Traverse path backwards
     for (let i = this.depth - 1; i > 0; i -= 1) {
-      const value = currentMap.get(keys[i]!);
+      currentMap = currentMap.get(keys[i]!);
 
-      if (!value) {
-        return value;
+      if (!currentMap) {
+        return false;
       }
-
-      currentMap = value;
     }
 
     return currentMap.has(keys[0]!);
