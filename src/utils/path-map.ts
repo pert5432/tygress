@@ -40,16 +40,11 @@ export class PathMap<Payload> {
 
     // Traverse maps until we reach the last one
     for (let i = this.depth - 1; i > 0; i -= 1) {
-      const existingValue = currentMap.get(keys[i]!);
-
-      if (!existingValue) {
-        const newMap = new Map();
-        currentMap.set(keys[i]!, newMap);
-
-        currentMap = newMap;
-      } else {
-        currentMap = existingValue;
+      if (!currentMap.has(keys[i]!)) {
+        currentMap.set(keys[i]!, new Map());
       }
+
+      currentMap = currentMap.get(keys[i]!);
     }
 
     // Write into last map
